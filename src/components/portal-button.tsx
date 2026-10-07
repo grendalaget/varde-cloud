@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Spinner } from "@heroui/react";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
@@ -21,14 +22,19 @@ export function PortalButton() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={go}
-        disabled={loading}
-        className="mt-5 rounded-lg border border-separator bg-surface-secondary px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-tertiary disabled:opacity-60"
+      <Button
+        variant="secondary"
+        isPending={loading}
+        onPress={go}
+        className="mt-5"
       >
-        {loading ? "Opening…" : "Manage billing"}
-      </button>
+        {({ isPending }) => (
+          <>
+            {isPending ? <Spinner color="current" size="sm" /> : null}
+            {isPending ? "Opening…" : "Manage billing"}
+          </>
+        )}
+      </Button>
       {error ? <p className="mt-2 text-xs text-warn">{error}</p> : null}
     </>
   );

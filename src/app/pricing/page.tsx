@@ -1,3 +1,4 @@
+import { Card, Chip } from "@heroui/react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -70,15 +71,19 @@ export default function PricingPage() {
           optional convenience for groups that want always-on save replication
           without running their own always-on machine.
         </p>
-        <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-separator bg-surface px-3 py-1 text-xs text-muted">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
-          Plans are indicative and not yet available — checkout is coming soon.
-        </p>
+        <div className="mt-3">
+          <Chip variant="secondary" size="sm">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
+            <Chip.Label>
+              Plans are indicative and not yet available — checkout is coming soon.
+            </Chip.Label>
+          </Chip>
+        </div>
       </div>
 
       <div className="mt-12 grid gap-5 md:grid-cols-3">
         {PLANS.map((plan) => (
-          <div
+          <Card
             key={plan.name}
             className={`flex flex-col rounded-2xl border p-7 ${
               plan.highlight
@@ -88,15 +93,13 @@ export default function PricingPage() {
           >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold">{plan.name}</h2>
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs ${
-                  plan.tag === "Coming soon"
-                    ? "border border-separator bg-surface-secondary text-warn"
-                    : "border border-separator bg-surface-secondary text-muted"
-                }`}
+              <Chip
+                variant="secondary"
+                size="sm"
+                color={plan.tag === "Coming soon" ? "warning" : "default"}
               >
                 {plan.tag}
-              </span>
+              </Chip>
             </div>
             <div className="mt-5">
               <span className="font-display text-4xl font-bold">{plan.price}</span>
@@ -153,7 +156,7 @@ export default function PricingPage() {
                 ) : null}
               </div>
             )}
-          </div>
+          </Card>
         ))}
       </div>
 

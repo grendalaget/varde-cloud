@@ -1,3 +1,4 @@
+import { Button, Card, Chip, Link } from "@heroui/react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -55,7 +56,7 @@ async function AccountContent() {
       <p className="mt-2 text-muted">Signed in as {user.email}</p>
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
-        <section className="rounded-2xl border border-separator bg-surface p-6">
+        <Card className="rounded-2xl border border-separator bg-surface p-6">
           <h2 className="font-display text-lg font-semibold">Profile</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div>
@@ -80,30 +81,27 @@ async function AccountContent() {
           <div className="mt-6">
             <SignOutButton />
           </div>
-        </section>
+        </Card>
 
         <div className="flex flex-col gap-5">
-          <section className="rounded-2xl border border-separator bg-surface p-6">
+          <Card className="rounded-2xl border border-separator bg-surface p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold">Plan</h2>
-              <span className="rounded-full border border-separator bg-surface-secondary px-2.5 py-1 text-xs text-muted">
+              <Chip variant="secondary" size="sm">
                 {PLAN_LABELS[user.plan as string] ?? "Free"}
-              </span>
+              </Chip>
             </div>
             <p className="mt-3 text-sm text-muted">
               {user.plan === "free"
                 ? "Everything self-hostable plus the hosted control plane. "
                 : "Managed cloud anchor for your group. "}
               See{" "}
-              <a href="/pricing" className="text-foreground underline underline-offset-4">
-                pricing
-              </a>
-              .
+              <Link href="/pricing">pricing</Link>.
             </p>
             {BILLING_ENABLED ? <PortalButton /> : null}
-          </section>
+          </Card>
 
-          <section className="rounded-2xl border border-dashed border-separator bg-surface/50 p-6">
+          <Card className="rounded-2xl border border-dashed border-separator bg-surface/50 p-6">
             <div className="flex items-center gap-3">
               <Mark className="h-8 w-8" title="Varde" />
               <h2 className="font-display text-lg font-semibold">
@@ -115,14 +113,10 @@ async function AccountContent() {
               accounts unify, you&apos;ll link it here to manage groups, anchors
               and billing from varde.games.
             </p>
-            <button
-              type="button"
-              disabled
-              className="mt-5 cursor-not-allowed rounded-lg border border-separator bg-surface-secondary px-4 py-2 text-sm font-semibold text-muted"
-            >
+            <Button isDisabled variant="secondary" className="mt-5 text-muted">
               Coming soon
-            </button>
-          </section>
+            </Button>
+          </Card>
         </div>
       </div>
     </main>

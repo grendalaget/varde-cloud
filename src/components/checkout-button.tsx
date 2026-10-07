@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Button, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
 
@@ -28,22 +29,16 @@ export function CheckoutButton({
   const [error, setError] = useState<string | null>(null);
   const { data: session } = authClient.useSession();
 
-  const base =
-    variant === "link"
-      ? "text-sm text-muted underline-offset-4 transition-colors hover:text-foreground"
-      : variant === "primary"
-        ? "rounded-lg bg-glod px-4 py-2.5 text-sm font-semibold text-natt transition-colors hover:bg-[#ff6f3d]"
-        : "rounded-lg border border-separator bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-tertiary";
-
   if (!billingEnabled) {
     return (
-      <button
-        type="button"
-        disabled
-        className="mt-8 w-full cursor-not-allowed rounded-lg border border-separator bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-muted"
+      <Button
+        isDisabled
+        variant="secondary"
+        fullWidth
+        className="mt-8 text-muted"
       >
         Coming soon
-      </button>
+      </Button>
     );
   }
 
@@ -62,16 +57,25 @@ export function CheckoutButton({
     // on success better-auth redirects to the Polar checkout URL
   }
 
+  const isLink = variant === "link";
+
   return (
     <>
-      <button
-        type="button"
-        onClick={go}
-        disabled={loading}
-        className={`w-full ${base} ${loading ? "opacity-60" : ""} ${className}`}
+      <Button
+        onPress={go}
+        isPending={loading}
+        variant={isLink ? "ghost" : variant === "secondary" ? "secondary" : "primary"}
+        size={isLink ? "sm" : "md"}
+        fullWidth={!isLink}
+        className={className}
       >
-        {loading ? "Opening checkout…" : label}
-      </button>
+        {({ isPending }) => (
+          <>
+            {isPending ? <Spinner color="current" size="sm" /> : null}
+            {isPending && !isLink ? "Opening checkout…" : label}
+          </>
+        )}
+      </Button>
       {error ? <p className="mt-2 text-xs text-warn">{error}</p> : null}
     </>
   );

@@ -1,3 +1,4 @@
+import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Mark } from "@/components/brand";
 
@@ -74,10 +75,12 @@ export default function Home() {
         />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 md:grid-cols-2 md:pb-28 md:pt-24">
           <div>
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-separator bg-surface px-3 py-1 text-xs text-muted">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-glod" />
-              Open source · AGPL-3.0-or-later
-            </p>
+            <div className="mb-4">
+              <Chip variant="secondary" size="sm">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-glod" />
+                <Chip.Label>Open source · AGPL-3.0-or-later</Chip.Label>
+              </Chip>
+            </div>
             <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
               Game servers built by many hands.
             </h1>
@@ -103,14 +106,14 @@ export default function Home() {
             </div>
             <p className="mt-6 text-sm text-muted">
               Available for Windows, macOS, and Linux ·{" "}
-              <a
+              <HLink
                 href="https://github.com/grendalaget/varde"
                 target="_blank"
                 rel="noreferrer"
                 className="underline decoration-skifer-600 underline-offset-4 hover:text-foreground"
               >
                 grendalaget/varde
-              </a>
+              </HLink>
             </p>
           </div>
 
@@ -136,7 +139,7 @@ export default function Home() {
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {HOW_IT_WORKS.map((f) => (
-              <div
+              <Card
                 key={f.title}
                 className="rounded-xl border border-separator bg-surface p-6"
               >
@@ -156,7 +159,7 @@ export default function Home() {
                 <p className="mt-2 text-sm leading-relaxed text-muted">
                   {f.body}
                 </p>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -174,18 +177,18 @@ export default function Home() {
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {GAMES.map((g) => (
-              <div
+              <Card
                 key={g.name}
-                className="flex items-start justify-between gap-4 rounded-xl border border-separator bg-surface p-6"
+                className="flex flex-row items-start justify-between gap-4 rounded-xl border border-separator bg-surface p-6"
               >
                 <div>
                   <h3 className="font-display text-lg font-semibold">{g.name}</h3>
                   <p className="mt-2 text-sm text-muted">{g.body}</p>
                 </div>
-                <span className="shrink-0 rounded-full border border-separator bg-surface-secondary px-2.5 py-1 text-xs text-muted">
+                <Chip variant="secondary" size="sm" className="shrink-0">
                   {g.status}
-                </span>
-              </div>
+                </Chip>
+              </Card>
             ))}
           </div>
         </div>
@@ -211,7 +214,7 @@ export default function Home() {
               See plans
             </Link>
           </div>
-          <div className="rounded-xl border border-separator bg-surface p-6">
+          <Card className="rounded-xl border border-separator bg-surface p-6">
             <div className="flex items-center justify-between">
               <p className="font-display text-lg font-semibold">Anchor</p>
               <p className="font-display text-2xl font-bold">
@@ -224,27 +227,27 @@ export default function Home() {
               <li>· Always-on replicated saves</li>
               <li>· 1 region</li>
             </ul>
-          </div>
+          </Card>
         </div>
       </section>
 
       {/* Open source */}
       <section className="border-t border-separator">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
-          <div className="rounded-2xl border border-separator bg-surface p-8 md:p-12">
+          <Card className="rounded-2xl border border-separator bg-surface p-8 md:p-12">
             <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
               Open source, forever.
             </h2>
             <p className="mt-4 max-w-2xl text-muted">
               Varde&apos;s core technology is{" "}
-              <a
+              <HLink
                 href="https://github.com/grendalaget/varde/blob/main/LICENSE"
                 target="_blank"
                 rel="noreferrer"
                 className="text-foreground underline decoration-skifer-600 underline-offset-4"
               >
                 AGPL-3.0-or-later
-              </a>
+              </HLink>
               . Run it, study it, modify it, self-host all of it. Only the
               optional managed hosting lives here.
             </p>
@@ -266,7 +269,7 @@ export default function Home() {
                 Read the docs
               </a>
             </div>
-          </div>
+          </Card>
         </div>
       </section>
     </main>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, FieldError, Input, Label, Spinner, TextField } from "@heroui/react";
+import { Alert, Button, Card, FieldError, Input, Label, Spinner, TextField } from "@heroui/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -46,7 +46,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-separator bg-surface p-7">
+    <Card className="w-full max-w-sm rounded-2xl border border-separator bg-surface p-7">
       <h1 className="font-display text-2xl font-bold tracking-tight">
         {isSignUp ? "Create your account" : "Welcome back"}
       </h1>
@@ -85,9 +85,12 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </TextField>
 
         {error ? (
-          <p role="alert" className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-[#f2a197]">
-            {error}
-          </p>
+          <Alert status="danger" role="alert">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Description>{error}</Alert.Description>
+            </Alert.Content>
+          </Alert>
         ) : null}
 
         <Button type="submit" fullWidth isPending={pending} isDisabled={pending}>
@@ -112,7 +115,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           </>
         )}
       </p>
-    </div>
+    </Card>
   );
 }
 

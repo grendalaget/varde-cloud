@@ -1,3 +1,4 @@
+import { Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Logo } from "./brand";
 import { MobileNav } from "./mobile-nav";
@@ -27,14 +28,14 @@ export function SiteNav() {
               {link.label}
             </Link>
           ))}
-          <a
+          <HLink
             href="https://github.com/grendalaget/varde"
             target="_blank"
             rel="noreferrer"
             className="text-sm text-muted transition-colors hover:text-foreground"
           >
             GitHub
-          </a>
+          </HLink>
         </div>
 
         <div className="flex items-center gap-2">

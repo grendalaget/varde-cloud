@@ -1,3 +1,4 @@
+import { Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Mark } from "./brand";
 
@@ -12,14 +13,14 @@ export function SiteFooter() {
             <p>Game servers built by many hands.</p>
             <p className="mt-2">
               Open source under{" "}
-              <a
+              <HLink
                 href="https://github.com/grendalaget/varde/blob/main/LICENSE"
                 target="_blank"
                 rel="noreferrer"
                 className="underline decoration-skifer-600 underline-offset-2 hover:text-foreground"
               >
                 AGPL-3.0-or-later
-              </a>
+              </HLink>
               .
             </p>
           </div>
@@ -40,30 +41,30 @@ export function SiteFooter() {
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-medium text-foreground">Developers</p>
-            <a
+            <HLink
               href="https://github.com/grendalaget/varde"
               target="_blank"
               rel="noreferrer"
               className="text-muted hover:text-foreground"
             >
               GitHub
-            </a>
-            <a
+            </HLink>
+            <HLink
               href="https://github.com/grendalaget/varde/tree/main/docs"
               target="_blank"
               rel="noreferrer"
               className="text-muted hover:text-foreground"
             >
               Documentation
-            </a>
-            <a
+            </HLink>
+            <HLink
               href="https://github.com/grendalaget/varde/releases"
               target="_blank"
               rel="noreferrer"
               className="text-muted hover:text-foreground"
             >
               Releases
-            </a>
+            </HLink>
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-medium text-foreground">Account</p>
