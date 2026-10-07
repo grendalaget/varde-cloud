@@ -1,0 +1,127 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/*
+ * Varde theme — dark-first (brand/README.md in grendalaget/varde).
+ * Natt canvas, Tåke text, Skifer surfaces. Glød #FF5B1F is reserved for the
+ * host/ember accent (lit stone, primary CTA); warnings use #E3C04B.
+ */
+@theme {
+  --color-natt: #10161a;
+  --color-take: #dce2e6;
+  --color-papir: #f3f0e9;
+  --color-glod: #ff5b1f;
+  --color-warn: #e3c04b;
+  --color-skifer-50: #eef0f2;
+  --color-skifer-100: #dce2e6;
+  --color-skifer-200: #c2c8cd;
+  --color-skifer-300: #a7afb4;
+  --color-skifer-400: #899198;
+  --color-skifer-500: #7a8389;
+  --color-skifer-600: #545f66;
+  --color-skifer-700: #364149;
+  --color-skifer-800: #1f2b34;
+  --color-skifer-900: #182027;
+  --color-skifer-950: #10161a;
+
+  --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* HeroUI dark theme → Varde palette (site is dark-only). */
+.dark,
+[data-theme="dark"] {
+  --background: #10161a;
+  --foreground: #dce2e6;
+  --surface: #182027;
+  --surface-foreground: #dce2e6;
+  --surface-secondary: #1f2b34;
+  --surface-secondary-foreground: #dce2e6;
+  --surface-tertiary: #26333d;
+  --surface-tertiary-foreground: #dce2e6;
+  --overlay: #1f2b34;
+  --overlay-foreground: #dce2e6;
+  --accent: #ff5b1f;
+  --accent-foreground: #10161a;
+  --accent-soft: color-mix(in oklab, #ff5b1f 16%, transparent);
+  --accent-soft-foreground: #ffb393;
+  --muted: #a7afb4;
+  --default: #364149;
+  --default-foreground: #dce2e6;
+  --default-soft-foreground: #dce2e6;
+  --warning: #e3c04b;
+  --warning-foreground: #10161a;
+  --field-background: #182027;
+  --field-foreground: #dce2e6;
+  --field-placeholder: #7a8389;
+  --field-border: #364149;
+  --border: #364149;
+  --separator: #2a3741;
+  --focus: #ff5b1f;
+  --link: #dce2e6;
+  --radius: 0.625rem;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: color-mix(in oklab, #ff5b1f 35%, transparent);
+}
+
+/* Brand marks: stones use currentColor (Tåke on Natt); Glød is only the lit
+   stone — the machine currently hosting a server. */
+.vd {
+  --vd-stone: currentColor;
+  --vd-ember: #ff5b1f;
+}
+.vd-s,
+.vd-h {
+  fill: var(--vd-stone);
+}
+.vd-h {
+  animation-name: vd-lit;
+  animation-duration: 3.6s;
+  animation-iteration-count: infinite;
+}
+.vd-h1 {
+  animation-delay: 0s;
+}
+.vd-h2 {
+  animation-delay: -2.4s;
+}
+.vd-h3 {
+  animation-delay: -1.2s;
+}
+@keyframes vd-lit {
+  0%,
+  25% {
+    fill: var(--vd-ember);
+  }
+  30%,
+  97% {
+    fill: var(--vd-stone);
+  }
+  100% {
+    fill: var(--vd-ember);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vd-h {
+    animation: none;
+  }
+  .vd-h1 {
+    fill: var(--vd-ember);
+  }
+}
+/* Static ember: only the host stone is Glød. */
+.vd-ember {
+  fill: var(--vd-ember);
+}
