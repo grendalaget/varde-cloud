@@ -13,10 +13,11 @@ public repo and stays open source (AGPL-3.0-or-later) forever.
 - **Next.js** (App Router) + TypeScript + Tailwind CSS v4 — Vercel-ready
 - **HeroUI** (`@heroui/react` v3) components, themed to the Varde palette
 - **better-auth** — email+password today, OAuth-ready (`socialProviders`)
-- **Drizzle ORM** + Postgres — chosen over Prisma because it's a thin
+- **Drizzle ORM** + Turso (libSQL) — chosen over Prisma because it's a thin
   schema-in-TypeScript layer with zero codegen step in the app itself
   (drizzle-kit only runs for schema changes), a first-class better-auth
-  adapter, and trivial `DATABASE_URL` deployment
+  adapter, and Turso's generous free tier. Local dev runs on a plain
+  `file:./varde.db` SQLite — no server needed.
 - **pnpm** — committed `pnpm-lock.yaml`; Vercel auto-detects it
 
 ## Layout
@@ -36,11 +37,14 @@ services/         (future) plan-sync workers
 
 ```sh
 pnpm install
-cp .env.example .env        # fill in BETTER_AUTH_SECRET (`openssl rand -base64 32`)
-docker compose up -d        # Postgres on :5432
-pnpm db:push                # create the auth tables
+cp .env.example .env        # set BETTER_AUTH_SECRET (`openssl rand -base64 32`);
+                            # leave TURSO_* unset for the local file db
+pnpm db:push                # create the auth tables in file:./varde.db
 pnpm dev
 ```
+
+No docker needed for the database. To point at a real Turso db instead, set
+`TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` in `.env`.
 
 Then http://localhost:3000 — sign up at `/auth/sign-up`, then `/account`.
 
@@ -52,7 +56,7 @@ Then http://localhost:3000 — sign up at `/auth/sign-up`, then `/account`.
 | `pnpm build`        | production build                                    |
 | `pnpm lint`         | eslint                                              |
 | `pnpm typecheck`    | `tsc --noEmit`                                      |
-| `pnpm db:push`      | push the Drizzle schema to `DATABASE_URL` (dev)     |
+| `pnpm db:push`      | push the Drizzle schema to `TURSO_DATABASE_URL`/`file:./varde.db` |
 | `pnpm db:generate`  | emit SQL migrations into `drizzle/`                 |
 | `pnpm auth:schema`  | regenerate `src/db/schema.ts` from better-auth      |
 
@@ -72,16 +76,16 @@ credentials.
 
 1. Import `grendalaget/varde-cloud` in Vercel — Next.js is auto-detected,
    zero config needed.
-2. Set env vars: `DATABASE_URL` (a hosted Postgres), `BETTER_AUTH_SECRET`,
-   `BETTER_AUTH_URL=https://varde.games`.
-3. Push the schema once: `DATABASE_URL=<prod> pnpm db:push` (or run the
-   generated SQL from `pnpm db:generate`).
+2. Set env vars: `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (from the Turso
+   CLI), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL=https://varde.games`.
+3. Push the schema once: `TURSO_DATABASE_URL=<prod> TURSO_AUTH_TOKEN=<tok> pnpm db:push`
+   (or run the generated SQL from `pnpm db:generate`).
 4. Done. Future OAuth provider keys go in the same env var set.
 
 ### Provisioning checklist
 
 - Vercel project + `varde.games` DNS
-- Hosted Postgres (Neon/Supabase/RDS — anything `pg`-compatible)
+- Turso database + auth token (`turso db create varde`, `turso db tokens create`)
 - `BETTER_AUTH_SECRET` in Vercel env
 - OAuth app credentials (GitHub/Google) when enabling social sign-in
 - Stripe/Polar keys when billing starts

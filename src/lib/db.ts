@@ -1,21 +1,16 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { createClient, type Client } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 
-const connectionString = process.env.DATABASE_URL;
+// Local dev falls back to a plain SQLite file — no server needed.
+// Prod sets TURSO_DATABASE_URL (libsql://...) + TURSO_AUTH_TOKEN.
+const url = process.env.TURSO_DATABASE_URL ?? "file:./varde.db";
 
-if (!connectionString) {
-  throw new Error(
-    "DATABASE_URL is not set. Copy .env.example to .env and start Postgres with `docker compose up -d`.",
-  );
-}
-
-const globalForDb = globalThis as unknown as { pool?: Pool };
-
-export const pool =
-  globalForDb.pool ?? new Pool({ connectionString });
-
+const globalForDb = globalThis as unknown as { libsql?: Client };
+export const client =
+  globalForDb.libsql ??
+  createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
 if (process.env.NODE_ENV !== "production") {
-  globalForDb.pool = pool;
+  globalForDb.libsql = client;
 }
 
-export const db = drizzle(pool);
+export const db = drizzle(client);

@@ -1,10 +1,12 @@
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  dialect: "postgresql",
+  dialect: "turso",
   schema: "./src/db/schema.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "",
+    // Local dev uses a plain file: SQLite db; prod uses the Turso URL + token.
+    url: process.env.TURSO_DATABASE_URL ?? "file:./varde.db",
+    authToken: process.env.TURSO_AUTH_TOKEN,
   },
 });
