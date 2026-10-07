@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+/* @import "@heroui-pro/react/css"; — uncomment after `HEROUI_AUTH_TOKEN=... pnpm dlx heroui-pro install react` downloads Pro artifacts */
 
 /*
  * Varde theme — dark-first (brand/README.md in grendalaget/varde).
