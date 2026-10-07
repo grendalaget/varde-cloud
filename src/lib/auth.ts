@@ -40,6 +40,8 @@ const polarPlugins = polarCore
             secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
             onSubscriptionCreated: (payload) =>
               syncPlan(payload.data.customer.external_id, true, payload.data.product_id),
+            onSubscriptionActive: (payload) =>
+              syncPlan(payload.data.customer.external_id, true, payload.data.product_id),
             onSubscriptionUpdated: (payload) =>
               syncPlan(
                 payload.data.customer.external_id,
