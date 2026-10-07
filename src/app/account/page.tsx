@@ -4,8 +4,16 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { Mark } from "@/components/brand";
+import { PortalButton } from "@/components/portal-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { auth } from "@/lib/auth";
+import { BILLING_ENABLED } from "@/lib/polar";
+
+const PLAN_LABELS: Record<string, string> = {
+  free: "Free",
+  anchor: "Anchor",
+  "anchor+": "Anchor+",
+};
 
 export const metadata: Metadata = {
   title: "Account",
@@ -79,17 +87,20 @@ async function AccountContent() {
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold">Plan</h2>
               <span className="rounded-full border border-separator bg-surface-secondary px-2.5 py-1 text-xs text-muted">
-                Free
+                {PLAN_LABELS[user.plan as string] ?? "Free"}
               </span>
             </div>
             <p className="mt-3 text-sm text-muted">
-              Everything self-hostable plus the hosted control plane. Cloud
-              anchor plans land here when they launch — see{" "}
+              {user.plan === "free"
+                ? "Everything self-hostable plus the hosted control plane. "
+                : "Managed cloud anchor for your group. "}
+              See{" "}
               <a href="/pricing" className="text-foreground underline underline-offset-4">
                 pricing
               </a>
               .
             </p>
+            {BILLING_ENABLED ? <PortalButton /> : null}
           </section>
 
           <section className="rounded-2xl border border-dashed border-separator bg-surface/50 p-6">

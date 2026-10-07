@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { CheckoutButton } from "@/components/checkout-button";
+import { BILLING_ENABLED } from "@/lib/polar";
+
 export const metadata: Metadata = {
   title: "Pricing",
   description:
@@ -29,6 +32,8 @@ const PLANS = [
     altPrice: "$30 per year",
     tag: "Coming soon",
     highlight: true,
+    slug: "anchor-monthly",
+    yearlySlug: "anchor-yearly",
     features: [
       "Managed always-on cloud anchor",
       "~25 GB deduplicated save storage",
@@ -43,6 +48,7 @@ const PLANS = [
     cadence: "per group / month",
     tag: "Coming soon",
     highlight: false,
+    slug: "anchor-plus",
     features: [
       "Everything in Anchor",
       "~100 GB deduplicated save storage",
@@ -124,13 +130,28 @@ export default function PricingPage() {
                 Get started
               </Link>
             ) : (
-              <button
-                type="button"
-                disabled
-                className="mt-8 cursor-not-allowed rounded-lg border border-separator bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-muted"
-              >
-                Coming soon
-              </button>
+              <div className="mt-8">
+                <CheckoutButton
+                  slug={plan.slug!}
+                  billingEnabled={BILLING_ENABLED}
+                  label={
+                    plan.highlight
+                      ? `Get ${plan.name}`
+                      : `Get ${plan.name} monthly`
+                  }
+                  variant={plan.highlight ? "primary" : "secondary"}
+                />
+                {"yearlySlug" in plan && plan.yearlySlug ? (
+                  <div className="mt-2 text-center">
+                    <CheckoutButton
+                      slug={plan.yearlySlug}
+                      billingEnabled={BILLING_ENABLED}
+                      label="or $30/year"
+                      variant="link"
+                    />
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
         ))}

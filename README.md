@@ -18,6 +18,9 @@ public repo and stays open source (AGPL-3.0-or-later) forever.
   (drizzle-kit only runs for schema changes), a first-class better-auth
   adapter, and Turso's generous free tier. Local dev runs on a plain
   `file:./varde.db` SQLite — no server needed.
+- **Polar** for payments — merchant of record (they handle global VAT,
+  invoicing, refunds, disputes), wired via the official
+  `@polar-sh/better-auth` plugin. Dormant until `POLAR_*` env vars are set.
 - **pnpm** — committed `pnpm-lock.yaml`; Vercel auto-detects it
 
 ## Layout
@@ -72,6 +75,22 @@ later step — the CP has an `auth.Provider` seam, so the likely path is the CP
 becoming an OIDC provider to this site (or vice versa) rather than shared
 credentials.
 
+## Billing (Polar)
+
+Polar is the merchant of record — we don't touch card data or VAT. The
+`@polar-sh/better-auth` plugin auto-creates a Polar customer on signup
+(external_id = user.id), serves `/api/auth/checkout` + `/customer/portal`,
+and verifies webhooks at `POST /api/auth/polar/webhooks`. Subscription
+events write `plan` (`free` | `anchor` | `anchor+`) onto the user row — see
+`syncPlan` in `src/lib/auth.ts` and the product→plan map in `src/lib/polar.ts`.
+
+Without `POLAR_ACCESS_TOKEN` the whole billing layer is dormant: the pricing
+page renders "Coming soon" and no Polar calls are made. To activate: create
+the three products in the Polar dashboard (Anchor monthly ~3, Anchor yearly
+~30, Anchor+ ~6, EUR is the org default currency), set `POLAR_ACCESS_TOKEN`,
+`POLAR_SERVER`, the product-ID envs, and add a webhook endpoint pointing at
+`/api/auth/polar/webhooks` (set `POLAR_WEBHOOK_SECRET`).
+
 ## Deploy (Vercel)
 
 1. Import `grendalaget/varde-cloud` in Vercel — Next.js is auto-detected,
@@ -87,8 +106,9 @@ credentials.
 - Vercel project + `varde.games` DNS
 - Turso database + auth token (`turso db create varde`, `turso db tokens create`)
 - `BETTER_AUTH_SECRET` in Vercel env
+- Polar production org + access token, products (Anchor monthly/yearly, Anchor+),
+  webhook → `/api/auth/polar/webhooks`, `POLAR_*` envs in Vercel
 - OAuth app credentials (GitHub/Google) when enabling social sign-in
-- Stripe/Polar keys when billing starts
 
 ## Brand
 
