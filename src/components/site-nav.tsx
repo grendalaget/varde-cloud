@@ -1,7 +1,7 @@
-import { Link as HLink } from "@heroui/react";
+import { Navbar } from "@heroui-pro/react/navbar";
 import Link from "next/link";
+
 import { Logo } from "./brand";
-import { MobileNav } from "./mobile-nav";
 
 export const NAV_LINKS = [
   { href: "/#how-it-works", label: "How it works" },
@@ -12,48 +12,70 @@ export const NAV_LINKS = [
 
 export function SiteNav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-separator bg-natt/80 backdrop-blur-md">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" aria-label="Varde home" className="shrink-0">
-          <Logo />
-        </Link>
+    <Navbar className="border-b border-separator bg-natt/80 backdrop-blur-md">
+      <Navbar.Header>
+        <Navbar.Brand>
+          <Link href="/" aria-label="Varde home" className="shrink-0">
+            <Logo />
+          </Link>
+        </Navbar.Brand>
 
-        <div className="hidden items-center gap-6 md:flex">
+        <Navbar.Content className="hidden md:flex">
           {NAV_LINKS.map((link) => (
-            <Link
+            <Navbar.Item
               key={link.href}
               href={link.href}
               className="text-sm text-muted transition-colors hover:text-foreground"
             >
               {link.label}
-            </Link>
+            </Navbar.Item>
           ))}
-          <HLink
+          <Navbar.Item
             href="https://github.com/grendalaget/varde"
             target="_blank"
             rel="noreferrer"
             className="text-sm text-muted transition-colors hover:text-foreground"
           >
             GitHub
-          </HLink>
-        </div>
+          </Navbar.Item>
+        </Navbar.Content>
 
-        <div className="flex items-center gap-2">
-          <Link
+        <Navbar.Spacer />
+
+        <Navbar.Content className="hidden sm:flex">
+          <Navbar.Item
             href="/auth/sign-in"
-            className="hidden rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:text-foreground sm:block"
+            className="text-sm text-muted transition-colors hover:text-foreground"
           >
             Sign in
-          </Link>
-          <Link
+          </Navbar.Item>
+          <Navbar.Item
             href="/download"
-            className="hidden rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-colors hover:bg-[#ff6f3d] sm:block"
+            className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-colors hover:bg-[#ff6f3d]"
           >
             Get started
-          </Link>
-          <MobileNav />
-        </div>
-      </nav>
-    </header>
+          </Navbar.Item>
+        </Navbar.Content>
+
+        <Navbar.MenuToggle className="md:hidden" />
+
+        <Navbar.Menu>
+          {NAV_LINKS.map((link) => (
+            <Navbar.MenuItem key={link.href} href={link.href}>
+              {link.label}
+            </Navbar.MenuItem>
+          ))}
+          <Navbar.MenuItem
+            href="https://github.com/grendalaget/varde"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+          </Navbar.MenuItem>
+          <Navbar.MenuItem href="/auth/sign-in">Sign in</Navbar.MenuItem>
+          <Navbar.MenuItem href="/download">Get started</Navbar.MenuItem>
+        </Navbar.Menu>
+      </Navbar.Header>
+    </Navbar>
   );
 }

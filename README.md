@@ -11,7 +11,7 @@ public repo and stays open source (AGPL-3.0-or-later) forever.
 ## Stack
 
 - **Next.js** (App Router) + TypeScript + Tailwind CSS v4 — Vercel-ready
-- **HeroUI** (`@heroui/react` v3) components, themed to the Varde palette
+- **HeroUI** (`@heroui/react` v3 + `@heroui-pro/react`) components, themed to the Varde palette — the Pro package downloads its artifacts via a `postinstall` that needs `HEROUI_AUTH_TOKEN` (CI/CD license key, see `.env.example`)
 - **better-auth** — email+password today, OAuth-ready (`socialProviders`)
 - **Drizzle ORM** + Turso (libSQL) — chosen over Prisma because it's a thin
   schema-in-TypeScript layer with zero codegen step in the app itself
