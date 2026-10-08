@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { MotionProvider } from "@/components/reveal";
 
 const schibsted = localFont({
   variable: "--font-schibsted",
@@ -62,7 +63,9 @@ export default function RootLayout({
       >
         <div className="flex min-h-screen flex-col">
           <SiteNav />
-          <div className="flex-1">{children}</div>
+          <div className="flex-1">
+            <MotionProvider>{children}</MotionProvider>
+          </div>
           <SiteFooter />
         </div>
       </body>

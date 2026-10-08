@@ -6,6 +6,7 @@ import { Suspense } from "react";
 
 import { Mark } from "@/components/brand";
 import { PortalButton } from "@/components/portal-button";
+import { Item, Reveal, Stagger } from "@/components/reveal";
 import { SignOutButton } from "@/components/sign-out-button";
 import { auth } from "@/lib/auth";
 import { BILLING_ENABLED } from "@/lib/polar";
@@ -50,40 +51,43 @@ async function AccountContent() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 md:py-20">
-      <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-        Account
-      </h1>
-      <p className="mt-2 text-muted">Signed in as {user.email}</p>
+      <Reveal>
+        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          Account
+        </h1>
+        <p className="mt-2 text-muted">Signed in as {user.email}</p>
+      </Reveal>
 
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
-        <Card className="rounded-2xl border border-separator bg-surface p-6">
-          <h2 className="font-display text-lg font-semibold">Profile</h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div>
-              <dt className="text-muted">Name</dt>
-              <dd className="mt-0.5 text-foreground">{user.name || "—"}</dd>
+      <Stagger stagger={0.08} className="mt-10 grid gap-5 md:grid-cols-2">
+        <Item>
+          <Card className="h-full rounded-2xl border border-separator bg-surface p-6">
+            <h2 className="font-display text-lg font-semibold">Profile</h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div>
+                <dt className="text-muted">Name</dt>
+                <dd className="mt-0.5 text-foreground">{user.name || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Email</dt>
+                <dd className="mt-0.5 text-foreground">{user.email}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Member since</dt>
+                <dd className="mt-0.5 text-foreground">
+                  {new Date(user.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-6">
+              <SignOutButton />
             </div>
-            <div>
-              <dt className="text-muted">Email</dt>
-              <dd className="mt-0.5 text-foreground">{user.email}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Member since</dt>
-              <dd className="mt-0.5 text-foreground">
-                {new Date(user.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </dd>
-            </div>
-          </dl>
-          <div className="mt-6">
-            <SignOutButton />
-          </div>
-        </Card>
-
-        <div className="flex flex-col gap-5">
+          </Card>
+        </Item>
+        <Item className="flex flex-col gap-5">
           <Card className="rounded-2xl border border-separator bg-surface p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold">Plan</h2>
@@ -117,8 +121,8 @@ async function AccountContent() {
               Coming soon
             </Button>
           </Card>
-        </div>
-      </div>
+        </Item>
+      </Stagger>
     </main>
   );
 }

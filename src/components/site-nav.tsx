@@ -51,7 +51,7 @@ export function SiteNav() {
           </Navbar.Item>
           <Navbar.Item
             href="/download"
-            className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-colors hover:bg-[#ff6f3d]"
+            className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:bg-[#ff6f3d] active:scale-[0.96]"
           >
             Get started
           </Navbar.Item>

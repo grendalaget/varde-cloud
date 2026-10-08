@@ -29,13 +29,13 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
           <div className="flex flex-col gap-2">
             <p className="font-medium text-foreground">Product</p>
-            <Link href="/#how-it-works" className="text-muted hover:text-foreground">
+            <Link href="/#how-it-works" className="text-muted transition-colors duration-150 hover:text-foreground">
               How it works
             </Link>
-            <Link href="/pricing" className="text-muted hover:text-foreground">
+            <Link href="/pricing" className="text-muted transition-colors duration-150 hover:text-foreground">
               Pricing
             </Link>
-            <Link href="/download" className="text-muted hover:text-foreground">
+            <Link href="/download" className="text-muted transition-colors duration-150 hover:text-foreground">
               Download
             </Link>
           </div>
@@ -45,7 +45,7 @@ export function SiteFooter() {
               href="https://github.com/grendalaget/varde"
               target="_blank"
               rel="noreferrer"
-              className="text-muted hover:text-foreground"
+              className="text-muted transition-colors duration-150 hover:text-foreground"
             >
               GitHub
             </HLink>
@@ -53,7 +53,7 @@ export function SiteFooter() {
               href="https://github.com/grendalaget/varde/tree/main/docs"
               target="_blank"
               rel="noreferrer"
-              className="text-muted hover:text-foreground"
+              className="text-muted transition-colors duration-150 hover:text-foreground"
             >
               Documentation
             </HLink>
@@ -61,20 +61,20 @@ export function SiteFooter() {
               href="https://github.com/grendalaget/varde/releases"
               target="_blank"
               rel="noreferrer"
-              className="text-muted hover:text-foreground"
+              className="text-muted transition-colors duration-150 hover:text-foreground"
             >
               Releases
             </HLink>
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-medium text-foreground">Account</p>
-            <Link href="/auth/sign-in" className="text-muted hover:text-foreground">
+            <Link href="/auth/sign-in" className="text-muted transition-colors duration-150 hover:text-foreground">
               Sign in
             </Link>
-            <Link href="/auth/sign-up" className="text-muted hover:text-foreground">
+            <Link href="/auth/sign-up" className="text-muted transition-colors duration-150 hover:text-foreground">
               Create account
             </Link>
-            <Link href="/account" className="text-muted hover:text-foreground">
+            <Link href="/account" className="text-muted transition-colors duration-150 hover:text-foreground">
               Account
             </Link>
           </div>

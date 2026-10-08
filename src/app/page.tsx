@@ -1,6 +1,7 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Mark } from "@/components/brand";
+import { Enter, Item, Reveal, Stagger } from "@/components/reveal";
 
 const HOW_IT_WORKS = [
   {
@@ -74,130 +75,143 @@ export default function Home() {
           }}
         />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 md:grid-cols-2 md:pb-28 md:pt-24">
-          <div>
-            <div className="mb-4">
+          <Stagger stagger={0.08}>
+            <Item className="mb-4">
               <Chip variant="secondary" size="sm">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-glod" />
                 <Chip.Label>Open source · AGPL-3.0-or-later</Chip.Label>
               </Chip>
-            </div>
-            <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
-              Game servers built by many hands.
-            </h1>
-            <p className="mt-5 max-w-xl text-lg text-muted">
-              Varde lets your friend group co-host game servers. Saves replicate
-              across everyone&apos;s machines, hosting fails over automatically,
-              and every player connects to the same stable address — no rented
-              servers, no port forwarding.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/download"
-                className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-colors hover:bg-[#ff6f3d]"
-              >
-                Download Varde
-              </Link>
-              <Link
-                href="#how-it-works"
-                className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-tertiary"
-              >
-                How it works
-              </Link>
-            </div>
-            <p className="mt-6 text-sm text-muted">
-              Available for Windows, macOS, and Linux ·{" "}
-              <HLink
-                href="https://github.com/grendalaget/varde"
-                target="_blank"
-                rel="noreferrer"
-                className="underline decoration-skifer-600 underline-offset-4 hover:text-foreground"
-              >
-                grendalaget/varde
-              </HLink>
-            </p>
-          </div>
+            </Item>
+            <Item>
+              <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
+                Game servers built by many hands.
+              </h1>
+            </Item>
+            <Item>
+              <p className="mt-5 max-w-xl text-lg text-muted">
+                Varde lets your friend group co-host game servers. Saves
+                replicate across everyone&apos;s machines, hosting fails over
+                automatically, and every player connects to the same stable
+                address — no rented servers, no port forwarding.
+              </p>
+            </Item>
+            <Item>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href="/download"
+                  className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-[#ff6f3d] hover:shadow-lg hover:shadow-glod/25 active:scale-[0.98]"
+                >
+                  Download Varde
+                </Link>
+                <Link
+                  href="#how-it-works"
+                  className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-surface-tertiary active:scale-[0.98]"
+                >
+                  How it works
+                </Link>
+              </div>
+            </Item>
+            <Item>
+              <p className="mt-6 text-sm text-muted">
+                Available for Windows, macOS, and Linux ·{" "}
+                <HLink
+                  href="https://github.com/grendalaget/varde"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline decoration-skifer-600 underline-offset-4 transition-colors duration-150 hover:text-foreground"
+                >
+                  grendalaget/varde
+                </HLink>
+              </p>
+            </Item>
+          </Stagger>
 
-          <div className="flex justify-center md:justify-end">
+          <Enter delay={0.25} y={34} className="flex justify-center md:justify-end">
             <Mark
               animated
               title="A cairn; the lit stone moves between friends"
               className="h-48 w-48 text-skifer-100 drop-shadow-[0_0_40px_rgba(255,91,31,0.15)] sm:h-64 sm:w-64 md:h-80 md:w-80"
             />
-          </div>
+          </Enter>
         </div>
       </section>
 
       {/* How it works */}
       <section id="how-it-works" className="border-t border-separator bg-skifer-900/40">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
-          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            How it works
-          </h2>
-          <p className="mt-3 max-w-2xl text-muted">
-            Varde turns your group&apos;s own PCs into a resilient hosting
-            collective. A cairn belongs to no one — and neither does your server.
-          </p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Reveal>
+            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              How it works
+            </h2>
+            <p className="mt-3 max-w-2xl text-muted">
+              Varde turns your group&apos;s own PCs into a resilient hosting
+              collective. A cairn belongs to no one — and neither does your
+              server.
+            </p>
+          </Reveal>
+          <Stagger inView className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {HOW_IT_WORKS.map((f) => (
-              <Card
-                key={f.title}
-                className="rounded-xl border border-separator bg-surface p-6"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-6 w-6 text-skifer-300"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  aria-hidden
-                >
-                  {f.icon}
-                </svg>
-                <h3 className="mt-4 font-display text-lg font-semibold">
-                  {f.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {f.body}
-                </p>
-              </Card>
+              <Item key={f.title}>
+                <Card className="h-full rounded-xl border border-separator bg-surface p-6 transition-all duration-200 ease-vd-out hover:-translate-y-1 hover:border-skifer-600 hover:shadow-lg hover:shadow-black/30">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6 text-skifer-300"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    aria-hidden
+                  >
+                    {f.icon}
+                  </svg>
+                  <h3 className="mt-4 font-display text-lg font-semibold">
+                    {f.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    {f.body}
+                  </p>
+                </Card>
+              </Item>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* Games */}
       <section id="games" className="border-t border-separator">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
-          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            Supported games
-          </h2>
-          <p className="mt-3 max-w-2xl text-muted">
-            Drivers are per-game and grouped by hosting style — more games join
-            as they fit an existing hosting approach.
-          </p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <Reveal>
+            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              Supported games
+            </h2>
+            <p className="mt-3 max-w-2xl text-muted">
+              Drivers are per-game and grouped by hosting style — more games
+              join as they fit an existing hosting approach.
+            </p>
+          </Reveal>
+          <Stagger inView className="mt-10 grid gap-4 sm:grid-cols-2">
             {GAMES.map((g) => (
-              <Card
-                key={g.name}
-                className="flex flex-row items-start justify-between gap-4 rounded-xl border border-separator bg-surface p-6"
-              >
-                <div>
-                  <h3 className="font-display text-lg font-semibold">{g.name}</h3>
-                  <p className="mt-2 text-sm text-muted">{g.body}</p>
-                </div>
-                <Chip variant="secondary" size="sm" className="shrink-0">
-                  {g.status}
-                </Chip>
-              </Card>
+              <Item key={g.name}>
+                <Card className="flex h-full flex-row items-start justify-between gap-4 rounded-xl border border-separator bg-surface p-6 transition-all duration-200 ease-vd-out hover:-translate-y-1 hover:border-skifer-600 hover:shadow-lg hover:shadow-black/30">
+                  <div>
+                    <h3 className="font-display text-lg font-semibold">
+                      {g.name}
+                    </h3>
+                    <p className="mt-2 text-sm text-muted">{g.body}</p>
+                  </div>
+                  <Chip variant="secondary" size="sm" className="shrink-0">
+                    {g.status}
+                  </Chip>
+                </Card>
+              </Item>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* Cloud anchors teaser */}
       <section className="border-t border-separator bg-skifer-900/40">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
-          <div>
+          <Reveal>
             <p className="text-sm font-medium text-glod">Coming soon</p>
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
               Cloud anchors
@@ -209,67 +223,71 @@ export default function Home() {
             </p>
             <Link
               href="/pricing"
-              className="mt-6 inline-block rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-tertiary"
+              className="mt-6 inline-block rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-surface-tertiary active:scale-[0.98]"
             >
               See plans
             </Link>
-          </div>
-          <Card className="rounded-xl border border-separator bg-surface p-6">
-            <div className="flex items-center justify-between">
-              <p className="font-display text-lg font-semibold">Anchor</p>
-              <p className="font-display text-2xl font-bold">
-                $3<span className="text-sm font-normal text-muted">/mo</span>
-              </p>
-            </div>
-            <ul className="mt-4 space-y-2 text-sm text-muted">
-              <li>· ~25 GB deduplicated save storage</li>
-              <li>· Every server in the group</li>
-              <li>· Always-on replicated saves</li>
-              <li>· 1 region</li>
-            </ul>
-          </Card>
+          </Reveal>
+          <Reveal delay={0.12} y={34}>
+            <Card className="rounded-xl border border-separator bg-surface p-6">
+              <div className="flex items-center justify-between">
+                <p className="font-display text-lg font-semibold">Anchor</p>
+                <p className="font-display text-2xl font-bold">
+                  $3<span className="text-sm font-normal text-muted">/mo</span>
+                </p>
+              </div>
+              <ul className="mt-4 space-y-2 text-sm text-muted">
+                <li>· ~25 GB deduplicated save storage</li>
+                <li>· Every server in the group</li>
+                <li>· Always-on replicated saves</li>
+                <li>· 1 region</li>
+              </ul>
+            </Card>
+          </Reveal>
         </div>
       </section>
 
       {/* Open source */}
       <section className="border-t border-separator">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
-          <Card className="rounded-2xl border border-separator bg-surface p-8 md:p-12">
-            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Open source, forever.
-            </h2>
-            <p className="mt-4 max-w-2xl text-muted">
-              Varde&apos;s core technology is{" "}
-              <HLink
-                href="https://github.com/grendalaget/varde/blob/main/LICENSE"
-                target="_blank"
-                rel="noreferrer"
-                className="text-foreground underline decoration-skifer-600 underline-offset-4"
-              >
-                AGPL-3.0-or-later
-              </HLink>
-              . Run it, study it, modify it, self-host all of it. Only the
-              optional managed hosting lives here.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="https://github.com/grendalaget/varde"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-colors hover:bg-[#ff6f3d]"
-              >
-                Star on GitHub
-              </a>
-              <a
-                href="https://github.com/grendalaget/varde/tree/main/docs"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-tertiary"
-              >
-                Read the docs
-              </a>
-            </div>
-          </Card>
+          <Reveal y={34}>
+            <Card className="rounded-2xl border border-separator bg-surface p-8 md:p-12">
+              <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                Open source, forever.
+              </h2>
+              <p className="mt-4 max-w-2xl text-muted">
+                Varde&apos;s core technology is{" "}
+                <HLink
+                  href="https://github.com/grendalaget/varde/blob/main/LICENSE"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-foreground underline decoration-skifer-600 underline-offset-4"
+                >
+                  AGPL-3.0-or-later
+                </HLink>
+                . Run it, study it, modify it, self-host all of it. Only the
+                optional managed hosting lives here.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a
+                  href="https://github.com/grendalaget/varde"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-[#ff6f3d] hover:shadow-lg hover:shadow-glod/25 active:scale-[0.98]"
+                >
+                  Star on GitHub
+                </a>
+                <a
+                  href="https://github.com/grendalaget/varde/tree/main/docs"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-surface-tertiary active:scale-[0.98]"
+                >
+                  Read the docs
+                </a>
+              </div>
+            </Card>
+          </Reveal>
         </div>
       </section>
     </main>

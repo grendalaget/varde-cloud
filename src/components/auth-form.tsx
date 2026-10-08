@@ -46,7 +46,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   return (
-    <Card className="w-full max-w-sm rounded-2xl border border-separator bg-surface p-7">
+    <Card className="vd-pop w-full max-w-sm rounded-2xl border border-separator bg-surface p-7">
       <h1 className="font-display text-2xl font-bold tracking-tight">
         {isSignUp ? "Create your account" : "Welcome back"}
       </h1>
@@ -85,7 +85,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </TextField>
 
         {error ? (
-          <Alert status="danger" role="alert">
+          <Alert status="danger" role="alert" className="vd-shake">
             <Alert.Indicator />
             <Alert.Content>
               <Alert.Description>{error}</Alert.Description>
