@@ -1,7 +1,7 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Mark } from "@/components/brand";
-import { Enter, Item, Reveal, Stagger } from "@/components/reveal";
+import { Item, Reveal, Stagger } from "@/components/reveal";
 
 const HOW_IT_WORKS = [
   {
@@ -126,13 +126,13 @@ export default function Home() {
             </Item>
           </Stagger>
 
-          <Enter delay={0.25} y={34} className="flex justify-center md:justify-end">
+          <div className="flex justify-center md:justify-end">
             <Mark
               animated
               title="A cairn; the lit stone moves between friends"
               className="h-48 w-48 text-skifer-100 drop-shadow-[0_0_40px_rgba(255,91,31,0.15)] sm:h-64 sm:w-64 md:h-80 md:w-80"
             />
-          </Enter>
+          </div>
         </div>
       </section>
 

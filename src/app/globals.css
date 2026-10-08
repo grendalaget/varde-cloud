@@ -82,16 +82,30 @@ body {
 }
 
 /* Brand marks: stones use currentColor (Tåke on Natt); Glød is only the lit
-   stone — the machine currently hosting a server. */
+   stone — the machine currently hosting a server. Resting state is static:
+   no flicker. On entry the varde stacks itself stone by stone (vd-b*, on
+   <g> wrappers); on hover/focus the mark warms into a glow and the ember
+   hops the upper stones — the failover motif, user-invited. */
 .vd {
   --vd-stone: currentColor;
   --vd-ember: #ff5b1f;
+  transition:
+    transform 300ms var(--ease-vd-spring),
+    filter 300ms var(--ease-vd-out);
+}
+.vd:hover,
+.vd:focus-visible {
+  transform: scale(1.04);
+  filter:
+    drop-shadow(0 0 40px rgba(255, 91, 31, 0.15))
+    drop-shadow(0 0 14px rgba(255, 91, 31, 0.45));
 }
 .vd-s,
 .vd-h {
   fill: var(--vd-stone);
 }
-.vd-h {
+.vd:hover .vd-h,
+.vd:focus-visible .vd-h {
   animation-name: vd-lit;
   animation-duration: 3.6s;
   animation-iteration-count: infinite;
@@ -118,9 +132,39 @@ body {
     fill: var(--vd-ember);
   }
 }
+
+/* Entry build: stones drop into place, bottom up (longhand so the hop
+   animation-delay classes keep working when the ember runs on the paths). */
+@keyframes vd-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-26px);
+  }
+}
+.vd-b1 {
+  animation: vd-drop 520ms var(--ease-vd-spring) backwards;
+}
+.vd-b2 {
+  animation: vd-drop 520ms var(--ease-vd-spring) 90ms backwards;
+}
+.vd-b3 {
+  animation: vd-drop 520ms var(--ease-vd-spring) 180ms backwards;
+}
+.vd-b4 {
+  animation: vd-drop 520ms var(--ease-vd-spring) 270ms backwards;
+}
+.vd-b5 {
+  animation: vd-drop 520ms var(--ease-vd-spring) 360ms backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .vd-b1,
+  .vd-b2,
+  .vd-b3,
+  .vd-b4,
+  .vd-b5,
   .vd-h {
-    animation: none;
+    animation: none !important;
   }
   .vd-h1 {
     fill: var(--vd-ember);

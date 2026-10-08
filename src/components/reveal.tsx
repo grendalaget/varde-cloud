@@ -5,7 +5,18 @@ import type { ReactNode } from "react";
 
 /** Respects prefers-reduced-motion for every motion component below it. */
 export function MotionProvider({ children }: { children: ReactNode }) {
-  return <MotionConfig reducedMotion="user">{children}</MotionConfig>;
+  return (
+    <MotionConfig reducedMotion="user">
+      {children}
+      {/* Without JS the hidden initial states never animate in — force all
+          reveal-wrapped content visible. */}
+      <noscript>
+        <style>{
+          "[data-vd-motion]{opacity:1 !important;transform:none !important;}"
+        }</style>
+      </noscript>
+    </MotionConfig>
+  );
 }
 
 const SPRING = { type: "spring", bounce: 0.22, duration: 0.7 } as const;
@@ -35,6 +46,7 @@ export function Enter({ children, className, delay = 0, y = 26 }: DivProps) {
   return (
     <motion.div
       className={className}
+      data-vd-motion
       initial={{ opacity: 0, y }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...SPRING, delay }}
@@ -49,6 +61,7 @@ export function Reveal({ children, className, delay = 0, y = 26 }: DivProps) {
   return (
     <motion.div
       className={className}
+      data-vd-motion
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -60px 0px" }}
@@ -94,7 +107,7 @@ export function Stagger({
 /** A staggered child — must sit under <Stagger>. */
 export function Item({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <motion.div className={className} variants={item}>
+    <motion.div className={className} data-vd-motion variants={item}>
       {children}
     </motion.div>
   );
