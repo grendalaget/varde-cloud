@@ -6,7 +6,7 @@ import { Mark } from "@/components/brand";
 export default function NotFound() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 sm:px-6">
-      <EmptyState>
+      <EmptyState className="vd-pop">
         <EmptyState.Header>
           <EmptyState.Media variant="icon">
             <Mark className="h-8 w-8" title="Varde" />

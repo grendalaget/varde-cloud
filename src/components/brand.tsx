@@ -3,7 +3,8 @@ import type { SVGProps } from "react";
 /**
  * Varde brand marks (brand/ in grendalaget/varde, MIT). Geometry is verbatim
  * from the kit; stones are currentColor (Tåke on Natt), Glød is only the lit
- * host stone. `animated` hops the ember between stones — the failover motif.
+ * host stone. `animated` drops the stones in one by one on entry and hops
+ * the ember between them on hover — the failover motif, user-invited.
  */
 
 const BASE =
@@ -32,11 +33,35 @@ export function Mark({
       {...props}
     >
       <title>{title}</title>
-      <path className="vd-s" d={BASE} />
-      <path className="vd-s" d={SLAB} />
-      <path className={animated ? "vd-h vd-h2" : "vd-s"} d={PEER} />
-      <path className={animated ? "vd-h vd-h1" : "vd-s vd-ember"} d={HOST} />
-      <path className={animated ? "vd-h vd-h3" : "vd-s"} d={CAP} />
+      {animated ? (
+        /* Entry build lives on <g> wrappers (transform), the ember hop on
+           the paths (fill) — separate properties, no animation conflicts. */
+        <>
+          <g className="vd-b1">
+            <path className="vd-s" d={BASE} />
+          </g>
+          <g className="vd-b2">
+            <path className="vd-s" d={SLAB} />
+          </g>
+          <g className="vd-b3">
+            <path className="vd-h vd-h2" d={PEER} />
+          </g>
+          <g className="vd-b4">
+            <path className="vd-h vd-h1 vd-ember" d={HOST} />
+          </g>
+          <g className="vd-b5">
+            <path className="vd-h vd-h3" d={CAP} />
+          </g>
+        </>
+      ) : (
+        <>
+          <path className="vd-s" d={BASE} />
+          <path className="vd-s" d={SLAB} />
+          <path className="vd-s" d={PEER} />
+          <path className="vd-s vd-ember" d={HOST} />
+          <path className="vd-s" d={CAP} />
+        </>
+      )}
     </svg>
   );
 }
