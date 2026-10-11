@@ -134,7 +134,7 @@ export function FailoverTimeline() {
         </Chip>
       </div>
 
-      <div className="mx-auto grid max-w-xl grid-cols-4 gap-2 sm:gap-3">
+      <div className="mx-auto grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-4 sm:gap-3">
         {MACHINE_IDS.map((id) => {
           const m = s.machines[id];
           const isOffline = m.tone === "danger" || m.tone === "off";
@@ -143,7 +143,7 @@ export function FailoverTimeline() {
           return (
             <div
               key={id}
-              className={`flex min-h-28 flex-col items-center rounded-large border p-3 text-center transition-colors sm:min-h-32 ${
+              className={`flex flex-row items-center gap-3 rounded-large border p-3 text-left transition-colors sm:min-h-32 sm:flex-col sm:items-center sm:gap-0 sm:text-center ${
                 m.tone === "ember"
                   ? "border-glod/60 bg-glod/10"
                   : isOffline
@@ -152,19 +152,21 @@ export function FailoverTimeline() {
               }`}
             >
               <motion.span
-                className={`mb-1.5 block size-2.5 rounded-full ${DOT[m.tone]}`}
+                className={`block size-2.5 shrink-0 rounded-full sm:mb-1.5 ${DOT[m.tone]}`}
                 animate={
                   m.tone === "ember" ? { scale: [1, 1.4, 1] } : { scale: 1 }
                 }
                 transition={{ duration: 2.2, repeat: Infinity }}
               />
-              <span className="text-sm font-semibold text-foreground">
-                {NAMES[id]}
+              <span className="flex min-w-0 flex-1 flex-col sm:items-center">
+                <span className="text-sm font-semibold text-foreground">
+                  {NAMES[id]}
+                </span>
+                <span className="mt-0.5 text-xs leading-tight text-muted">
+                  {m.sub}
+                </span>
               </span>
-              <span className="mt-0.5 text-xs leading-tight text-muted">
-                {m.sub}
-              </span>
-              <span className="mt-2 flex min-h-7 items-center">
+              <span className="ml-auto flex min-h-7 items-center sm:ml-0 sm:mt-2">
                 {hasLiveSave ? (
                   <motion.span
                     layoutId="live-save"
