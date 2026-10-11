@@ -32,7 +32,7 @@ src/
   db/             Drizzle schema (better-auth tables)
   lib/            auth server config, auth client, db pool
 public/brand/     logo kit copied from grendalaget/varde (MIT)
-infra/            (future) anchor-fleet provisioning
+infra/            hosted-infra deploys (cp/ = control plane on Fly.io); anchor-fleet provisioning later
 services/         (future) plan-sync workers
 ```
 

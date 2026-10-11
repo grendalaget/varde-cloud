@@ -1,0 +1,38 @@
+# fly.toml — hosted control plane (cp.varde.games)
+# Deploy from this directory: `fly deploy` (uses infra/cp/Dockerfile).
+app = "varde-cp"
+primary_region = "arn" # Stockholm — closest to the core users (Norway)
+
+[env]
+  VARDE_LISTEN = ":8080"
+  VARDE_LOG_LEVEL = "info"
+
+# The CP is plain HTTP request/response — no websockets — so the fly proxy can
+# saturate/suspend/start Machines freely. Sessions live in Postgres, so any
+# machine can serve any request.
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Scale down when idle: surplus Machines suspend (no billing for CPU) and the
+  # proxy wakes them again when the running ones hit the concurrency limit.
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  # One always-on machine: agents heartbeat every 5s and linking can't wait on
+  # a cold start. Burst capacity beyond this is provisioned by machine count
+  # (`fly scale count N`) and stays suspended until load demands it.
+  min_machines_running = 1
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 1000
+  [[http_service.checks]]
+    name = "healthz"
+    method = "GET"
+    path = "/healthz"
+    interval = 30000
+    timeout = 5000
+    grace_period = "15s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
