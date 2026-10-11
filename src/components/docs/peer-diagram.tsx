@@ -11,10 +11,10 @@ import { motion } from "motion/react";
 type Node = { id: string; label: string; sub: string };
 
 const NODES: Node[] = [
-  { id: "you", label: "You", sub: "playing now" },
-  { id: "sara", label: "Sara", sub: "hosting the world" },
-  { id: "kim", label: "Kim", sub: "backup host" },
-  { id: "ada", label: "Ada", sub: "playing now" },
+  { id: "you", label: "You", sub: "Playing now" },
+  { id: "sara", label: "Sara", sub: "Hosting the world" },
+  { id: "kim", label: "Kim", sub: "Backup host" },
+  { id: "ada", label: "Ada", sub: "Playing now" },
 ];
 
 export function PeerDiagram() {
@@ -53,9 +53,9 @@ export function PeerDiagram() {
               </span>
               <span className="mt-0.5 text-xs text-muted">
                 {isDown
-                  ? "offline"
+                  ? "Offline"
                   : takesOver
-                    ? "takes over hosting"
+                    ? "Takes over hosting"
                     : node.sub}
               </span>
             </button>

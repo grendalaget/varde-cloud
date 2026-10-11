@@ -28,9 +28,9 @@ export default function HowVardeWorks() {
         address book: it hands out{" "}
         <strong className="text-foreground">link codes</strong> (the short
         invites friends redeem to join) and tells machines where to find each
-        other. Machines that can host each keep a{" "}
+        other. Every machine keeps a{" "}
         <strong className="text-foreground">replicated save</strong>, an
-        identical copy of the world. And the{" "}
+        identical synced copy of the world. And the{" "}
         <strong className="text-foreground">relay</strong> is an encrypted
         detour, used only when a direct path is blocked.
       </P>
@@ -48,9 +48,9 @@ export default function HowVardeWorks() {
 
       <H2>When someone goes offline</H2>
       <P>
-        Hosting moves around the group. Because a second machine already holds
-        an identical save, the world survives its host disappearing mid-game.
-        Step through a failover:
+        Hosting moves around the group. Because the other machines already
+        hold identical saves, the world survives its host disappearing
+        mid-game. Step through a failover:
       </P>
 
       <FailoverTimeline />
@@ -58,9 +58,10 @@ export default function HowVardeWorks() {
       <H2>What Varde can&rsquo;t see</H2>
       <P>
         Relayed or not, game traffic is encrypted between machines. The relay
-        moves sealed packets it cannot open, and the control plane only knows
-        who is in your group and which machines are online. Your world, your
-        items, and your chat never pass through Varde readable.
+        moves sealed packets it cannot open, and the control plane only
+        coordinates: who is in the group, which machines are online, and whose
+        copies are in sync. Your world, your items, and your chat never pass
+        through Varde readable.
       </P>
 
       <Callout tone="glod" title="In one line">

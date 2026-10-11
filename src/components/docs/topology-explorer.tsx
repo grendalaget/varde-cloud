@@ -40,9 +40,8 @@ function hostId(role: Role): MachineId {
 
 function machineSub(id: MachineId, role: Role): string {
   const host = hostId(role);
-  if (id === host) return "hosting the world";
-  if (id === "kim") return "backup host";
-  return "playing";
+  if (id === host) return "Hosting";
+  return "Playing";
 }
 
 // One-line job descriptions, tuned to the selected role where it matters.
@@ -51,22 +50,22 @@ function describe(id: NodeId, role: Role): string {
   switch (id) {
     case "you":
       return role === "host"
-        ? "Your machine, hosting. It runs the world, keeps a save copy, and still lets you play."
-        : "Your machine. The agent on it keeps you linked to the group while you play.";
+        ? "Your machine, hosting. It runs the world, keeps the live save, and still lets you play."
+        : "Your machine. The agent on it keeps you linked to the group and holds a synced copy of the world while you play.";
     case "sara":
       return host === "sara"
         ? "A friend's machine, hosting right now. Everyone's game flows to and from it."
-        : "A friend playing on your world.";
+        : "A friend playing on your world, holding a copy of the save too.";
     case "kim":
-      return "The backup host. It keeps an identical copy of the save, ready to take over.";
+      return "A friend's machine, playing. It keeps a synced copy of the save, ready if it is ever asked to host.";
     case "ada":
-      return "A friend's machine, just playing. No save copy, no hosting duties.";
+      return "A friend's machine, playing. It holds a copy of the save like everyone else.";
     case "cp":
-      return "The control plane is Varde's address book. It hands out link codes and tells machines where to find each other. It never sees your game.";
+      return "The control plane is Varde's address book. It hands out link codes, tells machines where to find each other, and keeps the copies in sync. It never sees your game.";
     case "relay":
       return "The relay is Varde's encrypted detour. When two machines cannot connect directly, traffic passes through here, sealed shut.";
     case "cairn":
-      return "The cairn is your world save. Every machine that can host keeps an identical copy, so the world survives a dropout.";
+      return "The cairn is your world save. Every machine keeps an identical synced copy, so the world survives a dropout.";
   }
 }
 
@@ -89,7 +88,9 @@ function edges(role: Role): Edge[] {
   const host = hostId(role);
   const list: Edge[] = MACHINE_IDS.map((m) => ({ a: "cp", b: m, kind: "cp" }));
   list.push({ a: host, b: "cairn", kind: "save" });
-  list.push({ a: "kim", b: "cairn", kind: "replica" });
+  for (const m of MACHINE_IDS) {
+    if (m !== host) list.push({ a: m, b: "cairn", kind: "replica" });
+  }
   for (const m of MACHINE_IDS) {
     if (m !== host) list.push({ a: host, b: m, kind: "game" });
   }
@@ -120,7 +121,7 @@ export function TopologyExplorer() {
     id: NodeId,
     label: string,
     sub: string,
-    opts: { hosting?: boolean; replica?: boolean; icon?: React.ReactNode } = {},
+    opts: { hosting?: boolean; icon?: React.ReactNode } = {},
   ) => {
     const p = POS[id];
     const isLit = lit.has(id);
@@ -132,7 +133,7 @@ export function TopologyExplorer() {
         onClick={() => setSelected(isSel ? null : id)}
         aria-pressed={isSel}
         style={{ left: `${p.x}%`, top: `${p.y}%` }}
-        className={`absolute flex w-[26%] max-w-28 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-large border p-2.5 text-center transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod sm:w-28 ${
+        className={`absolute flex w-[26%] max-w-28 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-large border p-3 text-center transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod sm:w-28 ${
           isSel
             ? "border-glod bg-glod/10"
             : opts.hosting
@@ -225,7 +226,7 @@ export function TopologyExplorer() {
           })}
         </svg>
 
-        {nodeButton("cp", "Control plane", "address book", {
+        {nodeButton("cp", "Control plane", "Address book", {
           icon: (
             <svg
               viewBox="0 0 24 24"
@@ -240,7 +241,7 @@ export function TopologyExplorer() {
             </svg>
           ),
         })}
-        {nodeButton("relay", "Relay", "encrypted detour", {
+        {nodeButton("relay", "Relay", "Encrypted detour", {
           icon: (
             <svg
               viewBox="0 0 24 24"
@@ -255,14 +256,13 @@ export function TopologyExplorer() {
             </svg>
           ),
         })}
-        {nodeButton("cairn", "The world", "shared save", {
-          icon: <CairnsGlyph className="mb-1 size-5 text-glod" />,
+        {nodeButton("cairn", "The world", "Shared save", {
+          icon: <CairnsGlyph className="mb-1.5 size-5 text-glod" />,
         })}
 
         {MACHINE_IDS.map((id) =>
           nodeButton(id, NAMES[id], machineSub(id, role), {
             hosting: id === host,
-            replica: id === "kim",
           }),
         )}
       </div>

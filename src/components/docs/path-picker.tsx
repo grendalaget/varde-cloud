@@ -155,8 +155,8 @@ export function PathPicker() {
           </div>
         </div>
 
-        <Machine at={YOU} name="You" sub="playing" />
-        <Machine at={HOST} name="Sara" sub="hosting the world" />
+        <Machine at={YOU} name="You" sub="Playing" />
+        <Machine at={HOST} name="Sara" sub="Hosting" />
 
         <div
           style={{ left: `${RELAY.x}%`, top: `${RELAY.y}%` }}
@@ -169,7 +169,7 @@ export function PathPicker() {
           <svg
             viewBox="0 0 24 24"
             aria-hidden
-            className={`mb-1 size-5 ${blocked ? "text-glod" : "text-muted"}`}
+            className={`mb-1.5 size-5 ${blocked ? "text-glod" : "text-muted"}`}
             fill="none"
             stroke="currentColor"
             strokeWidth={1.8}
@@ -181,7 +181,7 @@ export function PathPicker() {
             Varde relay
           </span>
           <span className="mt-0.5 text-xs text-muted">
-            {blocked ? "forwarding, eyes shut" : "standing by"}
+            {blocked ? "Forwarding, eyes shut" : "Standing by"}
           </span>
         </div>
       </div>

@@ -10,8 +10,8 @@ import {
 } from "@heroui/react";
 
 // Failover timeline for the "How Varde works" doc. Step through what happens
-// when the machine hosting the world drops: the replica on the backup host
-// takes over, Varde appoints a new host, and everyone keeps playing. The lit
+// when the machine hosting the world drops: a synced copy on another machine
+// goes live, Varde appoints a new host, and everyone keeps playing. The live
 // save chip physically moves between machines as you step.
 
 type MachineId = "you" | "sara" | "kim" | "ada";
@@ -39,67 +39,67 @@ const NAMES: Record<MachineId, string> = {
 const STEPS: Step[] = [
   {
     title: "Sara hosts",
-    text: "Sara's machine runs the world. Everyone else plays on it, and Kim quietly holds an identical copy of the save.",
-    cp: "watching over the group",
+    text: "Sara's machine runs the world. Everyone else plays on it, and every machine quietly holds an identical copy of the save.",
+    cp: "Watching over the group",
     cpLit: false,
     liveSaveOn: "sara",
     machines: {
-      you: { tone: "ok", sub: "playing" },
-      sara: { tone: "ember", sub: "hosting the world" },
-      kim: { tone: "ok", sub: "backup host" },
-      ada: { tone: "ok", sub: "playing" },
+      you: { tone: "ok", sub: "Playing" },
+      sara: { tone: "ember", sub: "Hosting" },
+      kim: { tone: "ok", sub: "Playing" },
+      ada: { tone: "ok", sub: "Playing" },
     },
   },
   {
     title: "Sara drops",
     text: "Her laptop closes mid-game. The world is unreachable for a moment, and the control plane notices she is gone.",
-    cp: "notices Sara is gone",
+    cp: "Notices Sara is gone",
     cpLit: true,
     liveSaveOn: "sara",
     machines: {
-      you: { tone: "warn", sub: "connection lost" },
-      sara: { tone: "danger", sub: "offline" },
-      kim: { tone: "warn", sub: "connection lost" },
-      ada: { tone: "warn", sub: "connection lost" },
+      you: { tone: "warn", sub: "Connection lost" },
+      sara: { tone: "danger", sub: "Offline" },
+      kim: { tone: "warn", sub: "Connection lost" },
+      ada: { tone: "warn", sub: "Connection lost" },
     },
   },
   {
     title: "The copy wakes up",
-    text: "Kim's replica was synced all along, so it already has everyone's progress. It becomes the live save.",
-    cp: "finds a machine with a copy",
+    text: "The copies were synced all along, so Kim's already has everyone's progress. Hers becomes the live save.",
+    cp: "Finds a machine with a copy",
     cpLit: true,
     liveSaveOn: "kim",
     machines: {
-      you: { tone: "warn", sub: "waiting" },
-      sara: { tone: "off", sub: "offline" },
-      kim: { tone: "ok", sub: "save copy activates" },
-      ada: { tone: "warn", sub: "waiting" },
+      you: { tone: "warn", sub: "Waiting" },
+      sara: { tone: "off", sub: "Offline" },
+      kim: { tone: "ok", sub: "Goes live" },
+      ada: { tone: "warn", sub: "Waiting" },
     },
   },
   {
     title: "Kim takes over",
     text: "The control plane picks Kim as the new host and points every machine at her.",
-    cp: "points everyone at Kim",
+    cp: "Points everyone at Kim",
     cpLit: true,
     liveSaveOn: "kim",
     machines: {
-      you: { tone: "warn", sub: "reconnecting" },
-      sara: { tone: "off", sub: "offline" },
-      kim: { tone: "ember", sub: "new host" },
-      ada: { tone: "warn", sub: "reconnecting" },
+      you: { tone: "warn", sub: "Reconnecting" },
+      sara: { tone: "off", sub: "Offline" },
+      kim: { tone: "ember", sub: "New host" },
+      ada: { tone: "warn", sub: "Reconnecting" },
     },
   },
   {
     title: "Back to playing",
     text: "The game resumes on Kim with nothing lost. When Sara comes back, she rejoins as a player and can host again later.",
-    cp: "keeping the lights on",
+    cp: "Keeping the lights on",
     cpLit: false,
     liveSaveOn: "kim",
     machines: {
-      you: { tone: "ok", sub: "playing" },
-      sara: { tone: "off", sub: "can rejoin anytime" },
-      kim: { tone: "ember", sub: "hosting the world" },
-      ada: { tone: "ok", sub: "playing" },
+      you: { tone: "ok", sub: "Playing" },
+      sara: { tone: "off", sub: "Rejoins later" },
+      kim: { tone: "ember", sub: "Hosting" },
+      ada: { tone: "ok", sub: "Playing" },
     },
   },
 ];
@@ -139,12 +139,11 @@ export function FailoverTimeline() {
           const m = s.machines[id];
           const isOffline = m.tone === "danger" || m.tone === "off";
           const hasLiveSave = s.liveSaveOn === id;
-          const staticCopy =
-            (id === "kim" && step < 2) || (id === "sara" && step >= 2);
+          const staticCopy = !hasLiveSave;
           return (
             <div
               key={id}
-              className={`flex min-h-28 flex-col items-center rounded-large border p-2.5 text-center transition-colors sm:min-h-32 sm:p-3 ${
+              className={`flex min-h-28 flex-col items-center rounded-large border p-3 text-center transition-colors sm:min-h-32 ${
                 m.tone === "ember"
                   ? "border-glod/60 bg-glod/10"
                   : isOffline
@@ -165,7 +164,7 @@ export function FailoverTimeline() {
               <span className="mt-0.5 text-xs leading-tight text-muted">
                 {m.sub}
               </span>
-              <span className="mt-2 flex h-7 items-center">
+              <span className="mt-2 flex min-h-7 items-center">
                 {hasLiveSave ? (
                   <motion.span
                     layoutId="live-save"
@@ -190,14 +189,12 @@ export function FailoverTimeline() {
                         <rect x="7" y="10" width="10" height="4" rx="2" />
                         <rect x="4" y="16" width="16" height="4" rx="2" />
                       </svg>
-                      <Chip.Label>live save</Chip.Label>
+                      <Chip.Label>Live save</Chip.Label>
                     </Chip>
                   </motion.span>
                 ) : staticCopy ? (
                   <Chip size="sm" variant="secondary">
-                    <Chip.Label>
-                      {id === "kim" ? "replica" : "last copy"}
-                    </Chip.Label>
+                    <Chip.Label>Replica</Chip.Label>
                   </Chip>
                 ) : null}
               </span>
