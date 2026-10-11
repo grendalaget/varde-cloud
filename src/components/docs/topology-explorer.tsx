@@ -14,13 +14,13 @@ type NodeId = "you" | "sara" | "kim" | "ada" | "cp" | "relay" | "cairn";
 type Pt = { x: number; y: number };
 
 const POS: Record<NodeId, Pt> = {
-  cp: { x: 20, y: 10 },
-  relay: { x: 80, y: 10 },
-  cairn: { x: 50, y: 48 },
-  you: { x: 14, y: 82 },
-  sara: { x: 38, y: 88 },
-  kim: { x: 62, y: 88 },
-  ada: { x: 86, y: 82 },
+  cp: { x: 20, y: 17 },
+  relay: { x: 80, y: 17 },
+  cairn: { x: 50, y: 52 },
+  you: { x: 14, y: 84 },
+  sara: { x: 38, y: 90 },
+  kim: { x: 62, y: 90 },
+  ada: { x: 86, y: 84 },
 };
 
 const MACHINE_IDS = ["you", "sara", "kim", "ada"] as const;
@@ -81,13 +81,14 @@ function litNodes(role: Role): Set<NodeId> {
 type Edge = {
   a: NodeId;
   b: NodeId;
-  kind: "cp" | "game" | "save" | "relay";
+  kind: "cp" | "game" | "save" | "replica" | "relay";
 };
 
 function edges(role: Role): Edge[] {
   const host = hostId(role);
   const list: Edge[] = MACHINE_IDS.map((m) => ({ a: "cp", b: m, kind: "cp" }));
   list.push({ a: host, b: "cairn", kind: "save" });
+  list.push({ a: "kim", b: "cairn", kind: "replica" });
   for (const m of MACHINE_IDS) {
     if (m !== host) list.push({ a: host, b: m, kind: "game" });
   }
@@ -199,7 +200,7 @@ export function TopologyExplorer() {
             const a = POS[e.a];
             const b = POS[e.b];
             const isLit =
-              e.kind === "relay"
+              e.kind === "relay" || e.kind === "replica"
                 ? false
                 : lit.has(e.a) && lit.has(e.b) &&
                   (e.kind !== "cp" ||
@@ -215,21 +216,27 @@ export function TopologyExplorer() {
                 stroke="currentColor"
                 strokeWidth={1.5}
                 vectorEffect="non-scaling-stroke"
-                strokeDasharray={e.kind === "relay" ? "2 2" : undefined}
-                className={
-                  e.kind === "relay"
-                    ? "text-separator"
-                    : isLit
-                      ? "text-glod/70"
-                      : "text-separator"
+                strokeDasharray={
+                  e.kind === "relay" || e.kind === "replica" ? "2 2" : undefined
                 }
-                opacity={e.kind === "relay" ? 0.7 : isLit ? 0.9 : 0.4}
+                className={
+                  e.kind === "replica"
+                    ? "text-glod/60"
+                    : e.kind === "relay"
+                      ? "text-separator"
+                      : isLit
+                        ? "text-glod/70"
+                        : "text-separator"
+                }
+                opacity={
+                  e.kind === "relay" ? 0.7 : e.kind === "replica" ? 0.8 : isLit ? 0.9 : 0.4
+                }
               />
             );
           })}
         </svg>
 
-        {nodeButton("cp", "Control plane", "Varde's address book", {
+        {nodeButton("cp", "Control plane", "address book", {
           icon: (
             <svg
               viewBox="0 0 24 24"
@@ -259,7 +266,7 @@ export function TopologyExplorer() {
             </svg>
           ),
         })}
-        {nodeButton("cairn", "The world", "your shared save", {
+        {nodeButton("cairn", "The world", "shared save", {
           icon: <CairnsGlyph className="mb-1 size-5 text-glod" />,
         })}
 
