@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Checkbox, Label } from "@heroui/react";
 import { motion } from "motion/react";
+import { useState } from "react";
 
 // Checkable step list for the quickstart guides. Readers tick items off as
 // they go; progress lives in component state only (nothing is stored).
@@ -54,26 +55,25 @@ export function DocChecklist({
           const checked = done.has(i);
           return (
             <li key={label}>
-              <button
-                type="button"
-                aria-pressed={checked}
-                onClick={() => toggle(i)}
-                className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition-colors hover:bg-surface-secondary ${
-                  checked ? "text-muted" : "text-foreground"
-                }`}
+              <Checkbox
+                isSelected={checked}
+                onChange={() => toggle(i)}
+                variant="secondary"
+                className="w-full rounded-lg px-2 py-2 hover:bg-surface-secondary"
               >
-                <span
-                  aria-hidden
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-bold transition-colors ${
-                    checked
-                      ? "border-success bg-success text-success-foreground"
-                      : "border-separator bg-surface-secondary text-transparent"
-                  }`}
-                >
-                  ✓
-                </span>
-                <span className={checked ? "line-through" : ""}>{label}</span>
-              </button>
+                <Checkbox.Content>
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  <Label
+                    className={`text-sm ${
+                      checked ? "text-muted line-through" : "text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </Label>
+                </Checkbox.Content>
+              </Checkbox>
             </li>
           );
         })}

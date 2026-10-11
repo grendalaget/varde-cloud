@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Card } from "@heroui/react";
 import { useState } from "react";
 
 // Stylized mock of the invite link the dashboard hands out from Members >
@@ -22,7 +23,7 @@ export function InviteCardMock() {
 
   return (
     <figure className="my-6">
-      <div className="mx-auto max-w-sm rounded-xl border border-separator bg-surface p-5">
+      <Card className="mx-auto max-w-sm rounded-xl border border-separator bg-surface p-5">
         <p className="text-sm font-semibold text-foreground">Invite link</p>
         <p className="mt-0.5 text-xs text-muted">
           Valid for 7 days, up to 10 people.
@@ -31,19 +32,19 @@ export function InviteCardMock() {
           <span className="truncate font-mono text-xs text-foreground">
             {INVITE}
           </span>
-          <button
-            type="button"
-            onClick={() => void copy()}
-            className="shrink-0 rounded-md bg-glod px-2.5 py-1 text-xs font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+          <Button
+            size="sm"
+            onPress={() => void copy()}
+            className="shrink-0"
           >
             {copied === "ok"
               ? "Copied"
               : copied === "err"
                 ? "Copy failed"
                 : "Copy"}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
       <figcaption className="mt-3 text-center text-sm text-muted">
         What your friends receive. This one is a sample, it will not join
         anything.

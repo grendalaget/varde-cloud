@@ -89,7 +89,7 @@ export function TrayMenuMock({ hosting = false }: { hosting?: boolean }) {
           <span className="text-xs text-muted">12:42</span>
         </div>
         {/* The menu */}
-        <div className="rounded-lg border border-separator bg-surface-secondary p-1.5 shadow-xl shadow-black/30">
+        <div className="rounded-lg border border-separator bg-surface-secondary p-1.5 shadow-xl">
           {items.map((it, i) =>
             it === SEP ? (
               <div key={i} className="mx-2 my-1 border-t border-separator" />

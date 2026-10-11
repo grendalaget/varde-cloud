@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Button } from "@heroui/react";
 import { motion } from "motion/react";
+import { useState } from "react";
 
 // Stylized mock of the Varde link flow: the app asks you to continue, shows a
 // code, and the dashboard in your browser approves the PC. Illustrative, not
@@ -40,7 +41,7 @@ export function LinkFlowMock() {
     <figure className="my-8">
       <div className="grid gap-4 sm:grid-cols-2">
         {/* The Varde window on the PC */}
-        <div className="rounded-xl border border-separator bg-surface p-4 shadow-lg shadow-black/20">
+        <div className="rounded-xl border border-separator bg-surface p-4 shadow-lg">
           <WindowChrome label="Varde" />
           {stage === "form" && (
             <motion.div
@@ -62,13 +63,12 @@ export function LinkFlowMock() {
                   Use a different server
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setStage("approve")}
-                className="mt-4 rounded-lg bg-glod px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+              <Button
+                onPress={() => setStage("approve")}
+                className="mt-4"
               >
                 Continue
-              </button>
+              </Button>
             </motion.div>
           )}
 
@@ -90,24 +90,24 @@ export function LinkFlowMock() {
                 {CODE}
               </p>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => void copy()}
-                  className="rounded-lg border border-separator bg-surface-secondary px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-border"
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => void copy()}
                 >
                   {copied === "ok"
                     ? "Copied"
                     : copied === "err"
                       ? "Copy failed"
                       : "Copy code"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStage("form")}
-                  className="rounded-lg border border-separator bg-surface-secondary px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-border hover:text-foreground"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => setStage("form")}
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </motion.div>
           )}
@@ -131,13 +131,14 @@ export function LinkFlowMock() {
                 Linked to Friday crew as This PC. The Varde service is running
                 on this PC.
               </p>
-              <button
-                type="button"
-                onClick={() => setStage("form")}
-                className="mt-4 rounded-lg border border-separator bg-surface-secondary px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-border hover:text-foreground"
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={() => setStage("form")}
+                className="mt-4"
               >
                 Replay
-              </button>
+              </Button>
             </motion.div>
           )}
         </div>
@@ -146,7 +147,7 @@ export function LinkFlowMock() {
         <div
           className={`rounded-xl border p-4 transition-colors ${
             stage === "approve"
-              ? "border-glod/50 bg-surface shadow-lg shadow-black/20"
+              ? "border-glod/50 bg-surface shadow-lg"
               : "border-separator bg-surface"
           }`}
         >
@@ -172,13 +173,9 @@ export function LinkFlowMock() {
               <p className="my-3 rounded-lg border border-glod/40 bg-glod/10 py-2 text-center font-mono text-lg font-semibold tracking-widest text-glod">
                 {CODE}
               </p>
-              <button
-                type="button"
-                onClick={() => setStage("linked")}
-                className="w-full rounded-lg bg-glod px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
-              >
+              <Button onPress={() => setStage("linked")} fullWidth>
                 Approve
-              </button>
+              </Button>
             </motion.div>
           ) : (
             <div className="flex h-full min-h-24 items-center justify-center">

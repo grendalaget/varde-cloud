@@ -1,3 +1,4 @@
+import { Chip } from "@heroui/react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -34,11 +35,10 @@ export default function JoinAServer() {
       />
       <ul className="flex flex-wrap gap-2">
         {NEED.map((n) => (
-          <li
-            key={n}
-            className="rounded-full border border-separator bg-surface px-3 py-1 text-xs text-muted"
-          >
-            {n}
+          <li key={n}>
+            <Chip variant="secondary" size="sm">
+              <Chip.Label>{n}</Chip.Label>
+            </Chip>
           </li>
         ))}
       </ul>

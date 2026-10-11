@@ -1,7 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import {
+  Button,
+  Input,
+  Label,
+  ListBox,
+  Radio,
+  RadioGroup,
+  Select,
+  Switch,
+  TextField,
+} from "@heroui/react";
 import { motion } from "motion/react";
+import { useState } from "react";
 
 // Stylized mock of the dashboard "New server" form: pick a game, name it,
 // create. The result card mirrors what the dashboard shows afterwards.
@@ -70,15 +81,15 @@ export function CreateServerMock() {
             </p>
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs text-muted">Address</span>
-              <button
-                type="button"
-                onClick={() => void copy()}
-                className="rounded-md border border-separator bg-surface px-2 py-1 font-mono text-xs text-foreground transition-colors hover:border-border"
-                title="Copy address"
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={() => void copy()}
+                className="font-mono text-xs"
               >
                 127.77.4.20
                 {copied === "ok" ? " ✓" : copied === "err" ? " ×" : " ⧉"}
-              </button>
+              </Button>
             </div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <span className="text-xs text-muted">Hosting on</span>
@@ -91,13 +102,14 @@ export function CreateServerMock() {
               </span>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setStage("form")}
-            className="mt-4 text-xs text-muted underline underline-offset-2 hover:text-foreground"
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setStage("form")}
+            className="mt-4 underline underline-offset-2"
           >
             Back to the form
-          </button>
+          </Button>
         </motion.div>
         <figcaption className="mt-3 text-center text-sm text-muted">
           The address is what your friends paste into their game.
@@ -111,99 +123,93 @@ export function CreateServerMock() {
       <div className="rounded-xl border border-separator bg-surface p-5">
         <p className="text-sm font-semibold text-foreground">New server</p>
 
-        <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-muted">
-          Game
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {GAMES.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              aria-pressed={game === g.id}
-              onClick={() => setGame(g.id)}
-              className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
-                game === g.id
-                  ? "border-glod bg-glod/10"
-                  : "border-separator bg-surface-secondary hover:border-border"
-              }`}
-            >
-              <span className="block text-xs font-semibold text-foreground">
-                {g.name}
-              </span>
-              <span className="mt-0.5 block text-[11px] text-muted">
-                {g.ram}
-              </span>
-            </button>
-          ))}
-        </div>
+        <RadioGroup
+          value={game}
+          onChange={setGame}
+          aria-label="Game"
+          className="mt-4"
+        >
+          <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">
+            Game
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            {GAMES.map((g) => (
+              <Radio
+                key={g.id}
+                value={g.id}
+                className="items-start rounded-lg border border-separator bg-surface-secondary px-3 py-2.5 data-[selected=true]:border-glod data-[selected=true]:bg-glod/10"
+              >
+                <Radio.Content>
+                  <Radio.Control>
+                    <Radio.Indicator />
+                  </Radio.Control>
+                  <span>
+                    <span className="block text-xs font-semibold text-foreground">
+                      {g.name}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-muted">
+                      {g.ram}
+                    </span>
+                  </span>
+                </Radio.Content>
+              </Radio>
+            ))}
+          </div>
+        </RadioGroup>
 
         <div className="mt-4 space-y-3">
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-muted">
-              Server name
-            </span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-border bg-field px-3 py-2 text-sm text-foreground outline-none focus:border-glod"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-muted">
-              Preferred machine
-            </span>
-            <select
-              value={machine}
-              onChange={(e) => setMachine(e.target.value)}
-              className="w-full rounded-lg border border-border bg-field px-3 py-2 text-sm text-foreground outline-none focus:border-glod"
-            >
-              <option value="">Any machine</option>
-              <option value="This PC">This PC</option>
-            </select>
-          </label>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={startNow}
-            onClick={() => setStartNow(!startNow)}
-            className="flex items-center gap-2.5"
+          <TextField
+            name="serverName"
+            value={name}
+            onChange={setName}
+            className="w-full"
           >
-            <span
-              aria-hidden
-              className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
-                startNow ? "bg-glod" : "bg-surface-tertiary"
-              }`}
-            >
-              <span
-                className={`size-4 rounded-full bg-take transition-transform ${
-                  startNow ? "translate-x-4" : "translate-x-0"
-                }`}
-              />
-            </span>
-            <span className="text-xs text-foreground">Start now</span>
-          </button>
+            <Label>Server name</Label>
+            <Input />
+          </TextField>
+          <Select
+            selectedKey={machine || "any"}
+            onSelectionChange={(k) =>
+              setMachine(k === "any" ? "" : String(k))
+            }
+            className="w-full"
+          >
+            <Label>Preferred machine</Label>
+            <Select.Trigger>
+              <Select.Value />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                <ListBox.Item id="any">Any machine</ListBox.Item>
+                <ListBox.Item id="This PC">This PC</ListBox.Item>
+              </ListBox>
+            </Select.Popover>
+          </Select>
+          <Switch isSelected={startNow} onChange={setStartNow}>
+            <Switch.Content>
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <span className="text-xs text-foreground">Start now</span>
+            </Switch.Content>
+          </Switch>
         </div>
 
         <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => {
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
               setGame("minecraft");
               setName("Friday night server");
               setMachine("");
               setStartNow(true);
             }}
-            className="rounded-lg px-3 py-2 text-xs font-medium text-muted transition-colors hover:text-foreground"
           >
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => setStage("created")}
-            className="rounded-lg bg-glod px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
-            Create server
-          </button>
+          </Button>
+          <Button onPress={() => setStage("created")}>Create server</Button>
         </div>
       </div>
       <figcaption className="mt-3 text-center text-sm text-muted">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Button } from "@heroui/react";
 import { motion } from "motion/react";
+import { useState } from "react";
 
 // Stylized Windows SmartScreen dialog. Clicking "More info" reveals "Run
 // anyway", the same two clicks that get past the unsigned-installer warning.
@@ -13,7 +14,7 @@ export function SmartScreenMock() {
 
   return (
     <figure className="my-6">
-      <div className="mx-auto max-w-sm rounded-xl border border-separator bg-surface-secondary p-5 shadow-xl shadow-black/30">
+      <div className="mx-auto max-w-sm rounded-xl border border-separator bg-surface-secondary p-5 shadow-xl">
         <p className="text-sm font-semibold text-foreground">
           Windows protected your PC
         </p>
@@ -43,19 +44,17 @@ export function SmartScreenMock() {
           <div className="mt-4 space-y-2">
             {stage === "warn" ? (
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStage("more")}
-                  className="rounded-lg border border-separator bg-surface px-3 py-1.5 text-xs font-medium text-foreground underline-offset-2 transition-colors hover:border-border hover:underline"
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => setStage("more")}
+                  className="underline-offset-2 hover:underline"
                 >
                   More info
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-separator bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-border"
-                >
+                </Button>
+                <Button variant="secondary" size="sm" isDisabled>
                   Don&rsquo;t run
-                </button>
+                </Button>
               </div>
             ) : (
               <motion.div
@@ -63,19 +62,12 @@ export function SmartScreenMock() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-end gap-2"
               >
-                <button
-                  type="button"
-                  onClick={() => setStage("ran")}
-                  className="rounded-lg bg-glod px-3 py-1.5 text-xs font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
-                >
+                <Button size="sm" onPress={() => setStage("ran")}>
                   Run anyway
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-separator bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-border"
-                >
+                </Button>
+                <Button variant="secondary" size="sm" isDisabled>
                   Don&rsquo;t run
-                </button>
+                </Button>
               </motion.div>
             )}
           </div>
@@ -83,13 +75,14 @@ export function SmartScreenMock() {
       </div>
       <figcaption className="mt-3 text-center text-sm text-muted">
         {stage === "ran" ? (
-          <button
-            type="button"
-            onClick={() => setStage("warn")}
-            className="underline underline-offset-2 hover:text-foreground"
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setStage("warn")}
+            className="underline underline-offset-2"
           >
             Replay the warning
-          </button>
+          </Button>
         ) : (
           "The warning is normal for a new, unsigned app. Click More info."
         )}
