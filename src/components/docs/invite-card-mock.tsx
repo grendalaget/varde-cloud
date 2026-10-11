@@ -1,0 +1,49 @@
+"use client";
+
+import { useState } from "react";
+
+// Stylized mock of the invite link the dashboard hands out from Members >
+// Invite friends. The copy button really copies.
+
+const INVITE = "varde.games/invite/x7k2m9";
+
+export function InviteCardMock() {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${INVITE}`);
+    } catch {
+      // clipboard is best effort in a mock
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <figure className="my-6">
+      <div className="mx-auto max-w-sm rounded-xl border border-separator bg-surface p-5">
+        <p className="text-sm font-semibold text-foreground">Invite link</p>
+        <p className="mt-0.5 text-xs text-muted">
+          Valid for 7 days, up to 10 people.
+        </p>
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-separator bg-surface-secondary px-3 py-2">
+          <span className="truncate font-mono text-xs text-foreground">
+            {INVITE}
+          </span>
+          <button
+            type="button"
+            onClick={() => void copy()}
+            className="shrink-0 rounded-md bg-glod px-2.5 py-1 text-xs font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      </div>
+      <figcaption className="mt-3 text-center text-sm text-muted">
+        What your friends receive. They paste it in the dashboard or just open
+        it.
+      </figcaption>
+    </figure>
+  );
+}
