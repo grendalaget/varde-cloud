@@ -4,7 +4,6 @@ import { useSyncExternalStore } from "react";
 import {
   FilmGrain,
   FloatingParticles,
-  Godrays,
   RadialGradient,
   Shader,
   SolidColor,
@@ -34,37 +33,29 @@ export function EmberShader({ className }: { className?: string }) {
   return (
     <Shader className={className}>
       <SolidColor color="#10161a" />
-      {/* Warm pool under the cairn (right side on md+) */}
+      {/* Faint warm pool under the cairn (right side on md+) */}
       <RadialGradient
         colorA="#ff5b1f"
         colorB="#10161a"
         center={{ x: 0.72, y: 1.0 }}
-        radius={1.05}
+        radius={0.9}
         aspect={1.7}
         colorSpace="oklch"
       />
-      <Godrays
-        center={{ x: 0.72, y: 1.02 }}
-        rayColor="#ff5b1f"
-        density={0.22}
-        intensity={0.45}
-        spotty={0.9}
-        speed={0.25}
-      />
-      {/* Embers drifting up; they scatter gently off the cursor */}
+      {/* A few faint embers drifting up; barely-there cursor reaction */}
       <FloatingParticles
         particleColor="#ffb393"
-        count={420}
-        particleSize={1.1}
-        softness={0.4}
-        speed={0.16}
+        count={90}
+        particleSize={0.8}
+        softness={0.6}
+        speed={0.08}
         angle={270}
-        angleVariance={45}
-        randomness={0.35}
-        twinkle={0.65}
-        cursorStrength={0.35}
+        angleVariance={35}
+        randomness={0.3}
+        twinkle={0.35}
+        cursorStrength={0.15}
       />
-      <FilmGrain strength={0.05} />
+      <FilmGrain strength={0.025} />
     </Shader>
   );
 }
