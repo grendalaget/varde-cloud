@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 
 // Path picker for the "How Varde works" doc. Toggle between an open network
 // path and a blocked one to see where game traffic actually travels: straight
@@ -32,10 +33,8 @@ function Machine({
         animate={{ scale: [1, 1.3, 1] }}
         transition={{ duration: 2.4, repeat: Infinity }}
       />
-      <span className="text-xs font-semibold text-foreground sm:text-sm">
-        {name}
-      </span>
-      <span className="mt-0.5 text-[10px] text-muted sm:text-xs">{sub}</span>
+      <span className="text-sm font-semibold text-foreground">{name}</span>
+      <span className="mt-0.5 text-xs text-muted">{sub}</span>
     </div>
   );
 }
@@ -47,32 +46,20 @@ export function PathPicker() {
   return (
     <figure className="my-8 rounded-large border border-separator bg-surface-100 p-4 sm:p-6">
       <div className="mb-5 flex justify-center">
-        <div
-          role="group"
+        <ToggleButtonGroup
           aria-label="Pick a network situation"
-          className="inline-flex rounded-full border border-separator bg-surface-200 p-1"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[mode]}
+          onSelectionChange={(keys) => {
+            const next = keys.values().next().value;
+            if (next != null) setMode(next as Mode);
+          }}
+          size="sm"
         >
-          {(
-            [
-              { id: "open", label: "Open path" },
-              { id: "blocked", label: "Blocked by router" },
-            ] as const
-          ).map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              aria-pressed={mode === m.id}
-              onClick={() => setMode(m.id)}
-              className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
-                mode === m.id
-                  ? "bg-surface-300 font-semibold text-foreground"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+          <ToggleButton id="open">Open path</ToggleButton>
+          <ToggleButton id="blocked">Blocked by router</ToggleButton>
+        </ToggleButtonGroup>
       </div>
 
       <div className="relative mx-auto aspect-[10/7] w-full max-w-xl sm:aspect-[16/8]">
@@ -122,7 +109,7 @@ export function PathPicker() {
         {/* The packet: an ember carrying your game data. */}
         <motion.span
           key={mode}
-          className="absolute z-10 block size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-glod shadow-[0_0_12px_rgba(255,91,31,0.7)]"
+          className="absolute z-10 block size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-glod shadow-[0_0_12px_var(--color-glod)]"
           initial={false}
           animate={
             blocked
@@ -150,20 +137,20 @@ export function PathPicker() {
           }`}
           aria-hidden={!blocked}
         >
-          <div className="flex flex-col gap-[3px] rounded-medium border border-danger/50 bg-surface-100 p-1.5">
-            <div className="flex gap-[3px]">
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
+          <div className="flex flex-col gap-1 rounded-medium border border-danger/50 bg-surface-100 p-1.5">
+            <div className="flex gap-1">
+              <span className="h-2 w-5 bg-danger/40" />
+              <span className="h-2 w-5 bg-danger/40" />
+              <span className="h-2 w-5 bg-danger/40" />
             </div>
-            <div className="flex justify-center gap-[3px]">
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
+            <div className="flex justify-center gap-1">
+              <span className="h-2 w-5 bg-danger/40" />
+              <span className="h-2 w-5 bg-danger/40" />
             </div>
-            <div className="flex gap-[3px]">
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
-              <span className="h-2 w-5 rounded-sm bg-danger/40" />
+            <div className="flex gap-1">
+              <span className="h-2 w-5 bg-danger/40" />
+              <span className="h-2 w-5 bg-danger/40" />
+              <span className="h-2 w-5 bg-danger/40" />
             </div>
           </div>
         </div>
@@ -190,10 +177,10 @@ export function PathPicker() {
             <rect x="6" y="10" width="12" height="9" rx="2" />
             <path d="M9 10V7a3 3 0 0 1 6 0v3" strokeLinecap="round" />
           </svg>
-          <span className="text-xs font-semibold text-foreground sm:text-sm">
+          <span className="text-sm font-semibold text-foreground">
             Varde relay
           </span>
-          <span className="mt-0.5 text-[10px] text-muted sm:text-xs">
+          <span className="mt-0.5 text-xs text-muted">
             {blocked ? "forwarding, eyes shut" : "standing by"}
           </span>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 
 // Topology explorer for the "How Varde works" doc. A group of machines, the
 // control plane, the relay, and the cairn (the shared world save). The role
@@ -131,7 +132,7 @@ export function TopologyExplorer() {
         onClick={() => setSelected(isSel ? null : id)}
         aria-pressed={isSel}
         style={{ left: `${p.x}%`, top: `${p.y}%` }}
-        className={`absolute flex w-[26%] max-w-28 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-large border p-2.5 text-center transition-all sm:w-28 ${
+        className={`absolute flex w-[26%] max-w-28 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-large border p-2.5 text-center transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod sm:w-28 ${
           isSel
             ? "border-glod bg-glod/10"
             : opts.hosting
@@ -148,10 +149,10 @@ export function TopologyExplorer() {
             transition={{ duration: 2.2, repeat: Infinity }}
           />
         )}
-        <span className="text-xs font-semibold text-foreground sm:text-sm">
+        <span className="text-sm font-semibold text-foreground">
           {label}
         </span>
-        <span className="mt-0.5 text-[10px] leading-tight text-muted sm:text-xs">
+        <span className="mt-0.5 text-xs leading-tight text-muted">
           {sub}
         </span>
       </button>
@@ -161,32 +162,20 @@ export function TopologyExplorer() {
   return (
     <figure className="my-8 rounded-large border border-separator bg-surface-100 p-4 sm:p-6">
       <div className="mb-5 flex justify-center">
-        <div
-          role="group"
+        <ToggleButtonGroup
           aria-label="Pick your role"
-          className="inline-flex rounded-full border border-separator bg-surface-200 p-1"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[role]}
+          onSelectionChange={(keys) => {
+            const next = keys.values().next().value;
+            if (next != null) setRole(next as Role);
+          }}
+          size="sm"
         >
-          {(
-            [
-              { id: "play", label: "I just play" },
-              { id: "host", label: "I host" },
-            ] as const
-          ).map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              aria-pressed={role === r.id}
-              onClick={() => setRole(r.id)}
-              className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
-                role === r.id
-                  ? "bg-surface-300 font-semibold text-foreground"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+          <ToggleButton id="play">I just play</ToggleButton>
+          <ToggleButton id="host">I host</ToggleButton>
+        </ToggleButtonGroup>
       </div>
 
       <div className="relative mx-auto aspect-[10/9] w-full max-w-xl sm:aspect-[16/10]">

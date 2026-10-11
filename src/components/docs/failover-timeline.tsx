@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import {
+  Button,
+  Chip,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@heroui/react";
 
 // Failover timeline for the "How Varde works" doc. Step through what happens
 // when the machine hosting the world drops: the replica on the backup host
@@ -112,21 +118,20 @@ export function FailoverTimeline() {
 
   return (
     <figure className="my-8 rounded-large border border-separator bg-surface-100 p-4 sm:p-6">
-      <div className="mb-4 flex justify-center">
-        <div
-          className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs transition-colors ${
-            s.cpLit
-              ? "border-glod/60 bg-glod/10 text-foreground"
-              : "border-separator bg-surface-200 text-muted"
-          }`}
+      <div aria-live="polite" className="mb-4 flex justify-center">
+        <Chip
+          size="sm"
+          color={s.cpLit ? "accent" : "default"}
+          variant="soft"
         >
           <span
             aria-hidden
             className={`block size-1.5 rounded-full ${s.cpLit ? "bg-glod" : "bg-muted"}`}
           />
-          <span className="font-semibold text-foreground">Control plane</span>
-          <span aria-live="polite">{s.cp}</span>
-        </div>
+          <Chip.Label>
+            <span className="font-semibold">Control plane:</span> {s.cp}
+          </Chip.Label>
+        </Chip>
       </div>
 
       <div className="mx-auto grid max-w-xl grid-cols-4 gap-2 sm:gap-3">
@@ -154,39 +159,46 @@ export function FailoverTimeline() {
                 }
                 transition={{ duration: 2.2, repeat: Infinity }}
               />
-              <span className="text-xs font-semibold text-foreground sm:text-sm">
+              <span className="text-sm font-semibold text-foreground">
                 {NAMES[id]}
               </span>
-              <span className="mt-0.5 text-[10px] leading-tight text-muted sm:text-xs">
+              <span className="mt-0.5 text-xs leading-tight text-muted">
                 {m.sub}
               </span>
-              <span className="mt-2 flex h-6 items-center">
+              <span className="mt-2 flex h-7 items-center">
                 {hasLiveSave ? (
                   <motion.span
                     layoutId="live-save"
                     transition={{ type: "spring", stiffness: 320, damping: 28 }}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                      id === "sara" && m.tone !== "ember"
-                        ? "border-separator bg-surface-300 text-muted"
-                        : "border-glod/60 bg-glod/10 text-glod"
-                    }`}
                   >
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden
-                      className="size-3"
-                      fill="currentColor"
+                    <Chip
+                      size="sm"
+                      color={
+                        id === "sara" && m.tone !== "ember"
+                          ? "default"
+                          : "accent"
+                      }
+                      variant="soft"
                     >
-                      <rect x="9" y="4" width="6" height="4" rx="2" />
-                      <rect x="7" y="10" width="10" height="4" rx="2" />
-                      <rect x="4" y="16" width="16" height="4" rx="2" />
-                    </svg>
-                    live save
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden
+                        className="size-3"
+                        fill="currentColor"
+                      >
+                        <rect x="9" y="4" width="6" height="4" rx="2" />
+                        <rect x="7" y="10" width="10" height="4" rx="2" />
+                        <rect x="4" y="16" width="16" height="4" rx="2" />
+                      </svg>
+                      <Chip.Label>live save</Chip.Label>
+                    </Chip>
                   </motion.span>
                 ) : staticCopy ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-separator bg-surface-300 px-2 py-0.5 text-[10px] text-muted">
-                    {id === "kim" ? "replica" : "last copy"}
-                  </span>
+                  <Chip size="sm" variant="secondary">
+                    <Chip.Label>
+                      {id === "kim" ? "replica" : "last copy"}
+                    </Chip.Label>
+                  </Chip>
                 ) : null}
               </span>
             </div>
@@ -205,36 +217,44 @@ export function FailoverTimeline() {
       </figcaption>
 
       <div className="mt-4 flex items-center justify-center gap-4">
-        <button
-          type="button"
-          onClick={() => setStep((v) => Math.max(0, v - 1))}
-          disabled={step === 0}
-          className="rounded-full border border-separator bg-surface-200 px-3.5 py-1.5 text-sm text-foreground transition-colors hover:border-surface-400 disabled:opacity-40"
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={step === 0}
+          onPress={() => setStep((v) => Math.max(0, v - 1))}
         >
           Back
-        </button>
-        <div className="flex items-center gap-1.5" role="group" aria-label="Timeline steps">
+        </Button>
+        <ToggleButtonGroup
+          aria-label="Timeline steps"
+          selectionMode="single"
+          disallowEmptySelection
+          isDetached
+          selectedKeys={[String(step)]}
+          onSelectionChange={(keys) => {
+            const next = keys.values().next().value;
+            if (next != null) setStep(Number(next));
+          }}
+          className="gap-1.5"
+        >
           {STEPS.map((st, i) => (
-            <button
+            <ToggleButton
               key={st.title}
-              type="button"
+              id={String(i)}
+              isIconOnly
               aria-label={`Step ${i + 1}: ${st.title}`}
-              aria-current={i === step}
-              onClick={() => setStep(i)}
-              className={`size-2 rounded-full transition-colors ${
-                i === step ? "bg-glod" : "bg-surface-400 hover:bg-muted"
-              }`}
+              className="size-2 min-w-0 gap-0 rounded-full bg-surface-400 p-0 transition-colors hover:bg-muted data-[selected=true]:bg-glod data-[selected=true]:hover:bg-glod"
             />
           ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => setStep((v) => Math.min(STEPS.length - 1, v + 1))}
-          disabled={step === STEPS.length - 1}
-          className="rounded-full border border-separator bg-surface-200 px-3.5 py-1.5 text-sm text-foreground transition-colors hover:border-surface-400 disabled:opacity-40"
+        </ToggleButtonGroup>
+        <Button
+          variant="secondary"
+          size="sm"
+          isDisabled={step === STEPS.length - 1}
+          onPress={() => setStep((v) => Math.min(STEPS.length - 1, v + 1))}
         >
           Next
-        </button>
+        </Button>
       </div>
     </figure>
   );
