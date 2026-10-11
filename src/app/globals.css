@@ -33,6 +33,13 @@
   /* Motion: fast expo-out for transitions, light spring for entrances. */
   --ease-vd-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-vd-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* Numbered surface tiers used across the docs pages: aliases onto the
+     mouve theme vars so bg-surface-100..400 actually paint. */
+  --color-surface-100: var(--surface);
+  --color-surface-200: var(--surface-secondary);
+  --color-surface-300: var(--surface-tertiary);
+  --color-surface-400: var(--border);
 }
 
 /* Design system export (saved overrides on top of the mouve theme).
