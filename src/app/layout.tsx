@@ -1,25 +1,14 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { MotionProvider } from "@/components/reveal";
 
-const schibsted = localFont({
-  variable: "--font-schibsted",
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
   display: "swap",
-  src: [
-    {
-      path: "../fonts/schibsted-grotesk-latin-wght-normal.woff2",
-      weight: "400 900",
-      style: "normal",
-    },
-    {
-      path: "../fonts/schibsted-grotesk-latin-wght-italic.woff2",
-      weight: "400 900",
-      style: "italic",
-    },
-  ],
 });
 
 const DESCRIPTION =
@@ -57,9 +46,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" data-theme="dark">
+    <html
+      lang="en"
+      className="dark mouve-dark"
+      data-theme="mouve-dark"
+    >
       <body
-        className={`${schibsted.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${inter.variable} bg-background font-sans text-foreground antialiased`}
       >
         <div className="flex min-h-screen flex-col">
           <SiteNav />
