@@ -75,9 +75,7 @@ export default function PricingPage() {
         <div className="mt-3">
           <Chip variant="secondary" size="sm">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
-            <Chip.Label>
-              Plans are indicative and not yet available. Checkout is coming soon.
-            </Chip.Label>
+            <Chip.Label>Indicative plans, checkout soon</Chip.Label>
           </Chip>
         </div>
       </Reveal>
