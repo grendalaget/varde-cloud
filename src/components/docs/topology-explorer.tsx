@@ -21,10 +21,10 @@ const POS: Record<NodeId, Pt> = {
   cp: { x: 20, y: 17 },
   relay: { x: 80, y: 17 },
   cairn: { x: 50, y: 52 },
-  you: { x: 14, y: 84 },
-  sara: { x: 38, y: 90 },
-  kim: { x: 62, y: 90 },
-  ada: { x: 86, y: 84 },
+  you: { x: 12, y: 84 },
+  sara: { x: 37, y: 90 },
+  kim: { x: 63, y: 90 },
+  ada: { x: 88, y: 84 },
 };
 
 const MACHINE_IDS = ["you", "sara", "kim", "ada"] as const;
@@ -165,7 +165,7 @@ export function TopologyExplorer() {
         onClick={() => setSelected(isSel ? null : id)}
         aria-pressed={isSel}
         style={{ left: `${p.x}%`, top: `${p.y}%` }}
-        className={`absolute flex w-[26%] max-w-28 -translate-x-1/2 -translate-y-1/2 flex-col items-center p-3 text-center sm:w-28 ${nodeClasses(id, opts)}`}
+        className={`absolute flex w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center p-3 text-center ${nodeClasses(id, opts)}`}
       >
         {opts.copy ? COPY_MARK : null}
         {opts.icon ?? (
@@ -177,8 +177,12 @@ export function TopologyExplorer() {
             transition={{ duration: 2.6, repeat: Infinity }}
           />
         )}
-        <span className="text-sm font-semibold text-foreground">{label}</span>
-        <span className="mt-0.5 text-xs leading-tight text-muted">{sub}</span>
+        <span className="whitespace-nowrap text-sm font-semibold text-foreground">
+          {label}
+        </span>
+        <span className="mt-0.5 whitespace-nowrap text-xs leading-tight text-muted">
+          {sub}
+        </span>
       </button>
     );
   };
@@ -208,8 +212,12 @@ export function TopologyExplorer() {
           />
         )}
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-sm font-semibold text-foreground">{label}</span>
-          <span className="mt-0.5 text-xs leading-tight text-muted">{sub}</span>
+          <span className="whitespace-nowrap text-sm font-semibold text-foreground">
+            {label}
+          </span>
+          <span className="mt-0.5 whitespace-nowrap text-xs leading-tight text-muted">
+            {sub}
+          </span>
         </span>
         {opts.copy ? (
           <CairnsGlyph className="size-3.5 shrink-0 text-muted" />

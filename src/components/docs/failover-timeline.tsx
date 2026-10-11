@@ -57,10 +57,10 @@ const STEPS: Step[] = [
     cpLit: true,
     liveSaveOn: "sara",
     machines: {
-      you: { tone: "warn", sub: "Connection lost" },
+      you: { tone: "warn", sub: "Disconnected" },
       sara: { tone: "danger", sub: "Offline" },
-      kim: { tone: "warn", sub: "Connection lost" },
-      ada: { tone: "warn", sub: "Connection lost" },
+      kim: { tone: "warn", sub: "Disconnected" },
+      ada: { tone: "warn", sub: "Disconnected" },
     },
   },
   {
@@ -159,10 +159,10 @@ export function FailoverTimeline() {
                 transition={{ duration: 2.2, repeat: Infinity }}
               />
               <span className="flex min-w-0 flex-1 flex-col sm:items-center">
-                <span className="text-sm font-semibold text-foreground">
+                <span className="whitespace-nowrap text-sm font-semibold text-foreground">
                   {NAMES[id]}
                 </span>
-                <span className="mt-0.5 text-xs leading-tight text-muted sm:min-h-8">
+                <span className="mt-0.5 whitespace-nowrap text-xs leading-tight text-muted sm:min-h-8">
                   {m.sub}
                 </span>
               </span>

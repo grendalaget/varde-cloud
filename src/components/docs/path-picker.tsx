@@ -38,8 +38,10 @@ function Machine({
         animate={{ scale: [1, 1.3, 1] }}
         transition={{ duration: 2.4, repeat: Infinity }}
       />
-      <span className="text-sm font-semibold text-foreground">{name}</span>
-      <span className="mt-0.5 text-xs text-muted">{sub}</span>
+      <span className="whitespace-nowrap text-sm font-semibold text-foreground">
+        {name}
+      </span>
+      <span className="mt-0.5 whitespace-nowrap text-xs text-muted">{sub}</span>
     </div>
   );
 }
@@ -177,11 +179,11 @@ export function PathPicker() {
             <rect x="6" y="10" width="12" height="9" rx="2" />
             <path d="M9 10V7a3 3 0 0 1 6 0v3" strokeLinecap="round" />
           </svg>
-          <span className="text-sm font-semibold text-foreground">
-            Varde relay
+          <span className="whitespace-nowrap text-sm font-semibold text-foreground">
+            Relay
           </span>
-          <span className="mt-0.5 text-xs text-muted">
-            {blocked ? "Forwarding, eyes shut" : "Standing by"}
+          <span className="mt-0.5 whitespace-nowrap text-xs text-muted">
+            {blocked ? "Sealed shut" : "Standing by"}
           </span>
         </div>
       </div>
