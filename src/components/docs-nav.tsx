@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -25,10 +24,10 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                     href={href}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
-                    className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                    className={`block rounded-lg px-3 py-1.5 text-sm transition-colors ${
                       active
-                        ? "bg-surface-tertiary font-medium text-foreground"
-                        : "text-muted hover:bg-surface-secondary hover:text-foreground"
+                        ? "bg-surface-300 font-medium text-foreground"
+                        : "text-muted hover:bg-surface-200 hover:text-foreground"
                     }`}
                   >
                     {page.title}
@@ -44,21 +43,17 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function DocsNav() {
-  const detailsRef = useRef<HTMLDetailsElement>(null);
   return (
     <>
       <aside className="sticky top-24 hidden max-h-[calc(100vh-8rem)] overflow-y-auto pr-6 md:block">
         <NavList />
       </aside>
-      <details
-        ref={detailsRef}
-        className="mb-6 rounded-xl border border-separator bg-surface p-4 md:hidden"
-      >
+      <details className="mb-6 rounded-2xl border border-separator bg-surface-100 p-4 md:hidden">
         <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
           Docs menu
         </summary>
         <div className="mt-4">
-          <NavList onNavigate={() => detailsRef.current?.removeAttribute("open")} />
+          <NavList />
         </div>
       </details>
     </>
