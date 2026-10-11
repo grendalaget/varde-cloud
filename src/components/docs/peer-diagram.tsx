@@ -23,7 +23,7 @@ export function PeerDiagram() {
   const saraDown = down === "sara";
 
   return (
-    <figure className="my-8 rounded-large border border-separator bg-surface-100 p-6">
+    <figure className="my-8 rounded-xl border border-separator bg-surface p-6">
       <div className="flex flex-wrap items-start justify-center gap-4">
         {NODES.map((node) => {
           const isDown = down === node.id;
@@ -33,12 +33,12 @@ export function PeerDiagram() {
               key={node.id}
               type="button"
               onClick={() => setDown(isDown ? null : node.id)}
-              className={`flex w-32 flex-col items-center rounded-large border p-4 text-center transition-colors ${
+              className={`flex w-32 flex-col items-center rounded-xl border p-4 text-center transition-colors ${
                 isDown
                   ? "border-danger/60 bg-danger/10 opacity-60"
                   : takesOver
                     ? "border-glod bg-glod/10"
-                    : "border-separator bg-surface-200 hover:border-surface-400"
+                    : "border-separator bg-surface-secondary hover:border-skifer-600"
               }`}
             >
               <motion.span

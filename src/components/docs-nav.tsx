@@ -24,10 +24,10 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                     href={href}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
-                    className={`block rounded-medium px-3 py-1.5 text-sm transition-colors ${
+                    className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
                       active
-                        ? "bg-surface-300 font-medium text-foreground"
-                        : "text-muted hover:bg-surface-200 hover:text-foreground"
+                        ? "bg-surface-tertiary font-medium text-foreground"
+                        : "text-muted hover:bg-surface-secondary hover:text-foreground"
                     }`}
                   >
                     {page.title}
@@ -48,7 +48,7 @@ export function DocsNav() {
       <aside className="sticky top-24 hidden max-h-[calc(100vh-8rem)] overflow-y-auto pr-6 md:block">
         <NavList />
       </aside>
-      <details className="mb-6 rounded-large border border-separator bg-surface-100 p-4 md:hidden">
+      <details className="mb-6 rounded-xl border border-separator bg-surface p-4 md:hidden">
         <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
           Docs menu
         </summary>

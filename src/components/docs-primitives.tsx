@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 type CalloutTone = "info" | "warn" | "glod";
 
 const CALLOUT_STYLES: Record<CalloutTone, string> = {
-  info: "border-surface-400/60 bg-surface-200/60 text-foreground",
+  info: "border-separator bg-surface/60 text-foreground",
   warn: "border-warning/50 bg-warning/10 text-foreground",
   glod: "border-glod/50 bg-glod/10 text-foreground",
 };
@@ -23,7 +23,7 @@ export function Callout({
 }) {
   return (
     <aside
-      className={`my-6 rounded-large border px-4 py-3 text-sm leading-relaxed ${CALLOUT_STYLES[tone]}`}
+      className={`my-6 rounded-xl border px-4 py-3 text-sm leading-relaxed ${CALLOUT_STYLES[tone]}`}
     >
       {title ? (
         <p className="mb-1 font-semibold text-foreground">{title}</p>
