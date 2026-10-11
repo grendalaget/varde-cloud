@@ -2,14 +2,19 @@
 
 import { Alert, Button, Card, FieldError, Input, Label, Spinner, TextField } from "@heroui/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { safeNext } from "@/lib/next";
 
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const router = useRouter();
+  const next = safeNext(useSearchParams().get("next") ?? undefined);
   const [error, setError] = useState<string | null>(null);
+
+  const authHref = (path: string) =>
+    next ? `${path}?next=${encodeURIComponent(next)}` : path;
   const [pending, setPending] = useState(false);
   const isSignUp = mode === "sign-up";
 
@@ -36,7 +41,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           return;
         }
       }
-      router.push("/account");
+      router.push(next ?? "/account");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -102,14 +107,20 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         {isSignUp ? (
           <>
             Already have an account?{" "}
-            <Link href="/auth/sign-in" className="font-medium text-foreground underline-offset-4 hover:underline">
+            <Link
+              href={authHref("/auth/sign-in")}
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
               Sign in
             </Link>
           </>
         ) : (
           <>
             New to Varde?{" "}
-            <Link href="/auth/sign-up" className="font-medium text-foreground underline-offset-4 hover:underline">
+            <Link
+              href={authHref("/auth/sign-up")}
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
               Create an account
             </Link>
           </>
