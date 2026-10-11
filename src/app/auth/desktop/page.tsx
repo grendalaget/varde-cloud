@@ -15,8 +15,10 @@ async function DesktopAuthContent() {
 
 export default function DesktopAuthPage() {
   return (
-    <Suspense>
-      <DesktopAuthContent />
-    </Suspense>
+    <main className="flex min-h-[70vh] items-center justify-center px-4 py-16">
+      <Suspense>
+        <DesktopAuthContent />
+      </Suspense>
+    </main>
   );
 }

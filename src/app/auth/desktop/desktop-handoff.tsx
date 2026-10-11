@@ -20,6 +20,16 @@ export function DesktopHandoff({ enabled }: { enabled: boolean }) {
     }
   }, []);
 
+  // A click navigates to GET /api/auth/desktop-token directly: synchronous
+  // navigation keeps its user activation, so the browser's app-launch
+  // prompt can't be lost to a slow token request.
+  const openAppClick = useCallback(() => {
+    // hard nav on purpose: a full-page request to the API route keeps user
+    // activation through the 302 to varde://
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = "/api/auth/desktop-token";
+  }, []);
+
   useEffect(() => {
     if (!enabled) return;
     const t = setTimeout(() => void openApp(), 0);
@@ -39,7 +49,7 @@ export function DesktopHandoff({ enabled }: { enabled: boolean }) {
                 ? "That did not work. Try again, or use a code in the app instead."
                 : "You are signed in; your browser should ask to open Varde."}
             </p>
-            <Button className="w-full" onPress={() => void openApp()}>
+            <Button className="w-full" onPress={openAppClick}>
               Open Varde
             </Button>
             <p className="text-center text-sm">
