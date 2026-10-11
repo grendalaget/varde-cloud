@@ -326,11 +326,41 @@ body {
   animation-delay: 300ms;
 }
 
+/* Organic status dots: blob radius that morphs in discrete steps
+   (steps() easing, not interpolation) for a stop-motion clay feel.
+   The -b/-c variants just offset the phase so dots do not sync. */
+@keyframes vd-blob {
+  0%,
+  100% {
+    border-radius: 58% 42% 55% 45% / 55% 48% 52% 45%;
+  }
+  25% {
+    border-radius: 46% 54% 60% 40% / 48% 58% 42% 52%;
+  }
+  50% {
+    border-radius: 52% 48% 44% 56% / 60% 44% 56% 40%;
+  }
+  75% {
+    border-radius: 44% 56% 52% 48% / 45% 60% 40% 55%;
+  }
+}
+.vd-blob {
+  border-radius: 58% 42% 55% 45% / 55% 48% 52% 45%;
+  animation: vd-blob 3s steps(2) infinite;
+}
+.vd-blob-b {
+  animation-delay: -1s;
+}
+.vd-blob-c {
+  animation-delay: -2s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vd-enter,
   .vd-fade,
   .vd-pop,
-  .vd-shake {
+  .vd-shake,
+  .vd-blob {
     animation: none !important;
   }
   html {

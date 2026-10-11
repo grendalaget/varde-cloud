@@ -42,7 +42,7 @@ export function PeerDiagram() {
               }`}
             >
               <motion.span
-                className={`mb-2 block size-3 rounded-full ${isDown ? "bg-danger" : takesOver ? "bg-glod" : "bg-success"}`}
+                className={`vd-blob mb-2 block size-3 ${isDown ? "bg-danger" : takesOver ? "bg-glod" : "bg-success"}`}
                 animate={
                   isDown ? { scale: 1 } : { scale: [1, 1.35, 1] }
                 }

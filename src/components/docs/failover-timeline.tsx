@@ -126,7 +126,7 @@ export function FailoverTimeline() {
         >
           <span
             aria-hidden
-            className={`block size-1.5 rounded-full ${s.cpLit ? "bg-glod" : "bg-muted"}`}
+            className={`vd-blob vd-blob-c block size-1.5 ${s.cpLit ? "bg-glod" : "bg-muted"}`}
           />
           <Chip.Label>
             <span className="font-semibold">Control plane:</span> {s.cp}
@@ -135,7 +135,7 @@ export function FailoverTimeline() {
       </div>
 
       <div className="mx-auto grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-4 sm:gap-3">
-        {MACHINE_IDS.map((id) => {
+        {MACHINE_IDS.map((id, i) => {
           const m = s.machines[id];
           const isOffline = m.tone === "danger" || m.tone === "off";
           const hasLiveSave = s.liveSaveOn === id;
@@ -152,7 +152,7 @@ export function FailoverTimeline() {
               }`}
             >
               <motion.span
-                className={`block size-2.5 shrink-0 rounded-full sm:mb-1.5 ${DOT[m.tone]}`}
+                className={`vd-blob block size-2.5 shrink-0 sm:mb-1.5 ${DOT[m.tone]} ${["", "vd-blob-b", "vd-blob-c"][i % 3]}`}
                 animate={
                   m.tone === "ember" ? { scale: [1, 1.4, 1] } : { scale: 1 }
                 }
@@ -254,7 +254,7 @@ export function FailoverTimeline() {
               id={String(i)}
               isIconOnly
               aria-label={`Step ${i + 1}: ${st.title}`}
-              className="size-2 min-w-0 gap-0 rounded-full bg-surface-400 p-0 transition-colors hover:bg-muted data-[selected=true]:bg-glod data-[selected=true]:hover:bg-glod"
+              className={`vd-blob size-2 min-w-0 gap-0 bg-surface-400 p-0 transition-colors hover:bg-muted data-[selected=true]:bg-glod data-[selected=true]:hover:bg-glod ${["", "vd-blob-b", "vd-blob-c"][i % 3]}`}
             />
           ))}
         </ToggleButtonGroup>

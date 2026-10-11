@@ -34,7 +34,7 @@ function Machine({
       className="absolute flex w-[30%] max-w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-2xl border border-separator bg-surface-200 p-3 text-center"
     >
       <motion.span
-        className="mb-1.5 block size-2.5 rounded-full bg-success"
+        className="vd-blob vd-blob-b mb-1.5 block size-2.5 bg-success"
         animate={{ scale: [1, 1.3, 1] }}
         transition={{ duration: 2.4, repeat: Infinity }}
       />
@@ -116,7 +116,7 @@ export function PathPicker() {
         {/* The packet: an ember carrying your game data. */}
         <motion.span
           key={mode}
-          className="absolute z-10 block size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-glod shadow-[0_0_12px_var(--color-glod)]"
+          className="vd-blob absolute z-10 block size-3 -translate-x-1/2 -translate-y-1/2 bg-glod shadow-[0_0_12px_var(--color-glod)]"
           initial={false}
           animate={
             blocked
