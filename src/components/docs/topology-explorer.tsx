@@ -37,6 +37,17 @@ const NAMES: Record<MachineId, string> = {
   ada: "Ada",
 };
 
+// Phase offsets so the status blobs do not morph in sync.
+const BLOB_PHASE: Record<NodeId, string> = {
+  cp: "",
+  relay: "vd-blob-b",
+  you: "vd-blob-c",
+  sara: "",
+  kim: "vd-blob-b",
+  ada: "vd-blob-c",
+  cairn: "",
+};
+
 function hostId(role: Role): MachineId {
   return role === "host" ? "you" : "sara";
 }
@@ -170,9 +181,9 @@ export function TopologyExplorer() {
         {opts.copy ? COPY_MARK : null}
         {opts.icon ?? (
           <motion.span
-            className={`mb-1.5 block size-2.5 rounded-full ${
+            className={`vd-blob mb-1.5 block size-2.5 ${
               opts.hosting ? "bg-glod" : "bg-success"
-            }`}
+            } ${BLOB_PHASE[id]}`}
             animate={opts.hosting ? { scale: [1, 1.35, 1] } : { scale: 1 }}
             transition={{ duration: 2.6, repeat: Infinity }}
           />
@@ -204,9 +215,9 @@ export function TopologyExplorer() {
       >
         {opts.icon ?? (
           <motion.span
-            className={`block size-2.5 shrink-0 rounded-full ${
+            className={`vd-blob block size-2.5 shrink-0 ${
               opts.hosting ? "bg-glod" : "bg-success"
-            }`}
+            } ${BLOB_PHASE[id]}`}
             animate={opts.hosting ? { scale: [1, 1.35, 1] } : { scale: 1 }}
             transition={{ duration: 2.6, repeat: Infinity }}
           />
