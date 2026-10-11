@@ -28,7 +28,11 @@ const polarPlugins = polarCore
   ? [
       polarPlugin({
         client: polarCore,
-        createCustomerOnSignUp: true,
+        // Never block sign-up on Polar: a Polar API failure (bad env pair,
+        // email-domain validation, outage) aborted account creation. Checkout
+        // and portal pass external_customer_id, so Polar materializes the
+        // customer lazily on first billing action instead.
+        createCustomerOnSignUp: false,
         use: [
           checkout({
             products: POLAR_PRODUCTS,
