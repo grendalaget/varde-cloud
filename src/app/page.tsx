@@ -6,7 +6,7 @@ import { Item, Reveal, Stagger } from "@/components/reveal";
 const HOW_IT_WORKS = [
   {
     title: "Peer-hosted by the group",
-    body: "One member's PC hosts at a time — the lit stone in the cairn. Anyone in the group can take over; no rented hardware required to play.",
+    body: "One member's PC hosts at a time, the lit stone in the cairn. Anyone in the group can take over; no rented hardware required to play.",
     icon: (
       <path d="M4 17h16M6 17v-5l4-3v8M10 17V7l4-3v13M14 17V9l4-2v10" strokeLinecap="round" strokeLinejoin="round" />
     ),
@@ -27,7 +27,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Stable loopback addresses",
-    body: "Every server gets a stable 127.77.x.y address on each player's own machine. Bookmark it once — it never changes when hosting moves.",
+    body: "Every server gets a stable 127.77.x.y address on each player's own machine. Bookmark it once; it never changes when hosting moves.",
     icon: (
       <path d="M10 4a6 6 0 1 0 6 6M10 4a6 6 0 0 0-6 6m6-6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
     ),
@@ -92,7 +92,7 @@ export default function Home() {
                 Varde lets your friend group co-host game servers. Saves
                 replicate across everyone&apos;s machines, hosting fails over
                 automatically, and every player connects to the same stable
-                address — no rented servers, no port forwarding.
+                address. No rented servers, no port forwarding.
               </p>
             </Item>
             <Item>
@@ -150,7 +150,7 @@ export default function Home() {
             </h2>
             <p className="mt-3 max-w-2xl text-muted">
               Varde turns your group&apos;s own PCs into a resilient hosting
-              collective. A cairn belongs to no one — and neither does your
+              collective. A cairn belongs to no one, and neither does your
               server.
             </p>
           </Reveal>
@@ -189,7 +189,7 @@ export default function Home() {
               Supported games
             </h2>
             <p className="mt-3 max-w-2xl text-muted">
-              Drivers are per-game and grouped by hosting style — more games
+              Drivers are per-game and grouped by hosting style. More games
               join as they fit an existing hosting approach.
             </p>
           </Reveal>
@@ -223,7 +223,7 @@ export default function Home() {
             </h2>
             <p className="mt-3 max-w-xl text-muted">
               A managed always-on anchor keeps your group&apos;s saves safe even
-              when nobody&apos;s PC is online. The core stays open source —
+              when nobody&apos;s PC is online. The core stays open source;
               anchors are just another stone in the cairn.
             </p>
             <Link

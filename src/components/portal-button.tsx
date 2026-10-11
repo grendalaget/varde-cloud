@@ -15,7 +15,7 @@ export function PortalButton() {
     setError(null);
     const { error } = await authClient.customer.portal();
     if (error) {
-      setError("Couldn't open the billing portal — try again.");
+      setError("Couldn't open the billing portal. Try again.");
       setLoading(false);
     }
   }

@@ -1,7 +1,7 @@
 import { createPolar, createPolarCore } from "@polar-sh/sdk/2026-10";
 
 // Billing is opt-in: without POLAR_ACCESS_TOKEN the site stays in
-// "coming soon" mode — no checkout buttons, no webhook expectations.
+// "coming soon" mode: no checkout buttons, no webhook expectations.
 export const BILLING_ENABLED = Boolean(process.env.POLAR_ACCESS_TOKEN);
 
 const environment =
@@ -24,7 +24,7 @@ export const polar = BILLING_ENABLED
     })
   : null;
 
-// Product IDs come from the Polar dashboard — different per environment.
+// Product IDs come from the Polar dashboard, different per environment.
 export const POLAR_PRODUCTS = [
   { productId: process.env.POLAR_ANCHOR_MONTHLY_PRODUCT_ID ?? "", slug: "anchor-monthly" },
   { productId: process.env.POLAR_ANCHOR_YEARLY_PRODUCT_ID ?? "", slug: "anchor-yearly" },

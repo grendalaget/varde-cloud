@@ -65,7 +65,7 @@ async function AccountContent() {
             <dl className="mt-4 space-y-3 text-sm">
               <div>
                 <dt className="text-muted">Name</dt>
-                <dd className="mt-0.5 text-foreground">{user.name || "—"}</dd>
+                <dd className="mt-0.5 text-foreground">{user.name || "Not set"}</dd>
               </div>
               <div>
                 <dt className="text-muted">Email</dt>

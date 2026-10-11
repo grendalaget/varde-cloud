@@ -52,7 +52,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       </h1>
       <p className="mt-1.5 text-sm text-muted">
         {isSignUp
-          ? "One account for varde.games — plans and group features land here."
+          ? "One account for varde.games. Plans and group features land here."
           : "Sign in to your varde.games account."}
       </p>
 

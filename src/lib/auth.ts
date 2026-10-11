@@ -66,13 +66,13 @@ const polarPlugins = polarCore
  * varde.games authentication.
  *
  * Email+password today. OAuth providers (GitHub, Google) plug in via
- * `socialProviders` once their app credentials exist — the Drizzle `account`
+ * `socialProviders` once their app credentials exist; the Drizzle `account`
  * table already stores their tokens. In-game Varde accounts live in the
  * control plane (its own argon2id auth) for now; see README for the
  * unification plan (the CP's `auth.Provider` seam allows OIDC later).
  *
  * Billing (Polar) is wired but dormant until POLAR_ACCESS_TOKEN + product
- * IDs are set — see src/lib/polar.ts.
+ * IDs are set; see src/lib/polar.ts.
  */
 export const auth = betterAuth({
   appName: "Varde",

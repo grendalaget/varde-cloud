@@ -1,7 +1,7 @@
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 
-// Local dev falls back to a plain SQLite file — no server needed.
+// Local dev falls back to a plain SQLite file; no server needed.
 // Prod sets TURSO_DATABASE_URL (libsql://...) + TURSO_AUTH_TOKEN.
 const url = process.env.TURSO_DATABASE_URL ?? "file:./varde.db";
 

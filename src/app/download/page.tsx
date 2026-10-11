@@ -18,7 +18,7 @@ export default function DownloadPage() {
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-muted">
           Varde runs on every player&apos;s machine. Grab the latest release,
-          sign in, and link your PC to your group — the dashboard walks you
+          sign in, and link your PC to your group. The dashboard walks you
           through it.
         </p>
       </Reveal>
@@ -36,7 +36,7 @@ export default function DownloadPage() {
                 Windows installer
               </h2>
               <p className="mt-2 text-sm text-muted">
-                VardeSetup.exe — agent, mesh and desktop app in one install.
+                VardeSetup.exe: agent, mesh and desktop app in one install.
                 Works on Windows 10 and 11.
               </p>
               <p className="mt-4 text-sm font-medium text-glod transition-transform duration-200 ease-vd-out group-hover:translate-x-0.5 group-hover:underline">
@@ -112,7 +112,7 @@ export default function DownloadPage() {
             Self-hosting the control plane
           </h2>
           <p className="mt-2 text-sm text-muted">
-            The hosted control plane at varde.games is the default —
+            The hosted control plane at varde.games is the default;
             self-hosting stays fully supported. See the repo docs for running
             your own control plane and pointing installs at it.
           </p>

@@ -51,7 +51,7 @@ export function CheckoutButton({
     }
     const { error } = await authClient.checkout({ slug });
     if (error) {
-      setError("Checkout failed to start — try again.");
+      setError("Checkout failed to start. Try again.");
       setLoading(false);
     }
     // on success better-auth redirects to the Polar checkout URL

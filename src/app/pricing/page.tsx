@@ -20,7 +20,7 @@ const PLANS = [
     tag: "Open source",
     highlight: false,
     features: [
-      "Everything self-hostable — the whole stack",
+      "Everything self-hostable, the whole stack",
       "Hosted control plane at varde.games",
       "Peer-hosted servers with automatic failover",
       "Self-hosted anchor nodes",
@@ -68,7 +68,7 @@ export default function PricingPage() {
           Pricing
         </h1>
         <p className="mt-4 text-lg text-muted">
-          Varde&apos;s core is open source and free forever — anchors are an
+          Varde&apos;s core is open source and free forever. Anchors are an
           optional convenience for groups that want always-on save replication
           without running their own always-on machine.
         </p>
@@ -76,7 +76,7 @@ export default function PricingPage() {
           <Chip variant="secondary" size="sm">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
             <Chip.Label>
-              Plans are indicative and not yet available — checkout is coming soon.
+              Plans are indicative and not yet available. Checkout is coming soon.
             </Chip.Label>
           </Chip>
         </div>
@@ -168,7 +168,7 @@ export default function PricingPage() {
 
       <Reveal delay={0.1} className="mt-10 max-w-2xl">
         <p className="text-sm text-muted">
-          Deduplicated, compressed save chunks keep storage cheap — most groups
+          Deduplicated, compressed save chunks keep storage cheap. Most groups
           will never notice the cap. Prices are per group, not per player, and
           may change before launch.
         </p>

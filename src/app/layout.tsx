@@ -12,17 +12,17 @@ const inter = Inter({
 });
 
 const DESCRIPTION =
-  "Peer-hosted game servers for groups of friends. Replicated saves, automatic failover, and a stable address for every server — with optional always-on cloud anchors.";
+  "Peer-hosted game servers for groups of friends. Replicated saves, automatic failover, and a stable address for every server, with optional always-on cloud anchors.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://varde.games"),
   title: {
-    default: "Varde — Game servers built by many hands",
-    template: "%s — Varde",
+    default: "Varde | Game servers built by many hands",
+    template: "%s | Varde",
   },
   description: DESCRIPTION,
   openGraph: {
-    title: "Varde — Game servers built by many hands",
+    title: "Varde | Game servers built by many hands",
     description: DESCRIPTION,
     url: "https://varde.games",
     siteName: "Varde",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Varde — Game servers built by many hands",
+    title: "Varde | Game servers built by many hands",
     description: DESCRIPTION,
     images: ["/og.png"],
   },

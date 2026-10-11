@@ -8,7 +8,7 @@ export function MotionProvider({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
       {children}
-      {/* Without JS the hidden initial states never animate in — force all
+      {/* Without JS the hidden initial states never animate in; force all
           reveal-wrapped content visible. */}
       <noscript>
         <style>{
@@ -41,7 +41,7 @@ type DivProps = {
   y?: number;
 };
 
-/** Animates in on mount — for above-the-fold content. */
+/** Animates in on mount, for above-the-fold content. */
 export function Enter({ children, className, delay = 0, y = 26 }: DivProps) {
   return (
     <motion.div
@@ -72,7 +72,7 @@ export function Reveal({ children, className, delay = 0, y = 26 }: DivProps) {
   );
 }
 
-/** Parent that staggers its <Item> children — on mount by default,
+/** Parent that staggers its <Item> children, on mount by default,
  *  on scroll into view with `inView`. */
 export function Stagger({
   children,
@@ -104,7 +104,7 @@ export function Stagger({
   );
 }
 
-/** A staggered child — must sit under <Stagger>. */
+/** A staggered child; must sit under <Stagger>. */
 export function Item({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <motion.div className={className} data-vd-motion variants={item}>

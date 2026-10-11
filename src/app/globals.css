@@ -36,7 +36,7 @@
 }
 
 /* Design system export (saved overrides on top of the mouve theme).
- * Source: get_design_system_export css — keep in sync with the DS. */
+ * Source: get_design_system_export css; keep in sync with the DS. */
 .mouve-light,
 [data-theme="mouve-light"],
 .mouve-dark,
@@ -127,10 +127,10 @@ body {
 }
 
 /* Brand marks: stones use currentColor (Tåke on Natt); Glød is only the lit
-   stone — the machine currently hosting a server. Resting state is static:
+   stone: the machine currently hosting a server. Resting state is static:
    no flicker. On entry the varde stacks itself stone by stone (vd-b*, on
    <g> wrappers); on hover/focus the mark warms into a glow and the ember
-   hops the upper stones — the failover motif, user-invited. */
+   hops the upper stones, the failover motif, user-invited. */
 .vd {
   --vd-stone: currentColor;
   --vd-ember: #ff5b1f;
@@ -248,7 +248,7 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
- * Motion layer — same vocabulary as the dashboard (varde apps/web).
+ * Motion layer, same vocabulary as the dashboard (varde apps/web).
  * Entrances use fill-mode backwards so post-animation transforms (hover lifts,
  * presses) still work. Scroll/mount staggers live in components/reveal.tsx.
  * ------------------------------------------------------------------------- */

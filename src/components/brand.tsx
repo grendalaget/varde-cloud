@@ -4,7 +4,7 @@ import type { SVGProps } from "react";
  * Varde brand marks (brand/ in grendalaget/varde, MIT). Geometry is verbatim
  * from the kit; stones are currentColor (Tåke on Natt), Glød is only the lit
  * host stone. `animated` drops the stones in one by one on entry and hops
- * the ember between them on hover — the failover motif, user-invited.
+ * the ember between them on hover: the failover motif, user-invited.
  */
 
 const BASE =
@@ -35,7 +35,7 @@ export function Mark({
       <title>{title}</title>
       {animated ? (
         /* Entry build lives on <g> wrappers (transform), the ember hop on
-           the paths (fill) — separate properties, no animation conflicts. */
+           the paths (fill); separate properties, no animation conflicts. */
         <>
           <g className="vd-b1">
             <path className="vd-s" d={BASE} />
