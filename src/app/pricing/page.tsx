@@ -1,4 +1,4 @@
-import { Card, Chip } from "@heroui/react";
+import { Button, Card, Chip } from "@heroui/react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -137,26 +137,39 @@ export default function PricingPage() {
                 </Link>
               ) : (
                 <div className="mt-8">
-                  <CheckoutButton
-                    slug={plan.slug!}
-                    billingEnabled={BILLING_ENABLED}
-                    label={
-                      plan.highlight
-                        ? `Get ${plan.name}`
-                        : `Get ${plan.name} monthly`
-                    }
-                    variant={plan.highlight ? "primary" : "secondary"}
-                  />
-                  {"yearlySlug" in plan && plan.yearlySlug ? (
-                    <div className="mt-2 text-center">
+                  {BILLING_ENABLED ? (
+                    <>
                       <CheckoutButton
-                        slug={plan.yearlySlug}
+                        slug={plan.slug!}
                         billingEnabled={BILLING_ENABLED}
-                        label="or $30/year"
-                        variant="link"
+                        label={
+                          plan.highlight
+                            ? `Get ${plan.name}`
+                            : `Get ${plan.name} monthly`
+                        }
+                        variant={plan.highlight ? "primary" : "secondary"}
                       />
-                    </div>
-                  ) : null}
+                      {"yearlySlug" in plan && plan.yearlySlug ? (
+                        <div className="mt-2 text-center">
+                          <CheckoutButton
+                            slug={plan.yearlySlug}
+                            billingEnabled={BILLING_ENABLED}
+                            label="or $30/year"
+                            variant="link"
+                          />
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <Button
+                      isDisabled
+                      variant="secondary"
+                      fullWidth
+                      className="text-muted"
+                    >
+                      Coming soon
+                    </Button>
+                  )}
                 </div>
               )}
             </Card>
