@@ -8,6 +8,7 @@ export const NAV_LINKS = [
   { href: "/#games", label: "Games" },
   { href: "/pricing", label: "Pricing" },
   { href: "/download", label: "Download" },
+  { href: "/docs", label: "Docs" },
 ];
 
 export function SiteNav() {
