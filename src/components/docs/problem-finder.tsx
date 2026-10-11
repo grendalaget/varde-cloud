@@ -297,6 +297,7 @@ export function ProblemFinder() {
 
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   const matches = PROBLEMS.filter((p) => matchesQuery(p, terms));
+  const matchesSet = new Set(matches.map((p) => p.id));
 
   return (
     <div className="my-8">
@@ -308,19 +309,25 @@ export function ProblemFinder() {
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Describe the problem, like: can't connect" />
+          <SearchField.Input placeholder="Describe the problem" />
           <SearchField.ClearButton />
         </SearchField.Group>
       </SearchField>
-      <p className="mt-2 text-xs text-muted" aria-live="polite">
+      <p className="mt-3 text-xs text-muted" aria-live="polite">
         {terms.length === 0
           ? `${PROBLEMS.length} common fixes`
           : `${matches.length} of ${PROBLEMS.length} fixes`}
       </p>
 
-      <Accordion variant="surface" allowsMultipleExpanded className="mt-3">
-        {matches.map((p) => (
-          <Accordion.Item key={p.id} id={p.id}>
+      {/* Every item stays mounted while filtering; non-matches are hidden so
+          expanded state and panel animations never replay on remount. */}
+      <Accordion variant="surface" allowsMultipleExpanded className="mt-4">
+        {PROBLEMS.map((p) => (
+          <Accordion.Item
+            key={p.id}
+            id={p.id}
+            className={matchesSet.has(p.id) ? undefined : "hidden"}
+          >
             <Accordion.Heading>
               <Accordion.Trigger>
                 {p.title}
@@ -344,24 +351,19 @@ export function ProblemFinder() {
       </Accordion>
 
       {matches.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-separator p-6 text-center">
-          <p className="text-sm font-semibold text-foreground">
-            No fix matches that.
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            Try different words, like &ldquo;lag&rdquo;, &ldquo;invite&rdquo; or
-            &ldquo;tray&rdquo;, or{" "}
-            <a
-              href={ISSUES_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="text-glod underline"
-            >
-              open an issue on GitHub
-            </a>
-            .
-          </p>
-        </div>
+        <p className="mt-6 text-sm text-muted">
+          No fix matches that. Try different words, like &ldquo;lag&rdquo;,
+          &ldquo;invite&rdquo; or &ldquo;tray&rdquo;, or{" "}
+          <a
+            href={ISSUES_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="text-glod underline"
+          >
+            open an issue on GitHub
+          </a>
+          .
+        </p>
       ) : null}
     </div>
   );

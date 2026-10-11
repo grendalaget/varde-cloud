@@ -227,6 +227,8 @@ function firstLetter(term: string) {
   return term[0]!.toUpperCase();
 }
 
+const ALL_LETTERS = [...new Set(TERMS.map((t) => firstLetter(t.term)))];
+
 export function GlossaryIndex() {
   const [query, setQuery] = useState("");
 
@@ -237,6 +239,7 @@ export function GlossaryIndex() {
       t.term.toLowerCase().includes(q) ||
       (t.keywords ?? "").includes(q),
   );
+  const matchesSet = new Set(matches.map((t) => t.term));
 
   const letters = [...new Set(matches.map((t) => firstLetter(t.term)))];
 
@@ -250,18 +253,21 @@ export function GlossaryIndex() {
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Filter terms, like: relay" />
+          <SearchField.Input placeholder="Filter terms" />
           <SearchField.ClearButton />
         </SearchField.Group>
       </SearchField>
 
       {letters.length > 0 ? (
-        <nav aria-label="Jump to letter" className="mt-4 flex flex-wrap gap-1.5">
+        <nav
+          aria-label="Jump to letter"
+          className="mt-5 flex flex-wrap gap-x-4 gap-y-2"
+        >
           {letters.map((l) => (
             <a
               key={l}
               href={`#gl-${l}`}
-              className="flex size-8 items-center justify-center rounded-md border border-separator bg-surface text-xs font-semibold text-muted transition-colors hover:border-glod/50 hover:text-glod"
+              className="text-sm font-medium text-muted transition-colors hover:text-foreground"
             >
               {l}
             </a>
@@ -270,40 +276,48 @@ export function GlossaryIndex() {
       ) : null}
 
       {letters.length === 0 ? (
-        <div className="mt-6 rounded-lg border border-dashed border-separator p-6 text-center">
-          <p className="text-sm font-semibold text-foreground">
-            No term matches that.
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            Try a shorter word, or browse the full A-Z by clearing the filter.
-          </p>
-        </div>
-      ) : (
-        letters.map((letter) => (
-          <section key={letter} id={`gl-${letter}`} className="mt-8">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+        <p className="mt-8 text-sm text-muted">
+          No term matches that. Try a shorter word, or clear the filter to
+          browse the full A-Z.
+        </p>
+      ) : null}
+
+      {/* Terms and sections stay mounted while filtering; non-matches are
+          hidden so nothing remounts or replays on each keystroke. */}
+      {ALL_LETTERS.map((letter) => {
+        const sectionTerms = TERMS.filter(
+          (t) => firstLetter(t.term) === letter,
+        );
+        const visible = letters.includes(letter);
+        return (
+          <section
+            key={letter}
+            id={`gl-${letter}`}
+            className={`scroll-mt-28 ${visible ? "" : "hidden"}`}
+          >
+            <h2 className="mt-10 text-xs font-semibold uppercase tracking-wider text-muted">
               {letter}
             </h2>
-            <dl className="divide-y divide-separator rounded-lg border border-separator bg-surface">
-              {matches
-                .filter((t) => firstLetter(t.term) === letter)
-                .map((t) => (
-                  <div
-                    key={t.term}
-                    className="px-4 py-3 sm:grid sm:grid-cols-[10rem_1fr] sm:gap-4"
-                  >
-                    <dt className="text-sm font-semibold text-foreground">
-                      {t.term}
-                    </dt>
-                    <dd className="mt-1 text-sm leading-relaxed text-muted sm:mt-0 [&_a]:text-glod [&_a]:underline [&_code]:rounded [&_code]:bg-surface-tertiary [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.8em] [&_code]:text-foreground">
-                      {t.def}
-                    </dd>
-                  </div>
-                ))}
+            <dl>
+              {sectionTerms.map((t) => (
+                <div
+                  key={t.term}
+                  className={`border-b border-separator py-5 sm:grid sm:grid-cols-[10rem_1fr] sm:gap-6 ${
+                    matchesSet.has(t.term) ? "" : "hidden"
+                  }`}
+                >
+                  <dt className="text-sm font-semibold text-foreground">
+                    {t.term}
+                  </dt>
+                  <dd className="mt-1 text-sm leading-relaxed text-muted sm:mt-0 [&_a]:text-glod [&_a]:underline [&_code]:rounded [&_code]:bg-surface-tertiary [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.8em] [&_code]:text-foreground">
+                    {t.def}
+                  </dd>
+                </div>
+              ))}
             </dl>
           </section>
-        ))
-      )}
+        );
+      })}
     </div>
   );
 }
