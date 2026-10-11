@@ -1,6 +1,7 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Mark } from "@/components/brand";
+import { EmberShader } from "@/components/ember-shader";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 
 const HOW_IT_WORKS = [
@@ -74,6 +75,8 @@ export default function Home() {
               "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.09), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(54,65,73,0.35), transparent 70%)",
           }}
         />
+        {/* WebGL ember field (reduced-motion → the CSS gradient above shows) */}
+        <EmberShader className="pointer-events-none absolute inset-0 h-full w-full" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 md:grid-cols-2 md:pb-28 md:pt-24">
           <Stagger stagger={0.08}>
             <Item className="mb-4">
