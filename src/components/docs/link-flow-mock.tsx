@@ -47,7 +47,7 @@ export function LinkFlowMock() {
         {/* The Varde window on the PC */}
         <div className="rounded-xl border border-separator bg-surface p-5">
           <PaneTitle>Varde</PaneTitle>
-          <div className="flex h-56 flex-col">
+          <div className="flex h-56 flex-col overflow-y-auto">
             {stage === "form" && (
               <motion.div key="form" {...slide}>
                 <p className="text-sm font-semibold text-foreground">
@@ -140,7 +140,7 @@ export function LinkFlowMock() {
               varde.games/link
             </span>
           </div>
-          <div className="flex h-56 flex-col">
+          <div className="flex h-56 flex-col overflow-y-auto">
             {stage === "approve" ? (
               <motion.div
                 key="browser-approve"
@@ -173,7 +173,7 @@ export function LinkFlowMock() {
           </div>
         </div>
       </div>
-      <figcaption className="mt-4 h-5 text-center text-sm text-muted">
+      <figcaption className="mt-4 flex min-h-10 items-start justify-center text-center text-sm text-muted">
         {stage === "form" &&
           "Try it: press Continue, the same thing the real installer does."}
         {stage === "approve" &&

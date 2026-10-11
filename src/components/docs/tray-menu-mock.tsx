@@ -118,7 +118,7 @@ export function TrayMenuMock({ hosting = false }: { hosting?: boolean }) {
       </div>
       <figcaption
         aria-live="polite"
-        className="mt-4 flex h-10 items-start justify-center text-center text-sm text-muted"
+        className="mt-4 flex min-h-10 items-start justify-center text-center text-sm text-muted"
       >
         {selected?.hint ??
           (hosting

@@ -30,7 +30,7 @@ export function SmartScreenMock() {
           Publisher: <span className="text-foreground">Unknown publisher</span>
         </p>
 
-        <div className="mt-5 flex h-10 items-center justify-end">
+        <div className="mt-5 flex min-h-10 items-center justify-end">
           {stage === "ran" ? (
             <motion.p
               initial={{ opacity: 0 }}
@@ -72,7 +72,7 @@ export function SmartScreenMock() {
           )}
         </div>
       </div>
-      <figcaption className="mt-3 flex h-8 items-center justify-center text-center text-sm text-muted">
+      <figcaption className="mt-3 flex min-h-10 items-center justify-center text-center text-sm text-muted">
         {stage === "ran" ? (
           <Button
             variant="ghost"

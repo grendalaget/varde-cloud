@@ -46,7 +46,7 @@ export function CreateServerMock() {
   return (
     <figure className="my-8">
       <div className="rounded-xl border border-separator bg-surface p-5">
-        <div className="h-[500px] sm:h-[470px]">
+        <div className="h-[500px] overflow-y-auto sm:h-[470px]">
           {stage === "created" ? (
             <motion.div
               key="created"
@@ -211,7 +211,7 @@ export function CreateServerMock() {
           )}
         </div>
       </div>
-      <figcaption className="mt-4 h-5 text-center text-sm text-muted">
+      <figcaption className="mt-4 flex min-h-10 items-start justify-center text-center text-sm text-muted">
         {stage === "form"
           ? "Try it: pick a game and press Create server."
           : "The address is what your friends paste into their game."}
