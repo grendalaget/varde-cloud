@@ -76,7 +76,14 @@ const polarPlugins = polarCore
  */
 export const auth = betterAuth({
   appName: "Varde",
-  baseURL: process.env.BETTER_AUTH_URL,
+  // Explicit BETTER_AUTH_URL wins (production). On Vercel previews, fall back
+  // to the deployment's own URL so auth works on temp/preview domains; local
+  // dev falls back to localhost.
+  baseURL:
+    process.env.BETTER_AUTH_URL ??
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"),
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "sqlite",
