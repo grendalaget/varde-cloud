@@ -85,6 +85,16 @@ export const auth = betterAuth({
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000"),
   secret: process.env.BETTER_AUTH_SECRET,
+  // Origins allowed to POST to the auth endpoints. The baseURL origin is
+  // implied; cover the custom domain, its www variant, local dev, and
+  // Vercel preview deployments (where BETTER_AUTH_URL may point at prod).
+  trustedOrigins: [
+    "https://varde.games",
+    "https://www.varde.games",
+    "http://localhost:3000",
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    "https://*.vercel.app",
+  ],
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema,
