@@ -8,8 +8,8 @@ export default function NotFound() {
     <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 sm:px-6">
       <EmptyState className="vd-pop">
         <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <Mark className="h-8 w-8" title="Varde" />
+          <EmptyState.Media>
+            <Mark className="h-12 w-12" title="Varde" />
           </EmptyState.Media>
           <EmptyState.Title>This stone isn&apos;t here.</EmptyState.Title>
           <EmptyState.Description>
