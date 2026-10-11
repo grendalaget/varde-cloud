@@ -33,7 +33,6 @@
     "react-dom": "19.3.0",
     "react-resizable-panels": "^4.14.2",
     "react-stately": "^3.50.0",
-    "shaders": "^4.0.4",
     "tailwind-merge": "^3.7.0",
     "tailwind-variants": "^3.3.1"
   },

@@ -1,7 +1,6 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Mark } from "@/components/brand";
-import { EmberShader } from "@/components/ember-shader";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 
 const HOW_IT_WORKS = [
@@ -65,9 +64,6 @@ const GAMES = [
 export default function Home() {
   return (
     <main>
-      {/* WebGL ember field behind the whole page — flows under every section
-          (reduced-motion → hero keeps the CSS gradient below instead). */}
-      <EmberShader className="pointer-events-none fixed inset-0 -z-10 h-full w-full" />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div
@@ -75,7 +71,7 @@ export default function Home() {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.09), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(54,65,73,0.35), transparent 70%)",
+              "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.09), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(56,49,47,0.35), transparent 70%)",
           }}
         />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 md:grid-cols-2 md:pb-28 md:pt-24">
@@ -130,11 +126,16 @@ export default function Home() {
             </Item>
           </Stagger>
 
-          <div className="flex justify-center md:justify-end">
+          <div className="relative flex justify-center md:justify-end">
+            {/* Soft Glød halo radiating from the cairn itself */}
+            <div
+              aria-hidden
+              className="vd-cairn-glow pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+            />
             <Mark
               animated
               title="A cairn; the lit stone moves between friends"
-              className="h-48 w-48 text-skifer-100 drop-shadow-[0_0_40px_rgba(255,91,31,0.15)] sm:h-64 sm:w-64 md:h-80 md:w-80"
+              className="relative h-48 w-48 text-skifer-100 drop-shadow-[0_0_40px_rgba(255,91,31,0.2)] sm:h-64 sm:w-64 md:h-80 md:w-80"
             />
           </div>
         </div>

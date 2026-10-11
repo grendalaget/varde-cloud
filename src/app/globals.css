@@ -220,6 +220,33 @@ body {
   fill: var(--vd-ember);
 }
 
+/* Hero cairn halo: soft Glød glow radiating from the mark itself.
+   Opacity-only breathe so the positioning transform stays untouched. */
+.vd-cairn-glow {
+  background: radial-gradient(
+    circle at 50% 52%,
+    rgba(255, 91, 31, 0.24) 0%,
+    rgba(255, 91, 31, 0.1) 38%,
+    transparent 68%
+  );
+  filter: blur(20px);
+  animation: vd-glow-breathe 7s ease-in-out infinite;
+}
+@keyframes vd-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vd-cairn-glow {
+    animation: none;
+  }
+}
+
 /* ---------------------------------------------------------------------------
  * Motion layer — same vocabulary as the dashboard (varde apps/web).
  * Entrances use fill-mode backwards so post-animation transforms (hover lifts,
