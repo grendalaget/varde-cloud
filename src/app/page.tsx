@@ -65,6 +65,9 @@ const GAMES = [
 export default function Home() {
   return (
     <main>
+      {/* WebGL ember field behind the whole page — flows under every section
+          (reduced-motion → hero keeps the CSS gradient below instead). */}
+      <EmberShader className="pointer-events-none fixed inset-0 -z-10 h-full w-full" />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div
@@ -75,8 +78,6 @@ export default function Home() {
               "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.09), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(54,65,73,0.35), transparent 70%)",
           }}
         />
-        {/* WebGL ember field (reduced-motion → the CSS gradient above shows) */}
-        <EmberShader className="pointer-events-none absolute inset-0 h-full w-full" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 md:grid-cols-2 md:pb-28 md:pt-24">
           <Stagger stagger={0.08}>
             <Item className="mb-4">
