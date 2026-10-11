@@ -70,7 +70,7 @@ const PROBLEMS: Problem[] = [
         <p>Invite links can expire or run out of uses.</p>
         <FixSteps>
           <StepItem>
-            Sign in on varde.games first, then open the link again.
+            Sign in on your Varde dashboard first, then open the link again.
           </StepItem>
           <StepItem>
             Check the link was copied whole, with no missing characters at the
@@ -224,7 +224,8 @@ const PROBLEMS: Problem[] = [
         <FixSteps>
           <StepItem>The owner sends each friend an invite link.</StepItem>
           <StepItem>
-            Each friend signs in, installs Varde, and links their PC; the{" "}
+            Each friend installs Varde and signs in on the dashboard it
+            opens, then links their PC; the{" "}
             <Link href="/docs/join-a-server">join guide</Link> walks them
             through it.
           </StepItem>

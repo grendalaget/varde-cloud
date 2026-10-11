@@ -29,10 +29,10 @@ const QAS: QA[] = [
     q: "Do I need a varde.games account?",
     a: (
       <>
-        Yes. Linking a machine and joining a group both need a sign-in, so
-        every player makes a free account on the{" "}
-        <Link href="/auth/sign-up">sign-up page</Link> first. It only takes an
-        email and a password.
+        You need a Varde account, which is free. You make it the first time
+        the app opens your dashboard: just an email and a password. A
+        varde.games website account is separate today and only matters for
+        billing and paid cloud anchors once accounts unify.
       </>
     ),
   },
