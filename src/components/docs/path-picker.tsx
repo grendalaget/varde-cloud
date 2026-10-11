@@ -26,7 +26,7 @@ function Machine({
   return (
     <div
       style={{ left: `${at.x}%`, top: `${at.y}%` }}
-      className="absolute flex w-[30%] max-w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-large border border-separator bg-surface-200 p-3 text-center"
+      className="absolute flex w-[30%] max-w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-2xl border border-separator bg-surface-200 p-3 text-center"
     >
       <motion.span
         className="mb-1.5 block size-2.5 rounded-full bg-success"
@@ -44,7 +44,7 @@ export function PathPicker() {
   const blocked = mode === "blocked";
 
   return (
-    <figure className="my-8 rounded-large border border-separator bg-surface-100 p-4 sm:p-6">
+    <figure className="my-8 rounded-2xl border border-separator bg-surface-100 p-4 sm:p-6">
       <div className="mb-5 flex justify-center">
         <ToggleButtonGroup
           aria-label="Pick a network situation"
@@ -137,7 +137,7 @@ export function PathPicker() {
           }`}
           aria-hidden={!blocked}
         >
-          <div className="flex flex-col gap-1 rounded-medium border border-danger/50 bg-surface-100 p-1.5">
+          <div className="flex flex-col gap-1 rounded-xl border border-danger/50 bg-surface-100 p-1.5">
             <div className="flex gap-1">
               <span className="h-2 w-5 bg-danger/40" />
               <span className="h-2 w-5 bg-danger/40" />
@@ -160,7 +160,7 @@ export function PathPicker() {
 
         <div
           style={{ left: `${RELAY.x}%`, top: `${RELAY.y}%` }}
-          className={`absolute flex w-[30%] max-w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-large border p-3 text-center transition-colors ${
+          className={`absolute flex w-[30%] max-w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-2xl border p-3 text-center transition-colors ${
             blocked
               ? "border-glod/60 bg-surface-200"
               : "border-separator bg-surface-200 opacity-50"
@@ -188,7 +188,7 @@ export function PathPicker() {
 
       <figcaption
         aria-live="polite"
-        className="mt-5 min-h-10 rounded-medium border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
+        className="mt-5 min-h-10 rounded-xl border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
       >
         {blocked
           ? "No direct route, so the ember takes the long way through the relay. The traffic is encrypted end to end: the relay moves it, and cannot read it."

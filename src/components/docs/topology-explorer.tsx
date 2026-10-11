@@ -133,7 +133,7 @@ export function TopologyExplorer() {
         onClick={() => setSelected(isSel ? null : id)}
         aria-pressed={isSel}
         style={{ left: `${p.x}%`, top: `${p.y}%` }}
-        className={`absolute flex w-[26%] max-w-28 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-large border p-3 text-center transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod sm:w-28 ${
+        className={`absolute flex w-[26%] max-w-28 -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-2xl border p-3 text-center transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod sm:w-28 ${
           isSel
             ? "border-glod bg-glod/10"
             : opts.hosting
@@ -161,7 +161,7 @@ export function TopologyExplorer() {
   };
 
   return (
-    <figure className="my-8 rounded-large border border-separator bg-surface-100 p-4 sm:p-6">
+    <figure className="my-8 rounded-2xl border border-separator bg-surface-100 p-4 sm:p-6">
       <div className="mb-5 flex justify-center">
         <ToggleButtonGroup
           aria-label="Pick your role"
@@ -269,7 +269,7 @@ export function TopologyExplorer() {
 
       <figcaption
         aria-live="polite"
-        className="mt-5 min-h-10 rounded-medium border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
+        className="mt-5 min-h-10 rounded-xl border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
       >
         {selected
           ? describe(selected, role)

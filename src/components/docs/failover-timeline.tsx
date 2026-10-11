@@ -117,7 +117,7 @@ export function FailoverTimeline() {
   const s = STEPS[step];
 
   return (
-    <figure className="my-8 rounded-large border border-separator bg-surface-100 p-4 sm:p-6">
+    <figure className="my-8 rounded-2xl border border-separator bg-surface-100 p-4 sm:p-6">
       <div aria-live="polite" className="mb-4 flex justify-center">
         <Chip
           size="sm"
@@ -143,7 +143,7 @@ export function FailoverTimeline() {
           return (
             <div
               key={id}
-              className={`flex flex-row items-center gap-3 rounded-large border p-3 text-left transition-colors sm:min-h-32 sm:flex-col sm:items-center sm:gap-0 sm:text-center ${
+              className={`flex flex-row items-center gap-3 rounded-2xl border p-3 text-left transition-colors sm:min-h-32 sm:flex-col sm:items-center sm:gap-0 sm:text-center ${
                 m.tone === "ember"
                   ? "border-glod/60 bg-glod/10"
                   : isOffline
@@ -207,7 +207,7 @@ export function FailoverTimeline() {
 
       <figcaption
         aria-live="polite"
-        className="mt-5 min-h-12 rounded-medium border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
+        className="mt-5 min-h-12 rounded-xl border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
       >
         <span className="mb-0.5 block font-semibold text-foreground">
           {s.title}
