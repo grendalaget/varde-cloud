@@ -8,16 +8,16 @@ import { useState } from "react";
 const INVITE = "varde.games/invite/x7k2m9";
 
 export function InviteCardMock() {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"idle" | "ok" | "err">("idle");
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(`https://${INVITE}`);
+      setCopied("ok");
     } catch {
-      // clipboard is best effort in a mock
+      setCopied("err");
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setTimeout(() => setCopied("idle"), 1500);
   };
 
   return (
@@ -36,13 +36,17 @@ export function InviteCardMock() {
             onClick={() => void copy()}
             className="shrink-0 rounded-md bg-glod px-2.5 py-1 text-xs font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
           >
-            {copied ? "Copied" : "Copy"}
+            {copied === "ok"
+              ? "Copied"
+              : copied === "err"
+                ? "Copy failed"
+                : "Copy"}
           </button>
         </div>
       </div>
       <figcaption className="mt-3 text-center text-sm text-muted">
-        What your friends receive. They paste it in the dashboard or just open
-        it.
+        What your friends receive. This one is a sample, it will not join
+        anything.
       </figcaption>
     </figure>
   );

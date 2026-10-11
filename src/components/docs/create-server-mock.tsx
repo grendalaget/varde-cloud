@@ -19,16 +19,16 @@ export function CreateServerMock() {
   const [name, setName] = useState("Friday night server");
   const [machine, setMachine] = useState("");
   const [startNow, setStartNow] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"idle" | "ok" | "err">("idle");
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText("127.77.4.20");
+      setCopied("ok");
     } catch {
-      // clipboard is best effort in a mock
+      setCopied("err");
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setTimeout(() => setCopied("idle"), 1500);
   };
 
   if (stage === "created") {
@@ -44,14 +44,26 @@ export function CreateServerMock() {
             <p className="text-sm font-semibold text-foreground">
               {name.trim() || "Friday night server"}
             </p>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-medium text-success">
-              <span aria-hidden className="size-1.5 rounded-full bg-success" />
-              Running
-            </span>
+            {startNow ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-medium text-success">
+                <span aria-hidden className="size-1.5 rounded-full bg-success" />
+                Running
+              </span>
+            ) : (
+              <span className="text-xs font-medium text-muted">
+                Not running
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-xs text-muted">
             {GAMES.find((g) => g.id === game)?.name}
           </p>
+          {!startNow && (
+            <p className="mt-2 text-xs text-muted">
+              Start now was off, so it is created but not started yet. Start
+              it from the dashboard when you are ready.
+            </p>
+          )}
           <div className="mt-4 rounded-lg border border-separator bg-surface-secondary p-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
               Connect
@@ -64,7 +76,8 @@ export function CreateServerMock() {
                 className="rounded-md border border-separator bg-surface px-2 py-1 font-mono text-xs text-foreground transition-colors hover:border-border"
                 title="Copy address"
               >
-                127.77.4.20{copied ? " ✓" : " ⧉"}
+                127.77.4.20
+                {copied === "ok" ? " ✓" : copied === "err" ? " ×" : " ⧉"}
               </button>
             </div>
             <div className="mt-2 flex items-center justify-between gap-3">

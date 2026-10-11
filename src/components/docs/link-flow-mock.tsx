@@ -24,16 +24,16 @@ function WindowChrome({ label }: { label: string }) {
 
 export function LinkFlowMock() {
   const [stage, setStage] = useState<Stage>("form");
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"idle" | "ok" | "err">("idle");
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(CODE);
+      setCopied("ok");
     } catch {
-      // clipboard is best effort in a mock
+      setCopied("err");
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setTimeout(() => setCopied("idle"), 1500);
   };
 
   return (
@@ -95,7 +95,11 @@ export function LinkFlowMock() {
                   onClick={() => void copy()}
                   className="rounded-lg border border-separator bg-surface-secondary px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-border"
                 >
-                  {copied ? "Copied" : "Copy code"}
+                  {copied === "ok"
+                    ? "Copied"
+                    : copied === "err"
+                      ? "Copy failed"
+                      : "Copy code"}
                 </button>
                 <button
                   type="button"
