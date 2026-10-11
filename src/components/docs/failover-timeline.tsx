@@ -162,7 +162,7 @@ export function FailoverTimeline() {
                 <span className="text-sm font-semibold text-foreground">
                   {NAMES[id]}
                 </span>
-                <span className="mt-0.5 text-xs leading-tight text-muted">
+                <span className="mt-0.5 text-xs leading-tight text-muted sm:min-h-8">
                   {m.sub}
                 </span>
               </span>
@@ -205,14 +205,26 @@ export function FailoverTimeline() {
         })}
       </div>
 
+      {/* All five captions share one grid cell, so the box is always the
+          height of the tallest step and stepping never shifts the page. */}
       <figcaption
         aria-live="polite"
-        className="mt-5 min-h-12 rounded-xl border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
+        className="mt-5 grid rounded-xl border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
       >
-        <span className="mb-0.5 block font-semibold text-foreground">
-          {s.title}
-        </span>
-        {s.text}
+        {STEPS.map((st, i) => (
+          <span
+            key={st.title}
+            aria-hidden={i !== step}
+            className={`col-start-1 row-start-1 transition-opacity duration-300 ${
+              i === step ? "" : "invisible"
+            }`}
+          >
+            <span className="mb-0.5 block font-semibold text-foreground">
+              {st.title}
+            </span>
+            {st.text}
+          </span>
+        ))}
       </figcaption>
 
       <div className="mt-4 flex items-center justify-center gap-4">

@@ -10,6 +10,11 @@ import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 
 type Mode = "open" | "blocked";
 
+const CAPTION_OPEN =
+  "When nothing blocks the way, your game talks straight to the host machine. Shortest path, lowest ping.";
+const CAPTION_BLOCKED =
+  "No direct route, so the ember takes the long way through the relay. The traffic is encrypted end to end: the relay moves it, and cannot read it.";
+
 const YOU = { x: 16, y: 42 };
 const HOST = { x: 84, y: 42 };
 const RELAY = { x: 50, y: 82 };
@@ -138,19 +143,14 @@ export function PathPicker() {
           aria-hidden={!blocked}
         >
           <div className="flex flex-col gap-1 rounded-xl border border-danger/50 bg-surface-100 p-1.5">
-            <div className="flex gap-1">
-              <span className="h-2 w-5 bg-danger/40" />
-              <span className="h-2 w-5 bg-danger/40" />
-              <span className="h-2 w-5 bg-danger/40" />
+            <div className="flex justify-center gap-1">
+              <span className="h-1.5 w-4 bg-danger/40 sm:h-2 sm:w-5" />
+              <span className="h-1.5 w-4 bg-danger/40 sm:h-2 sm:w-5" />
+              <span className="h-1.5 w-4 bg-danger/40 sm:h-2 sm:w-5" />
             </div>
             <div className="flex justify-center gap-1">
-              <span className="h-2 w-5 bg-danger/40" />
-              <span className="h-2 w-5 bg-danger/40" />
-            </div>
-            <div className="flex gap-1">
-              <span className="h-2 w-5 bg-danger/40" />
-              <span className="h-2 w-5 bg-danger/40" />
-              <span className="h-2 w-5 bg-danger/40" />
+              <span className="h-1.5 w-4 bg-danger/40 sm:h-2 sm:w-5" />
+              <span className="h-1.5 w-4 bg-danger/40 sm:h-2 sm:w-5" />
             </div>
           </div>
         </div>
@@ -186,13 +186,18 @@ export function PathPicker() {
         </div>
       </div>
 
+      {/* The caption stacks the live text over the longest variant so the
+          box keeps one height and the page never shifts. */}
       <figcaption
         aria-live="polite"
-        className="mt-5 min-h-10 rounded-xl border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
+        className="mt-5 grid rounded-xl border border-separator bg-surface-200 px-4 py-3 text-center text-sm text-muted"
       >
-        {blocked
-          ? "No direct route, so the ember takes the long way through the relay. The traffic is encrypted end to end: the relay moves it, and cannot read it."
-          : "When nothing blocks the way, your game talks straight to the host machine. Shortest path, lowest ping."}
+        <span className="invisible col-start-1 row-start-1" aria-hidden>
+          {CAPTION_BLOCKED}
+        </span>
+        <span className="col-start-1 row-start-1">
+          {blocked ? CAPTION_BLOCKED : CAPTION_OPEN}
+        </span>
       </figcaption>
     </figure>
   );
