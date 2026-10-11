@@ -1,66 +1,83 @@
-# infra/cp — hosted control plane on Fly.io
+# infra/cp — hosted control plane on Fly.io (LiteFS)
 
 Runs the Varde control plane (`apps/controlplane` from the public repo) at
-`cp.varde.games` on Fly Machines: scales **out** under request load (the proxy
-wakes suspended machines as concurrency rises) and **down** when idle (surplus
-machines suspend). One machine stays warm for agent heartbeats and linking.
+`cp.varde.games` on Fly Machines with **LiteFS**: the sqlite db is replicated
+to every machine, so reads are served locally everywhere and writes are
+forwarded to the primary by LiteFS's built-in HTTP proxy.
 
 ## Prerequisites
 
 - `flyctl` authenticated (`fly auth login`)
-- A Postgres database — the CP has a `postgres://` dialect with embedded
-  migrations. Either a Fly Postgres cluster (`fly postgres create`) or any
-  managed Postgres (Neon, Supabase, Cloud SQL). `VARDE_DB` is a secret.
+- The LiteFS reconciler gate (`VARDE_PRIMARY_FILE`) in the varde build —
+  varde PRs #37+#38 or later (`--build-arg VARDE_REF=<tag>`; `main` once merged).
 
 ## Deploy
 
 ```bash
 cd infra/cp
 
-fly apps create varde-cp                # once
+fly apps create varde-cp                 # once
 
-fly secrets set \
-  VARDE_DB='postgres://USER:PASS@HOST/varde_cp?sslmode=require' \
-  VARDE_PUBLIC_URL='https://cp.varde.games' \
-  VARDE_SIGNUP='invite'
+# LiteFS holds its lease in Fly's Consul — this sets FLY_CONSUL_URL.
+fly consul attach
 
-fly deploy --build-arg VARDE_REF=main   # or a tag, e.g. v1.2.3
+# One volume per machine, in the primary region. LiteFS keeps the
+# replicated db + LTX files under /var/lib/litefs.
+fly volumes create litefs -n 2 --region arn --size 1
 
-fly scale count 3                       # provision burst capacity (stays suspended when idle)
+fly deploy --build-arg VARDE_REF=main    # or a tag, e.g. v1.2.3
 
-fly certs add cp.varde.games            # then point the DNS record at the app
+fly scale count 2 --region arn           # two write-capable machines
+
+fly certs add cp.varde.games             # then point the DNS record at the app
 ```
 
 ## Scaling model
 
-- `min_machines_running = 1` — one warm machine always (heartbeat interval is
-  5 s; a stopped CP means unlinked groups, so do not set this to 0).
-- `soft_limit = 200` concurrent requests/machine — when exceeded, the proxy
-  starts suspended machines (up to `fly scale count`).
-- `auto_stop_machines = "suspend"` — machines above the minimum suspend when
-  traffic drains; they resume in ~1 s, not a cold boot.
-- To go further (unbounded autoscale-out), run the community
-  `fly-autoscaler` app against the app's metrics; the machine count above is
-  the manual ceiling it would move between.
+- **Writes**: only machines in `primary_region` (arn) are lease `candidate`s
+  (`litefs.yml`). Run ≥2 there for write failover — Consul hands the lease
+  to a survivor in ~10s; the LiteFS proxy holds writes briefly during the
+  handoff (`primary-redirect-timeout`).
+- **Reads**: every machine serves reads locally — `fly m clone --region lhr`
+  (or any region) adds read replicas close to users; they never lead.
+- **Capacity**: machines are **always-on** — LiteFS explicitly warns against
+  combining autostop/autostart with leases (a stale machine can win the
+  lease and discard newer writes). Scale the fleet with `fly scale count N`
+  (arn, write-capable) or `fly m clone --region …` (elsewhere, read-only).
+  `fly scale count` auto-provisions a `litefs` volume per new machine; each
+  machine must have its own volume.
+- The CP's reconciler runs only on the lease holder: `VARDE_PRIMARY_FILE`
+  points at LiteFS's `/litefs/.primary` and `VARDE_NODE_NAME` (set in
+  `litefs.yml`'s `exec`) names this node — see `litefs.yml`.
 
-## Secrets and env
+## Env
 
-| Var | Where | Notes |
-| --- | --- | --- |
-| `VARDE_DB` | `fly secrets` | `postgres://…` — required for multi-machine (sqlite is single-writer) |
-| `VARDE_PUBLIC_URL` | `fly secrets` | `https://cp.varde.games` — device-link verification base |
-| `VARDE_SIGNUP` | `fly secrets` | `invite` recommended for the hosted CP |
-| `VARDE_EMBEDDED_RELAY` / `VARDE_EMBEDDED_RELAY_ADDR` | optional | in-process QUIC relay; needs a dedicated IPv4 + UDP service block — not wired in this fly.toml (declared `--relay`s / fallback relays cover it for v1) |
+All non-secret config lives in `fly.toml [env]`: `VARDE_LISTEN` (app port,
+fronted by the LiteFS proxy on 8080), `VARDE_DB` (sqlite inside the FUSE
+mount), `VARDE_PUBLIC_URL`, `VARDE_SIGNUP`, `VARDE_PRIMARY_FILE`. Use
+`fly secrets set` for anything sensitive in the future
+(`VARDE_EMBEDDED_RELAY*` optional — needs a dedicated IPv4 + UDP service
+block, not wired here).
 
-## Known limits before scaling past 1 sustained machine
+## Operations
 
-- **Reconciler + scheduler run per-machine** — in-process tickers; at N>1
-  they double-fire. Their idempotency under concurrent runs is unverified, so
-  sustained multi-instance needs leader election (a Postgres advisory lock)
-  or a `--role=worker` split first. The current profile mostly runs 1 warm
-  machine with suspended burst extras, which keeps exposure small but real
-  under sustained load.
-- `store.Open` sets `MaxOpenConns(1)` — a sqlite-era safety that serializes
-  every query; raise it for Postgres before real traffic.
+```bash
+fly ssh console                        # into any machine
+litefs export -name varde.db -o /tmp/varde.db   # consistent db snapshot
+litefs db -name varde.db               # txid + replication position
+```
+
+Volumes are per-machine and durable — a destroyed machine's volume keeps its
+copy; a *new* volume bootstraps from the cluster. Take periodic off-site
+backups of the export above (LiteFS is pre-1.0; belt and suspenders).
+
+## Known limits
+
+- **Failover loss window**: a primary dying mid-transaction can drop
+  uncommitted writes (replication lag). Small blast radius at this scale;
+  acceptable for v1.
+- Postgres mode remains fully supported (`VARDE_DB=postgres://…` + the
+  advisory-lock elector from PR #37) for deployments that outgrow LiteFS —
+  e.g. write load too heavy for a single writer, or non-fly hosting.
 - The embedded relay (UDP :3478) needs a dedicated IPv4 address and a
   `[[services]]` UDP block; left out until relays are actually needed.

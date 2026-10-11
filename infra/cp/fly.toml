@@ -1,26 +1,26 @@
-# fly.toml — hosted control plane (cp.varde.games)
+# fly.toml — hosted control plane (cp.varde.games), LiteFS sqlite edition
 # Deploy from this directory: `fly deploy` (uses infra/cp/Dockerfile).
 app = "varde-cp"
 primary_region = "arn" # Stockholm — closest to the core users (Norway)
 
 [env]
-  VARDE_LISTEN = ":8080"
+  VARDE_LISTEN = ":8081"          # app port; litefs proxy (8080) fronts it
+  VARDE_DB = "sqlite:///litefs/varde.db"
+  VARDE_PUBLIC_URL = "https://cp.varde.games"
+  VARDE_SIGNUP = "invite"
   VARDE_LOG_LEVEL = "info"
+  # Reconciler gate: only the LiteFS lease holder may run periodic writes
+  # (requires varde PRs #37+#38 — build VARDE_REF at those commits or later).
+  VARDE_PRIMARY_FILE = "/litefs/.primary"
 
-# The CP is plain HTTP request/response — no websockets — so the fly proxy can
-# saturate/suspend/start Machines freely. Sessions live in Postgres, so any
-# machine can serve any request.
+# Port 8080 is the LiteFS HTTP proxy, not the app: reads are served locally
+# with txid consistency, write requests are forwarded to the primary machine.
+# No autostop/autostart — fly's own LiteFS docs warn that suspending machines
+# can elect a stale primary and lose writes, so machines stay always-on and
+# capacity is managed with `fly scale count` / `fly m clone`.
 [http_service]
   internal_port = 8080
   force_https = true
-  # Scale down when idle: surplus Machines suspend (no billing for CPU) and the
-  # proxy wakes them again when the running ones hit the concurrency limit.
-  auto_stop_machines = "suspend"
-  auto_start_machines = true
-  # One always-on machine: agents heartbeat every 5s and linking can't wait on
-  # a cold start. Burst capacity beyond this is provisioned by machine count
-  # (`fly scale count N`) and stays suspended until load demands it.
-  min_machines_running = 1
   [http_service.concurrency]
     type = "requests"
     soft_limit = 200
@@ -28,11 +28,15 @@ primary_region = "arn" # Stockholm — closest to the core users (Norway)
   [[http_service.checks]]
     name = "healthz"
     method = "GET"
-    path = "/healthz"
+    path = "/healthz"             # litefs passthrough — machine-local check
     interval = 30000
     timeout = 5000
-    grace_period = "15s"
+    grace_period = "20s"          # litefs mount + primary connect on boot
+
+[mounts]
+  source = "litefs"               # fly volumes create litefs (one per machine)
+  destination = "/var/lib/litefs" # litefs data dir — the durable db store
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "512mb"                # litefs FUSE daemon + proxy + CP binary

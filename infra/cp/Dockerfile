@@ -32,9 +32,20 @@ RUN rm -rf apps/controlplane/internal/webui/dist \
  && CGO_ENABLED=0 go build -o /out/varde-control-plane .
 
 # --- Runtime ---------------------------------------------------------------
-FROM gcr.io/distroless/static-debian12:nonroot
+# debian-slim + fuse3 for LiteFS's FUSE mount; runs as root since mounting
+# /litefs requires it. litefs mount supervises the CP (see litefs.yml exec).
+FROM mirror.gcr.io/library/debian:bookworm-slim
+ARG TARGETARCH
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl fuse3 sqlite3 \
+ && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL \
+      "https://github.com/superfly/litefs/releases/download/v0.5.14/litefs-v0.5.14-linux-${TARGETARCH}.tar.gz" \
+      | tar -xz -C /usr/local/bin litefs
+COPY litefs.yml /etc/litefs.yml
+COPY --chmod=0755 varde-cp-entry /usr/local/bin/varde-cp-entry
 COPY --from=cp /out/varde-control-plane /varde-control-plane
 EXPOSE 8080
 # Flags are all env-driven: VARDE_LISTEN, VARDE_DB, VARDE_PUBLIC_URL,
 # VARDE_SIGNUP, VARDE_EMBEDDED_RELAY(_ADDR), VARDE_LOG_LEVEL (see main.go).
-ENTRYPOINT ["/varde-control-plane"]
+ENTRYPOINT ["litefs", "mount"]
