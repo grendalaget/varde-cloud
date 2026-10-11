@@ -237,8 +237,8 @@ export function TopologyExplorer() {
         </ToggleButtonGroup>
       </div>
 
-      {/* Phone layout: the same pieces, stacked so nothing can overlap. The
-          relay stays out of this view; the copy explains it. */}
+      {/* Phone layout: the same pieces, stacked so nothing can overlap and
+          every node stays tappable in both layouts. */}
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-1.5 sm:hidden">
         {mobileRow("cp", "Control plane", "Address book", {
           icon: (
@@ -252,6 +252,22 @@ export function TopologyExplorer() {
             >
               <rect x="4" y="5" width="16" height="14" rx="2.5" />
               <path d="M8 9h8M8 13h5" strokeLinecap="round" />
+            </svg>
+          ),
+        })}
+        <span aria-hidden className="h-3 w-px bg-surface-400" />
+        {mobileRow("relay", "Relay", "Encrypted detour", {
+          icon: (
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden
+              className="size-5 shrink-0 text-muted"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <rect x="6" y="10" width="12" height="9" rx="2" />
+              <path d="M9 10V7a3 3 0 0 1 6 0v3" strokeLinecap="round" />
             </svg>
           ),
         })}
