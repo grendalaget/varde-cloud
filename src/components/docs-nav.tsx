@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -43,17 +44,21 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function DocsNav() {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
   return (
     <>
       <aside className="sticky top-24 hidden max-h-[calc(100vh-8rem)] overflow-y-auto pr-6 md:block">
         <NavList />
       </aside>
-      <details className="mb-6 rounded-xl border border-separator bg-surface p-4 md:hidden">
+      <details
+        ref={detailsRef}
+        className="mb-6 rounded-xl border border-separator bg-surface p-4 md:hidden"
+      >
         <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
           Docs menu
         </summary>
         <div className="mt-4">
-          <NavList />
+          <NavList onNavigate={() => detailsRef.current?.removeAttribute("open")} />
         </div>
       </details>
     </>

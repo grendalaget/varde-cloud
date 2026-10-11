@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { SearchField } from "@heroui/react";
 
 // A-Z glossary of Varde terms, one plain sentence each. A filter input
 // narrows the list and a letter bar jumps to a section. Terms link into
@@ -241,27 +242,18 @@ export function GlossaryIndex() {
 
   return (
     <div className="my-8">
-      <div className="relative">
-        <svg
-          aria-hidden
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-        >
-          <circle cx="9" cy="9" r="6" />
-          <path d="m13.5 13.5 3.5 3.5" strokeLinecap="round" />
-        </svg>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filter terms, like: relay"
-          aria-label="Filter glossary terms"
-          className="w-full rounded-lg border border-separator bg-surface py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted focus:border-glod/60 focus:outline-none focus:ring-2 focus:ring-glod/25"
-        />
-      </div>
+      <SearchField
+        value={query}
+        onChange={setQuery}
+        aria-label="Filter glossary terms"
+        className="w-full"
+      >
+        <SearchField.Group>
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder="Filter terms, like: relay" />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
 
       {letters.length > 0 ? (
         <nav aria-label="Jump to letter" className="mt-4 flex flex-wrap gap-1.5">

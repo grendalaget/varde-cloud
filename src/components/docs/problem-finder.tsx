@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { Accordion, SearchField } from "@heroui/react";
 
 // Interactive troubleshooting index. Type how you would describe the problem
 // and the list narrows live; expand an entry for the fix. Every entry ends
@@ -294,98 +294,54 @@ function matchesQuery(p: Problem, terms: string[]) {
 
 export function ProblemFinder() {
   const [query, setQuery] = useState("");
-  const [openId, setOpenId] = useState<string | null>(null);
 
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   const matches = PROBLEMS.filter((p) => matchesQuery(p, terms));
 
   return (
     <div className="my-8">
-      <div className="relative">
-        <svg
-          aria-hidden
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-        >
-          <circle cx="9" cy="9" r="6" />
-          <path d="m13.5 13.5 3.5 3.5" strokeLinecap="round" />
-        </svg>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Describe the problem, like: can't connect"
-          aria-label="Search troubleshooting fixes"
-          className="w-full rounded-lg border border-separator bg-surface py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted focus:border-glod/60 focus:outline-none focus:ring-2 focus:ring-glod/25"
-        />
-      </div>
+      <SearchField
+        value={query}
+        onChange={setQuery}
+        aria-label="Search troubleshooting fixes"
+        className="w-full"
+      >
+        <SearchField.Group>
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder="Describe the problem, like: can't connect" />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
       <p className="mt-2 text-xs text-muted" aria-live="polite">
         {terms.length === 0
           ? `${PROBLEMS.length} common fixes`
           : `${matches.length} of ${PROBLEMS.length} fixes`}
       </p>
 
-      <ul className="mt-3 space-y-2">
-        {matches.map((p) => {
-          const open = openId === p.id;
-          return (
-            <li
-              key={p.id}
-              className="overflow-hidden rounded-lg border border-separator bg-surface"
-            >
-              <button
-                type="button"
-                aria-expanded={open}
-                aria-controls={`fix-${p.id}`}
-                onClick={() => setOpenId(open ? null : p.id)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-secondary"
-              >
-                <span className="text-sm font-semibold text-foreground">
-                  {p.title}
-                </span>
-                <svg
-                  aria-hidden
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className={`size-4 shrink-0 text-muted transition-transform motion-reduce:transition-none ${
-                    open ? "-rotate-180" : ""
-                  }`}
-                >
-                  <path
-                    d="m5 7.5 5 5 5-5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              {open ? (
-                <div id={`fix-${p.id}`} className="px-4 pb-4">
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="text-sm text-muted [&_a]:text-glod [&_a]:underline [&_code]:rounded [&_code]:bg-surface-tertiary [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.8em] [&_code]:text-foreground"
-                  >
-                    {p.body}
-                    <p className="mt-3 text-sm">
-                      Still stuck?{" "}
-                      <a href={ISSUES_URL} target="_blank" rel="noreferrer">
-                        Open an issue on GitHub
-                      </a>{" "}
-                      with your logs attached.
-                    </p>
-                  </motion.div>
-                </div>
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
+      <Accordion variant="surface" allowsMultipleExpanded className="mt-3">
+        {matches.map((p) => (
+          <Accordion.Item key={p.id} id={p.id}>
+            <Accordion.Heading>
+              <Accordion.Trigger>
+                {p.title}
+                <Accordion.Indicator />
+              </Accordion.Trigger>
+            </Accordion.Heading>
+            <Accordion.Panel>
+              <Accordion.Body className="text-sm text-muted [&_a]:text-glod [&_a]:underline [&_code]:rounded [&_code]:bg-surface-tertiary [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.8em] [&_code]:text-foreground">
+                {p.body}
+                <p className="mt-3 text-sm">
+                  Still stuck?{" "}
+                  <a href={ISSUES_URL} target="_blank" rel="noreferrer">
+                    Open an issue on GitHub
+                  </a>{" "}
+                  with your logs attached.
+                </p>
+              </Accordion.Body>
+            </Accordion.Panel>
+          </Accordion.Item>
+        ))}
+      </Accordion>
 
       {matches.length === 0 ? (
         <div className="rounded-lg border border-dashed border-separator p-6 text-center">
