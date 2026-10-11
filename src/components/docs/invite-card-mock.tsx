@@ -35,7 +35,7 @@ export function InviteCardMock() {
           <Button
             size="sm"
             onPress={() => void copy()}
-            className="shrink-0"
+            className="w-24 shrink-0"
           >
             {copied === "ok"
               ? "Copied"

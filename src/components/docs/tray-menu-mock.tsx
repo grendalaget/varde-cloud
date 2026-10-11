@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
 
 // Stylized Windows tray menu for Varde. Click a menu item to learn what it
 // does. `hosting` shows the menu while this PC is running a server: the
@@ -77,13 +76,11 @@ export function TrayMenuMock({ hosting = false }: { hosting?: boolean }) {
       <div className="mx-auto max-w-xs">
         {/* Fake taskbar corner */}
         <div className="mb-2 flex items-center justify-end gap-2 rounded-lg border border-separator bg-surface px-3 py-2">
-          <motion.span
+          <span
             aria-hidden
             className={`block size-3 rounded-sm ${
               hosting ? "bg-glod" : "bg-surface-tertiary"
             }`}
-            animate={hosting ? { opacity: [1, 0.6, 1] } : { opacity: 1 }}
-            transition={{ duration: 3, repeat: hosting ? Infinity : 0 }}
             title={hosting ? "Hosting" : "Varde"}
           />
           <span className="text-xs text-muted">12:42</span>
@@ -121,7 +118,7 @@ export function TrayMenuMock({ hosting = false }: { hosting?: boolean }) {
       </div>
       <figcaption
         aria-live="polite"
-        className="mt-4 min-h-6 text-center text-sm text-muted"
+        className="mt-4 flex min-h-10 items-start justify-center text-center text-sm text-muted"
       >
         {selected?.hint ??
           (hosting

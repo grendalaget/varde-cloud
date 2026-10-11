@@ -6,6 +6,8 @@ import { useState } from "react";
 
 // Stylized Windows SmartScreen dialog. Clicking "More info" reveals "Run
 // anyway", the same two clicks that get past the unsigned-installer warning.
+// The action area is fixed height so advancing the step never reflows the
+// page below.
 
 type Stage = "warn" | "more" | "ran";
 
@@ -22,58 +24,55 @@ export function SmartScreenMock() {
           Microsoft Defender SmartScreen prevented an unrecognized app from
           starting. Running this app might put your PC at risk.
         </p>
-        <div className="mt-3 space-y-1 text-xs">
-          <p className="text-muted">
-            App: <span className="text-foreground">VardeSetup.exe</span>
-          </p>
-          <p className="text-muted">
-            Publisher: <span className="text-foreground">Unknown publisher</span>
-          </p>
-        </div>
+        <p className="mt-3 text-xs text-muted">
+          App: <span className="text-foreground">VardeSetup.exe</span>
+          <span className="mx-2 text-muted/50">·</span>
+          Publisher: <span className="text-foreground">Unknown publisher</span>
+        </p>
 
-        {stage === "ran" ? (
-          <motion.p
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex items-center gap-2 text-xs font-medium text-success"
-          >
-            <span aria-hidden>✓</span> Setup launched. Varde installs and opens
-            its setup window.
-          </motion.p>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {stage === "warn" ? (
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onPress={() => setStage("more")}
-                  className="underline-offset-2 hover:underline"
-                >
-                  More info
-                </Button>
-                <Button variant="secondary" size="sm" isDisabled>
-                  Don&rsquo;t run
-                </Button>
-              </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-end gap-2"
+        <div className="mt-5 flex min-h-10 items-center justify-end">
+          {stage === "ran" ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-2 text-xs font-medium text-success"
+            >
+              <span aria-hidden>✓</span> Setup launched. Varde installs and
+              opens its setup window.
+            </motion.p>
+          ) : stage === "warn" ? (
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={() => setStage("more")}
+                className="underline-offset-2 hover:underline"
               >
-                <Button size="sm" onPress={() => setStage("ran")}>
-                  Run anyway
-                </Button>
-                <Button variant="secondary" size="sm" isDisabled>
-                  Don&rsquo;t run
-                </Button>
-              </motion.div>
-            )}
-          </div>
-        )}
+                More info
+              </Button>
+              <Button variant="secondary" size="sm" isDisabled>
+                Don&rsquo;t run
+              </Button>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.25 }}
+              className="flex gap-2"
+            >
+              <Button size="sm" onPress={() => setStage("ran")}>
+                Run anyway
+              </Button>
+              <Button variant="secondary" size="sm" isDisabled>
+                Don&rsquo;t run
+              </Button>
+            </motion.div>
+          )}
+        </div>
       </div>
-      <figcaption className="mt-3 text-center text-sm text-muted">
+      <figcaption className="mt-3 flex min-h-10 items-center justify-center text-center text-sm text-muted">
         {stage === "ran" ? (
           <Button
             variant="ghost"
