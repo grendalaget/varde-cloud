@@ -28,7 +28,7 @@ export default function DocsIndex() {
                 <Link
                   key={page.slug}
                   href={`/docs/${page.slug}`}
-                  className="group rounded-large border border-separator bg-surface-100 p-4 transition-colors hover:border-surface-400 hover:bg-surface-200"
+                  className="group rounded-2xl border border-separator bg-surface-100 p-4 transition-colors hover:border-surface-400 hover:bg-surface-200"
                 >
                   <p className="font-semibold text-foreground group-hover:text-glod">
                     {page.title}

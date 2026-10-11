@@ -23,7 +23,7 @@ export function Callout({
 }) {
   return (
     <aside
-      className={`my-6 rounded-large border px-4 py-3 text-sm leading-relaxed ${CALLOUT_STYLES[tone]}`}
+      className={`my-6 rounded-2xl border px-4 py-3 text-sm leading-relaxed ${CALLOUT_STYLES[tone]}`}
     >
       {title ? (
         <p className="mb-1 font-semibold text-foreground">{title}</p>
