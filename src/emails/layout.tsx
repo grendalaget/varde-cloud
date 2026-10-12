@@ -5,6 +5,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -41,13 +42,14 @@ const card: CSSProperties = {
   padding: "32px",
 };
 
-const wordmark: CSSProperties = {
+// Served from the site itself: same-domain assets keep sender reputation
+// consistent and there is no third-party host to depend on. PNG — SVG is
+// not rendered by major mail clients (Gmail included).
+const LOGO_URL = "https://varde.games/brand/varde-logo-dark.png";
+
+const logo: CSSProperties = {
+  display: "block",
   margin: "0 0 20px",
-  fontSize: "12px",
-  fontWeight: 700,
-  letterSpacing: "0.18em",
-  textTransform: "uppercase",
-  color: colors.take,
 };
 
 const title: CSSProperties = {
@@ -115,7 +117,13 @@ export function EmailLayout({
       <Preview>{preview}</Preview>
       <Body style={body}>
         <Container style={card}>
-          <Text style={wordmark}>Varde</Text>
+          <Img
+            src={LOGO_URL}
+            alt="Varde"
+            width={110}
+            height={34}
+            style={logo}
+          />
           <Heading as="h1" style={title}>
             {heading}
           </Heading>
