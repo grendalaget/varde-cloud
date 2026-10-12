@@ -95,14 +95,17 @@ const polarPlugins = polarCore
  */
 export const auth = betterAuth({
   appName: "Varde",
-  // Explicit BETTER_AUTH_URL wins (production). On Vercel previews, fall back
-  // to the deployment's own URL so auth works on temp/preview domains; local
-  // dev falls back to localhost.
+  // Explicit BETTER_AUTH_URL wins. In production fall back to the canonical
+  // domain — VERCEL_URL is the *.vercel.app deployment URL, which must never
+  // end up in emailed verify/reset links. Previews fall back to their own
+  // deployment URL so auth works on temp domains; dev falls back to local.
   baseURL:
     process.env.BETTER_AUTH_URL ??
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"),
+    (process.env.VERCEL_ENV === "production"
+      ? "https://varde.games"
+      : process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000"),
   secret: process.env.BETTER_AUTH_SECRET,
   // Origins allowed to POST to the auth endpoints. The baseURL origin is
   // implied; cover the custom domain, its www variant, local dev, and
