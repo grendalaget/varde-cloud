@@ -1,7 +1,12 @@
 import { Navbar } from "@heroui-pro/react/navbar";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { Suspense } from "react";
+
+import { auth } from "@/lib/auth";
 
 import { Logo } from "./brand";
+import { NavSignOutMenuItem, NavUserMenu } from "./nav-user-menu";
 
 export const NAV_LINKS = [
   { href: "/#how-it-works", label: "How it works" },
@@ -10,6 +15,63 @@ export const NAV_LINKS = [
   { href: "/download", label: "Download" },
   { href: "/docs", label: "Docs" },
 ];
+
+function SignInItems() {
+  return (
+    <>
+      <Navbar.Item
+        href="/auth/sign-in"
+        className="text-sm text-muted transition-colors hover:text-foreground"
+      >
+        Sign in
+      </Navbar.Item>
+      <Navbar.Item
+        href="/download"
+        className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:bg-[#ff6f3d] active:scale-[0.96]"
+      >
+        Get started
+      </Navbar.Item>
+    </>
+  );
+}
+
+function SignInMenuItems() {
+  return (
+    <>
+      <Navbar.MenuItem href="/auth/sign-in">Sign in</Navbar.MenuItem>
+      <Navbar.MenuItem href="/download">Get started</Navbar.MenuItem>
+    </>
+  );
+}
+
+async function NavAuthItems() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return <SignInItems />;
+  }
+
+  const { name, email, image } = session.user;
+  return <NavUserMenu user={{ name, email, image }} />;
+}
+
+async function NavAuthMenuItems() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return <SignInMenuItems />;
+  }
+
+  return (
+    <>
+      <Navbar.MenuItem href="/account">
+        <span className="flex flex-col">
+          <span>Account</span>
+          <span className="text-xs text-muted">{session.user.email}</span>
+        </span>
+      </Navbar.MenuItem>
+      <NavSignOutMenuItem />
+    </>
+  );
+}
 
 export function SiteNav() {
   return (
@@ -44,18 +106,9 @@ export function SiteNav() {
         <Navbar.Spacer />
 
         <Navbar.Content className="hidden sm:flex">
-          <Navbar.Item
-            href="/auth/sign-in"
-            className="text-sm text-muted transition-colors hover:text-foreground"
-          >
-            Sign in
-          </Navbar.Item>
-          <Navbar.Item
-            href="/download"
-            className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:bg-[#ff6f3d] active:scale-[0.96]"
-          >
-            Get started
-          </Navbar.Item>
+          <Suspense fallback={<SignInItems />}>
+            <NavAuthItems />
+          </Suspense>
         </Navbar.Content>
 
         <Navbar.MenuToggle className="md:hidden" />
@@ -73,8 +126,9 @@ export function SiteNav() {
           >
             GitHub
           </Navbar.MenuItem>
-          <Navbar.MenuItem href="/auth/sign-in">Sign in</Navbar.MenuItem>
-          <Navbar.MenuItem href="/download">Get started</Navbar.MenuItem>
+          <Suspense fallback={<SignInMenuItems />}>
+            <NavAuthMenuItems />
+          </Suspense>
         </Navbar.Menu>
       </Navbar.Header>
     </Navbar>
