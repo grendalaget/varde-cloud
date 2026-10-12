@@ -6,18 +6,15 @@ export async function POST(req: Request) {
   const user = await cpUser();
   if (isResponse(user)) return user;
 
-  let body: { user_code?: string; group_id?: string; name?: string };
+  let body: { user_code?: string; group_id?: string; name?: string } | null;
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json(
-      { error: "validation", message: "invalid body" },
-      { status: 400 },
-    );
+    body = null;
   }
-  const userCode = (body.user_code ?? "").trim();
-  const name = (body.name ?? "").trim();
-  if (!userCode || !body.group_id || !name) {
+  const userCode = (body?.user_code ?? "").trim();
+  const name = (body?.name ?? "").trim();
+  if (!userCode || !body?.group_id || !name) {
     return Response.json(
       {
         error: "validation",

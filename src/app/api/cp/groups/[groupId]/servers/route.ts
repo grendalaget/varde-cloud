@@ -22,17 +22,19 @@ export async function POST(
   if (isResponse(user)) return user;
   const { groupId } = await params;
 
-  let body: { name?: string; game_id?: string; preferred_node_id?: string; start?: boolean };
+  let body: {
+    name?: string;
+    game_id?: string;
+    preferred_node_id?: string;
+    start?: boolean;
+  } | null;
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json(
-      { error: "validation", message: "invalid body" },
-      { status: 400 },
-    );
+    body = null;
   }
-  const name = (body.name ?? "").trim();
-  if (!name || name.length > 80 || !body.game_id) {
+  const name = (body?.name ?? "").trim();
+  if (!name || name.length > 80 || !body?.game_id) {
     return Response.json(
       { error: "validation", message: "name and game_id are required" },
       { status: 400 },

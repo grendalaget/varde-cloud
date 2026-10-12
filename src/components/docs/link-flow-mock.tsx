@@ -310,6 +310,9 @@ export function LinkFlowMock() {
                         <Label>Name in the group</Label>
                         <Input />
                       </TextField>
+                      {err ? (
+                        <p className="mt-3 text-xs text-danger">{err}</p>
+                      ) : null}
                       <div className="mt-4 flex gap-2">
                         <Button
                           onPress={() => void approve()}
@@ -321,7 +324,10 @@ export function LinkFlowMock() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onPress={() => setLink(null)}
+                          onPress={() => {
+                            setLink(null);
+                            setErr(null);
+                          }}
                         >
                           Back
                         </Button>

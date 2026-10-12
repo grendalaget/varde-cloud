@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Card, Input, Label, TextField } from "@heroui/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { cpFetch, LiveHint, useDocsCp } from "./live-primitives";
 
@@ -34,10 +34,14 @@ export function JoinGroupCard() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [joined, setJoined] = useState<string | null>(null);
+  // Bumped on every edit — a stale lookup response can't resurrect a
+  // preview for a code that's no longer in the field.
+  const seq = useRef(0);
 
   const lookup = async () => {
     const code = inviteCode(value);
     if (!code) return;
+    const mine = ++seq.current;
     setBusy(true);
     setErr(null);
     setInvite(null);
@@ -45,15 +49,17 @@ export function JoinGroupCard() {
       const data = await cpFetch<{ invite: InvitePreview }>(
         `/api/cp/invites/${encodeURIComponent(code)}`,
       );
-      setInvite(data.invite);
+      if (mine === seq.current) setInvite(data.invite);
     } catch (e) {
-      setErr(
-        e instanceof Error
-          ? e.message
-          : "That invite link is invalid or has expired",
-      );
+      if (mine === seq.current) {
+        setErr(
+          e instanceof Error
+            ? e.message
+            : "That invite link is invalid or has expired",
+        );
+      }
     } finally {
-      setBusy(false);
+      if (mine === seq.current) setBusy(false);
     }
   };
 
@@ -111,6 +117,8 @@ export function JoinGroupCard() {
                 name="inviteLink"
                 value={value}
                 onChange={(v) => {
+                  seq.current += 1;
+                  setBusy(false);
                   setValue(v);
                   setInvite(null);
                   setErr(null);
