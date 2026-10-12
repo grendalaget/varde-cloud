@@ -11,7 +11,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "./db";
 import * as schema from "../db/schema";
-import { sendPasswordResetEmail } from "./email";
+import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
 
 // Sync a Polar subscription's product/status onto our user's `plan` field.
@@ -25,8 +25,19 @@ async function syncPlan(userId: string | null | undefined, active: boolean, prod
     .where(eq(schema.user.id, userId));
 }
 
-const RESET_MAIL_COOLDOWN_MS = 5 * 60 * 1000;
-const resetMailSentAt = new Map<string, number>();
+// Per-account mail cooldown: unauthenticated callers can mint mail tokens at
+// will (reset links, verification links via sign-in attempts and the resend
+// endpoint), so cap how often we actually send. In-memory is a best-effort
+// limit (per warm instance); Resend-side rate rules are the durable backstop.
+const MAIL_COOLDOWN_MS = 5 * 60 * 1000;
+const mailSentAt = new Map<string, number>();
+
+function mailCooldownActive(key: string) {
+  const last = mailSentAt.get(key);
+  if (last && Date.now() - last < MAIL_COOLDOWN_MS) return true;
+  mailSentAt.set(key, Date.now());
+  return false;
+}
 
 const polarPlugins = polarCore
   ? [
@@ -107,17 +118,30 @@ export const auth = betterAuth({
     provider: "sqlite",
     schema,
   }),
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      if (mailCooldownActive(`verify:${user.email}`)) return;
+      await sendVerificationEmail(user.email, url);
+    },
+    // Verification mail goes out on sign-up and again whenever an unverified
+    // user tries to sign in — that retry is how pre-verification users
+    // recover access (see requireEmailVerification below).
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    // The verify link drops the user straight into a session, so the
+    // post-click redirect can land on a signed-in page.
+    autoSignInAfterVerification: true,
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    // Unverified users cannot sign in: sign-in attempts return
+    // EMAIL_NOT_VERIFIED (and, per sendOnSignIn, send a fresh link). Also
+    // makes sign-up skip its session and answer duplicate emails with a
+    // generic response instead of USER_ALREADY_EXISTS.
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
-      // Per-account mail cooldown: unauthenticated callers can mint reset
-      // tokens at will, so cap how often we actually send. In-memory is a
-      // best-effort limit (per warm instance); Resend-side rate rules are
-      // the durable backstop.
-      const last = resetMailSentAt.get(user.email);
-      if (last && Date.now() - last < RESET_MAIL_COOLDOWN_MS) return;
-      resetMailSentAt.set(user.email, Date.now());
+      if (mailCooldownActive(`reset:${user.email}`)) return;
       await sendPasswordResetEmail(user.email, url);
     },
   },

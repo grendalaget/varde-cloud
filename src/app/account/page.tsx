@@ -1,4 +1,4 @@
-import { Button, Card, Chip, Link } from "@heroui/react";
+import { Alert, Button, Card, Chip, Link } from "@heroui/react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -21,10 +21,14 @@ export const metadata: Metadata = {
   title: "Account",
 };
 
-export default function AccountPage() {
+export default function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   return (
     <Suspense fallback={<AccountShellFallback />}>
-      <AccountContent />
+      <AccountContent searchParams={searchParams} />
     </Suspense>
   );
 }
@@ -41,13 +45,18 @@ function AccountShellFallback() {
   );
 }
 
-async function AccountContent() {
+async function AccountContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     redirect("/auth/sign-in");
   }
 
   const { user } = session;
+  const justVerified = (await searchParams).verified === "1";
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 md:py-20">
@@ -57,6 +66,17 @@ async function AccountContent() {
         </h1>
         <p className="mt-2 text-muted">Signed in as {user.email}</p>
       </Reveal>
+
+      {justVerified ? (
+        <Alert status="success" className="mt-6">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Description>
+              Email verified. Your account is all set.
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
+      ) : null}
 
       <Stagger stagger={0.08} className="mt-10 grid gap-5 md:grid-cols-2">
         <Item>
