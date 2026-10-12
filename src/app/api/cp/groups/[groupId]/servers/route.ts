@@ -1,5 +1,5 @@
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
-import { withCp } from "@/lib/cp";
+import { CpError, withCp } from "@/lib/cp";
 
 interface CpServer {
   id: string;
@@ -41,7 +41,7 @@ export async function POST(
 
   try {
     const gid = encodeURIComponent(groupId);
-    const server = await withCp(user, async (cp) => {
+    const result = await withCp(user, async (cp) => {
       const created = await cp.post<CpServer>(`/v1/groups/${gid}/servers`, {
         name,
         game_id: body.game_id,
@@ -49,15 +49,24 @@ export async function POST(
           ? { preferred_node_id: body.preferred_node_id }
           : {}),
       });
-      if (body.start) {
-        return cp.post<CpServer>(
+      if (!body.start) return { server: created, startError: null };
+      // The server exists now even if start is rejected (e.g. no machine
+      // online to schedule it) — report both halves honestly.
+      try {
+        const started = await cp.post<CpServer>(
           `/v1/servers/${encodeURIComponent(created.id)}/start`,
           {},
         );
+        return { server: started, startError: null };
+      } catch (e) {
+        return {
+          server: created,
+          startError:
+            e instanceof CpError ? e.message : "could not start it yet",
+        };
       }
-      return created;
     });
-    return Response.json({ server }, { status: 201 });
+    return Response.json(result, { status: 201 });
   } catch (e) {
     return cpErrorResponse(e);
   }

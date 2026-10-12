@@ -76,6 +76,7 @@ export function CreateServerMock() {
   const [created, setCreated] = useState<{
     server: CreatedServer;
     nodeName: string | null;
+    startError: string | null;
   } | null>(null);
   const [copied, setCopied] = useState<"idle" | "ok" | "err">("idle");
 
@@ -126,21 +127,22 @@ export function CreateServerMock() {
     setBusy(true);
     setErr(null);
     try {
-      const data = await cpFetch<{ server: CreatedServer }>(
-        `/api/cp/groups/${encodeURIComponent(group.id)}/servers`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: name.trim(),
-            game_id: game,
-            start: startNow,
-            ...(validNodeId ? { preferred_node_id: validNodeId } : {}),
-          }),
-        },
-      );
+      const data = await cpFetch<{
+        server: CreatedServer;
+        startError: string | null;
+      }>(`/api/cp/groups/${encodeURIComponent(group.id)}/servers`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.trim(),
+          game_id: game,
+          start: startNow,
+          ...(validNodeId ? { preferred_node_id: validNodeId } : {}),
+        }),
+      });
       setCreated({
         server: data.server,
         nodeName: nodes.find((n) => n.id === validNodeId)?.name ?? null,
+        startError: data.startError,
       });
       setStage("created");
     } catch (e) {
@@ -152,8 +154,9 @@ export function CreateServerMock() {
 
   const address = created?.server.service?.loopback_ip ?? null;
   const running =
-    created?.server.desired_state === "running" ||
-    created?.server.observed_state === "running";
+    !created?.startError &&
+    (created?.server.desired_state === "running" ||
+      created?.server.observed_state === "running");
 
   return (
     <figure className="my-8">
@@ -192,7 +195,9 @@ export function CreateServerMock() {
               <p className="mt-2 text-xs text-muted">
                 {running
                   ? "A linked machine in your group picks it up and starts it — usually within a minute."
-                  : "Created but not started yet. Start it from the dashboard when you are ready."}
+                  : created.startError
+                    ? `Created, but it couldn't start yet: ${created.startError}. Start it from the dashboard when a machine is online.`
+                    : "Created but not started yet. Start it from the dashboard when you are ready."}
               </p>
               <div className="mt-5 rounded-lg border border-separator bg-surface-secondary p-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
@@ -325,6 +330,9 @@ export function CreateServerMock() {
                             (n) => (
                               <ListBox.Item key={n.id} id={n.id}>
                                 {n.name}
+                                {"online" in n && !n.online
+                                  ? " (offline)"
+                                  : ""}
                               </ListBox.Item>
                             ),
                           )}

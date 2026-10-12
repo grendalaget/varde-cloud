@@ -3,7 +3,12 @@
 import { Button, Input, Label, ListBox, Select, TextField } from "@heroui/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { useSession } from "@/lib/auth-client";
 
@@ -19,36 +24,84 @@ export interface CpGroup {
   role: "owner" | "admin" | "member";
 }
 
+// One shared snapshot across every demo on the page — a group created in
+// one demo is visible in the others, client-side back/forward navigation
+// never restores stale groups, and mounts within the TTL share one fetch.
+interface CpSnapshot {
+  userId: string;
+  enabled: boolean;
+  groups: CpGroup[];
+  at: number;
+}
+
+let shared: CpSnapshot | null = null;
+let inflight: Promise<unknown> | null = null;
+const listeners = new Set<() => void>();
+const STATE_TTL_MS = 30_000;
+
+function emit() {
+  listeners.forEach((l) => l());
+}
+
+function subscribe(l: () => void) {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+}
+
+function fetchState(userId: string): Promise<unknown> {
+  if (inflight) return inflight;
+  inflight = fetch("/api/cp/state", { cache: "no-store" })
+    .then((r) =>
+      r.ok ? r.json() : { enabled: false, groups: [] as CpGroup[] },
+    )
+    .then((d: { enabled: boolean; groups: CpGroup[] }) => {
+      shared = { userId, enabled: d.enabled, groups: d.groups, at: Date.now() };
+    })
+    .catch(() => {
+      shared = { userId, enabled: false, groups: [], at: Date.now() };
+    })
+    .finally(() => {
+      inflight = null;
+      emit();
+    });
+  return inflight;
+}
+
+function ensureFresh(userId: string) {
+  if (
+    !inflight &&
+    (!shared || shared.userId !== userId || Date.now() - shared.at > STATE_TTL_MS)
+  ) {
+    void fetchState(userId);
+  }
+}
+
 export function useDocsCp(): {
   status: CpStatus;
   groups: CpGroup[];
   refresh: () => void;
 } {
   const { data: session, isPending } = useSession();
-  // Keyed by user id so a sign-out/in cycle never shows the previous
-  // account's groups.
-  const [state, setState] = useState<{
-    userId: string;
-    enabled: boolean;
-    groups: CpGroup[];
-  } | null>(null);
+  const userId = session?.user.id ?? null;
+  const snap = useSyncExternalStore(
+    subscribe,
+    () => shared,
+    () => null as CpSnapshot | null,
+  );
 
-  const userId = session?.user.id;
-  const refresh = useCallback(() => {
-    if (!userId) return;
-    fetch("/api/cp/state", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { enabled: false, groups: [] }))
-      .then((d: { enabled: boolean; groups: CpGroup[] }) =>
-        setState({ userId, enabled: d.enabled, groups: d.groups }),
-      )
-      .catch(() => setState({ userId, enabled: false, groups: [] }));
+  useEffect(() => {
+    if (userId) ensureFresh(userId);
   }, [userId]);
 
-  const current = state && state.userId === userId ? state : null;
-  useEffect(() => {
-    if (userId && !current) refresh();
-  }, [userId, current, refresh]);
+  const refresh = useCallback(() => {
+    if (!userId) return;
+    shared = null;
+    ensureFresh(userId);
+  }, [userId]);
 
+  const current = userId && snap?.userId === userId ? snap : null;
   const groups = current?.groups ?? [];
   if (isPending) return { status: "loading", groups, refresh };
   if (!session) return { status: "signed-out", groups, refresh };
