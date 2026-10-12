@@ -15,6 +15,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 import {
+  AutoHeight,
   cpFetch,
   CreateGroupInline,
   GroupField,
@@ -26,7 +27,7 @@ import {
 // The dashboard "New server" form. Signed-in readers get the real thing —
 // it creates an actual server in their group on the hosted control plane.
 // Everyone else sees a static illustration plus a quiet sign-in hint. The
-// stage area is fixed height so creating the server never reflows the page.
+// stage area resizes to its content with an animated height transition.
 
 interface CatalogGame {
   id: string;
@@ -161,14 +162,13 @@ export function CreateServerMock() {
   return (
     <figure className="my-8">
       <div className="rounded-xl border border-separator bg-surface p-5">
-        <div className="h-[500px] overflow-y-auto sm:h-[470px]">
+        <AutoHeight>
           {stage === "created" && created ? (
             <motion.div
               key="created"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.25 }}
-              className="flex h-full flex-col justify-center"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-foreground">
@@ -239,7 +239,7 @@ export function CreateServerMock() {
               </Button>
             </motion.div>
           ) : (
-            <div className="flex h-full flex-col">
+            <div className="flex flex-col">
               <p className="text-sm font-semibold text-foreground">New server</p>
 
               {live && groups.length === 0 ? (
@@ -359,7 +359,7 @@ export function CreateServerMock() {
                     <p className="mt-3 text-xs text-danger">{err}</p>
                   ) : null}
 
-                  <div className="mt-auto flex justify-end gap-2 pt-5">
+                  <div className="mt-6 flex justify-end gap-2 pt-5">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -386,7 +386,7 @@ export function CreateServerMock() {
               )}
             </div>
           )}
-        </div>
+        </AutoHeight>
       </div>
       <figcaption className="mt-4 flex min-h-10 items-start justify-center text-center text-sm text-muted">
         {stage === "created" && created

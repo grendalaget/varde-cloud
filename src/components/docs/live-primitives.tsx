@@ -1,11 +1,14 @@
 "use client";
 
 import { Button, Input, Label, ListBox, Select, TextField } from "@heroui/react";
+import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -17,6 +20,35 @@ import { useSession } from "@/lib/auth-client";
 // illustration plus a quiet sign-in hint.
 
 export type CpStatus = "loading" | "signed-out" | "unavailable" | "live";
+
+// Stage container that resizes to its content — the demo cards grow and
+// shrink (form → result, an error line appearing) with a short animated
+// height transition instead of pinning a fixed height.
+export function AutoHeight({ children }: { children: React.ReactNode }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const measure = () => setHeight(el.getBoundingClientRect().height);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <motion.div
+      className="overflow-hidden"
+      initial={false}
+      animate={{ height: height ?? "auto" }}
+      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+    >
+      <div ref={contentRef}>{children}</div>
+    </motion.div>
+  );
+}
 
 export interface CpGroup {
   id: string;
