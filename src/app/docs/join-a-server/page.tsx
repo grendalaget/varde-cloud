@@ -11,6 +11,7 @@ import {
   Steps,
 } from "@/components/docs-primitives";
 import { DocChecklist } from "@/components/docs/doc-checklist";
+import { JoinGroupCard } from "@/components/docs/join-group-card";
 import { LinkFlowMock } from "@/components/docs/link-flow-mock";
 import { SmartScreenMock } from "@/components/docs/smartscreen-mock";
 import { TrayMenuMock } from "@/components/docs/tray-menu-mock";
@@ -93,6 +94,7 @@ export default function JoinAServer() {
           </strong>{" "}
           and press <strong className="text-foreground">Join group</strong>. The
           full link works, and so does just the code at the end of it.
+          <JoinGroupCard />
         </Step>
         <Step n={5} title="Copy the address and play">
           Open the server in your dashboard and copy its{" "}
