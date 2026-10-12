@@ -36,6 +36,10 @@ interface CpSnapshot {
 
 let shared: CpSnapshot | null = null;
 let inflight: Promise<unknown> | null = null;
+// Whose fetch is running and who asked while it ran — an account switch or
+// a refresh() during a flight queues one follow-up instead of being lost.
+let inflightUser: string | null = null;
+let queuedUser: string | null = null;
 const listeners = new Set<() => void>();
 const STATE_TTL_MS = 30_000;
 
@@ -51,7 +55,11 @@ function subscribe(l: () => void) {
 }
 
 function fetchState(userId: string): Promise<unknown> {
-  if (inflight) return inflight;
+  if (inflight) {
+    queuedUser = userId;
+    return inflight;
+  }
+  inflightUser = userId;
   inflight = fetch("/api/cp/state", { cache: "no-store" })
     .then((r) =>
       r.ok ? r.json() : { enabled: false, groups: [] as CpGroup[] },
@@ -64,18 +72,27 @@ function fetchState(userId: string): Promise<unknown> {
     })
     .finally(() => {
       inflight = null;
+      inflightUser = null;
       emit();
+      const next = queuedUser;
+      queuedUser = null;
+      if (next) void fetchState(next);
     });
   return inflight;
 }
 
-function ensureFresh(userId: string) {
+function ensureFresh(userId: string, force = false) {
+  // Already fetching this user: nothing to do (force queues a follow-up).
+  if (inflight && inflightUser === userId && !force) return;
   if (
-    !inflight &&
-    (!shared || shared.userId !== userId || Date.now() - shared.at > STATE_TTL_MS)
+    !force &&
+    shared &&
+    shared.userId === userId &&
+    Date.now() - shared.at <= STATE_TTL_MS
   ) {
-    void fetchState(userId);
+    return;
   }
+  void fetchState(userId);
 }
 
 export function useDocsCp(): {
@@ -98,7 +115,7 @@ export function useDocsCp(): {
   const refresh = useCallback(() => {
     if (!userId) return;
     shared = null;
-    ensureFresh(userId);
+    ensureFresh(userId, true);
   }, [userId]);
 
   const current = userId && snap?.userId === userId ? snap : null;

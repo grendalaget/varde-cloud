@@ -59,12 +59,15 @@ export function JoinGroupCard() {
         );
       }
     } finally {
-      if (mine === seq.current) setBusy(false);
+      // Stale completions still release the button — the seq guard above
+      // is what keeps them from writing preview/error state.
+      setBusy(false);
     }
   };
 
   const accept = async () => {
     if (!invite) return;
+    const mine = seq.current;
     setBusy(true);
     setErr(null);
     try {
@@ -72,9 +75,11 @@ export function JoinGroupCard() {
         `/api/cp/invites/${encodeURIComponent(invite.code)}/accept`,
         { method: "POST", body: JSON.stringify({}) },
       );
+      // The join happened even if the reader kept typing — tell them, but
+      // leave an edited field alone. The consumed invite clears either way.
       setJoined(invite.group_name);
       setInvite(null);
-      setValue("");
+      if (mine === seq.current) setValue("");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not join the group");
     } finally {
@@ -118,7 +123,6 @@ export function JoinGroupCard() {
                 value={value}
                 onChange={(v) => {
                   seq.current += 1;
-                  setBusy(false);
                   setValue(v);
                   setInvite(null);
                   setErr(null);
