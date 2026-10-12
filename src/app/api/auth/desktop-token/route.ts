@@ -5,10 +5,12 @@ import { federationSecret, mintDesktopToken } from "@/lib/federation";
 // Mints the short-lived token the desktop exchanges at the control plane.
 // Session-gated on both methods; the bearer never lands in page markup or
 // GET logs (it only appears in a redirect Location or a POST response).
-async function desktopToken(): Promise<string | Response> {
+async function desktopToken(
+  unauthenticated: () => Response,
+): Promise<string | Response> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
-    return Response.json({ error: "Sign in first" }, { status: 401 });
+    return unauthenticated();
   }
   const secret = federationSecret();
   if (!secret) {
@@ -24,7 +26,11 @@ async function desktopToken(): Promise<string | Response> {
 // activation so the browser's app-launch prompt can't be lost to a slow
 // token request — and the 302 hands off to the OS protocol handler.
 export async function GET() {
-  const r = await desktopToken();
+  // A signed-out/expired click lands back on sign-in (which returns here),
+  // not on a JSON error page with no path forward.
+  const r = await desktopToken(() =>
+    Response.redirect("/auth/sign-in?next=/auth/desktop"),
+  );
   return typeof r === "string"
     ? Response.redirect(`varde://auth/callback?token=${r}`)
     : r;
@@ -33,7 +39,9 @@ export async function GET() {
 // JSON variant for the auto-open attempt on page load: the client hands the
 // returned URL to window.location itself so it can offer a retry on error.
 export async function POST() {
-  const r = await desktopToken();
+  const r = await desktopToken(() =>
+    Response.json({ error: "Sign in first" }, { status: 401 }),
+  );
   return typeof r === "string"
     ? Response.json({ url: `varde://auth/callback?token=${r}` })
     : r;

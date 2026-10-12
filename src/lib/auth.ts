@@ -11,6 +11,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "./db";
 import * as schema from "../db/schema";
+import { sendPasswordResetEmail } from "./email";
 import { polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
 
 // Sync a Polar subscription's product/status onto our user's `plan` field.
@@ -23,6 +24,9 @@ async function syncPlan(userId: string | null | undefined, active: boolean, prod
     .set({ plan: active && productId ? planForProduct(productId) : "free" })
     .where(eq(schema.user.id, userId));
 }
+
+const RESET_MAIL_COOLDOWN_MS = 5 * 60 * 1000;
+const resetMailSentAt = new Map<string, number>();
 
 const polarPlugins = polarCore
   ? [
@@ -106,6 +110,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    sendResetPassword: async ({ user, url }) => {
+      // Per-account mail cooldown: unauthenticated callers can mint reset
+      // tokens at will, so cap how often we actually send. In-memory is a
+      // best-effort limit (per warm instance); Resend-side rate rules are
+      // the durable backstop.
+      const last = resetMailSentAt.get(user.email);
+      if (last && Date.now() - last < RESET_MAIL_COOLDOWN_MS) return;
+      resetMailSentAt.set(user.email, Date.now());
+      await sendPasswordResetEmail(user.email, url);
+    },
   },
   user: {
     additionalFields: {

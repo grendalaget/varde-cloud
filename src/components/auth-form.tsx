@@ -88,6 +88,16 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           />
           <FieldError />
         </TextField>
+        {isSignUp ? null : (
+          <div className="-mt-2 text-right text-sm">
+            <Link
+              href={authHref("/auth/forgot")}
+              className="text-muted underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        )}
 
         {error ? (
           <Alert status="danger" role="alert" className="vd-shake">
