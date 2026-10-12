@@ -10,7 +10,7 @@ import { createElement, type ComponentType } from "react";
 import { PasswordResetEmail } from "../emails/password-reset";
 import { VerifyEmail } from "../emails/verify-email";
 
-const FROM = process.env.EMAIL_FROM ?? "Varde <hello@varde.games>";
+const FROM = process.env.EMAIL_FROM ?? "Varde <spawn@varde.games>";
 
 async function send(
   to: string,
