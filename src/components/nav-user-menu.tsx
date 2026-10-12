@@ -55,7 +55,13 @@ export function NavUserMenu({ user }: { user: NavUser }) {
             }
             if (key === "sign-out") {
               setSigningOut(true);
-              await authClient.signOut();
+              try {
+                const res = await authClient.signOut();
+                if (res?.error) throw res.error;
+              } catch {
+                setSigningOut(false);
+                return;
+              }
               router.push("/");
               router.refresh();
             }
@@ -101,8 +107,15 @@ export function NavSignOutMenuItem() {
       onClick={async () => {
         if (signingOut) return;
         setSigningOut(true);
+        try {
+          const res = await authClient.signOut();
+          if (res?.error) throw res.error;
+        } catch {
+          // Keep the menu open so Sign out is retryable.
+          setSigningOut(false);
+          return;
+        }
         setMenuOpen(false);
-        await authClient.signOut();
         router.push("/");
         router.refresh();
       }}
