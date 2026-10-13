@@ -27,8 +27,16 @@ export class CpError extends Error {
 
 // Federation can't produce a CP session: secret unset, CP not in federated
 // mode, or unreachable. Distinct from a CP error — callers show the calm
-// "unavailable" state rather than an error.
-export class CpUnavailable extends Error {}
+// "unavailable" state rather than an error. `message` is what a visitor
+// reads; `detail` stays server-side for logs.
+export class CpUnavailable extends Error {
+  constructor(
+    public detail: string,
+    opts?: { cause?: unknown },
+  ) {
+    super("The Varde service is unreachable right now. Try again in a moment.", opts);
+  }
+}
 
 type SessionUser = { id: string; email?: string | null; name?: string | null };
 
@@ -46,7 +54,7 @@ async function exchange(user: SessionUser): Promise<string> {
       cache: "no-store",
     });
   } catch (e) {
-    throw new CpUnavailable(`control plane unreachable: ${e}`);
+    throw new CpUnavailable("auth exchange failed", { cause: e });
   }
   if (res.status === 404) throw new CpUnavailable("federation is not enabled");
   if (!res.ok) {
@@ -88,7 +96,7 @@ async function call<T>(
       cache: "no-store",
     });
   } catch (e) {
-    throw new CpUnavailable(`control plane unreachable: ${e}`);
+    throw new CpUnavailable(`api call failed: ${method} ${path}`, { cause: e });
   }
   if (!res.ok) {
     const body2 = (await res.json().catch(() => null)) as {
@@ -98,7 +106,7 @@ async function call<T>(
     throw new CpError(
       res.status,
       body2?.code ?? "error",
-      body2?.message ?? `control plane error ${res.status}`,
+      body2?.message ?? "Something went wrong on the Varde service. Try again.",
     );
   }
   if (res.status === 204) return undefined as T;

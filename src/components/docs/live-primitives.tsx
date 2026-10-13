@@ -292,18 +292,23 @@ export async function cpFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(path, {
-    ...init,
-    headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      ...init,
+      headers: {
+        ...(init?.body ? { "Content-Type": "application/json" } : {}),
+        ...init?.headers,
+      },
+    });
+  } catch {
+    throw new Error("Couldn't reach the site. Check your connection and try again.");
+  }
   const data = (await res.json().catch(() => ({}))) as T & {
     message?: string;
   };
   if (!res.ok) {
-    throw new Error(data.message ?? `Something went wrong (${res.status})`);
+    throw new Error(data.message ?? "Something went wrong. Try again.");
   }
   return data;
 }
