@@ -11,6 +11,26 @@ interface CpServer {
   preferred_node_id?: string | null;
 }
 
+// Servers in the group — the account dashboard lists them with their state.
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ groupId: string }> },
+) {
+  const user = await cpUser();
+  if (isResponse(user)) return user;
+  const { groupId } = await params;
+  try {
+    const data = await withCp(user, (cp) =>
+      cp.get<{ servers: unknown[] }>(
+        `/v1/groups/${encodeURIComponent(groupId)}/servers`,
+      ),
+    );
+    return Response.json(data);
+  } catch (e) {
+    return cpErrorResponse(e);
+  }
+}
+
 // Create a real server on the hosted CP. `start: true` additionally calls
 // /v1/servers/{id}/start — the CP creates servers stopped by default, and a
 // linked machine picks it up from there.
