@@ -15,7 +15,7 @@ const DESCRIPTION =
   "Peer-hosted game servers for groups of friends. Replicated saves, automatic failover, and a stable address for every server, with optional always-on cloud anchors.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://varde.games"),
+  metadataBase: new URL("https://www.varde.games"),
   title: {
     default: "Varde | Game servers built by many hands",
     template: "%s | Varde",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Varde | Game servers built by many hands",
     description: DESCRIPTION,
-    url: "https://varde.games",
+    url: "https://www.varde.games",
     siteName: "Varde",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "Varde" }],
     type: "website",

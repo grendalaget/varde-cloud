@@ -45,7 +45,7 @@ const card: CSSProperties = {
 // Served from the site itself: same-domain assets keep sender reputation
 // consistent and there is no third-party host to depend on. PNG — SVG is
 // not rendered by major mail clients (Gmail included).
-const LOGO_URL = "https://varde.games/brand/varde-logo-dark.png";
+const LOGO_URL = "https://www.varde.games/brand/varde-logo-dark.png";
 
 const logo: CSSProperties = {
   display: "block",

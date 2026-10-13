@@ -100,11 +100,13 @@ const polarPlugins = polarCore
 const baseURL =
   process.env.BETTER_AUTH_URL ??
   (process.env.VERCEL_ENV === "production"
-    ? "https://varde.games"
+    ? "https://www.varde.games"
     : process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000");
 
+// Emailed links point at the canonical www host: apex 308-redirects to www,
+// and linking straight there keeps verify/reset clicks off the redirect hop.
 // Domain-wide session cookies let cp.varde.games recognize a varde.games
 // sign-in with no second login. Only on the real domain — previews and local
 // dev keep host-scoped cookies. A Vercel preview can point BETTER_AUTH_URL at

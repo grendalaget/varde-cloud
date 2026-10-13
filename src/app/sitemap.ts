@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { ALL_DOCS_PAGES } from "@/lib/docs-nav";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://varde.games";
+  const base = "https://www.varde.games";
   return [
     { url: base, changeFrequency: "weekly", priority: 1 },
     { url: `${base}/pricing`, changeFrequency: "monthly", priority: 0.8 },
