@@ -1,8 +1,8 @@
 "use client";
 
 import {
+  Alert,
   Button,
-  FieldError,
   Input,
   Label,
   Spinner,
@@ -34,10 +34,16 @@ export function EditProfile({
   const save = async () => {
     setBusy(true);
     setErr(null);
+    const img = newImage.trim();
+    if (img && !/^(https?:\/\/|\/)\S+$/i.test(img)) {
+      setErr("Avatar must be a full URL (https://…) or a path starting with /");
+      setBusy(false);
+      return;
+    }
     try {
       const res = await authClient.updateUser({
         name: newName.trim(),
-        image: newImage.trim() || null,
+        image: img || null,
       });
       if (res.error) {
         setErr(res.error.message ?? "Could not save your profile");
@@ -103,7 +109,14 @@ export function EditProfile({
         <p className="text-sm text-muted">Email</p>
         <p className="mt-0.5 text-sm text-foreground">{email}</p>
       </div>
-      {err ? <FieldError>{err}</FieldError> : null}
+      {err ? (
+        <Alert status="danger" role="alert">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Description>{err}</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      ) : null}
       <div className="flex gap-3">
         <Button type="submit" size="sm" isPending={busy} isDisabled={!newName.trim()}>
           {busy ? <Spinner color="current" size="sm" /> : null}
