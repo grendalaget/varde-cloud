@@ -41,8 +41,24 @@ interface CpServer {
 }
 
 interface GroupDetail {
-  nodes: CpNode[];
-  servers: CpServer[];
+  nodes: CpNode[] | null; // null = fetch failed
+  servers: CpServer[] | null;
+}
+
+// Accepts a bare code ("x7k2m9") or a pasted invite link
+// ("cp.varde.games/invite/x7k2m9", "...?code=x7k2m9").
+function parseInviteCode(raw: string): string {
+  const t = raw.trim();
+  if (!t || (!t.includes("/") && !t.includes("?"))) return t;
+  try {
+    const u = new URL(t.includes("://") ? t : `https://${t}`);
+    const q = u.searchParams.get("code");
+    if (q) return q.trim();
+    const segs = u.pathname.split("/").filter(Boolean);
+    return segs[segs.length - 1] ?? t;
+  } catch {
+    return t;
+  }
 }
 
 const STATE_COLORS: Record<string, "success" | "warning" | "danger" | "default"> = {
@@ -88,11 +104,12 @@ export function HostingDashboard() {
             fetch(`/api/cp/groups/${gid}/servers`, { cache: "no-store" }),
           ]);
           const nodes = nodesRes.ok
-            ? ((await nodesRes.json()) as { nodes?: CpNode[] }).nodes ?? []
-            : [];
+            ? (((await nodesRes.json()) as { nodes?: CpNode[] }).nodes ?? null)
+            : null;
           const servers = serversRes.ok
-            ? ((await serversRes.json()) as { servers?: CpServer[] }).servers ?? []
-            : [];
+            ? (((await serversRes.json()) as { servers?: CpServer[] }).servers ??
+                null)
+            : null;
           return [g.id, { nodes, servers }] as const;
         }),
       );
@@ -105,6 +122,8 @@ export function HostingDashboard() {
 
   useEffect(() => {
     queueMicrotask(() => void load());
+    const id = setInterval(() => void load(), 30_000);
+    return () => clearInterval(id);
   }, [load]);
 
   if (needsLink) {
@@ -183,6 +202,10 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
           <div className="mt-3 flex items-center gap-2 text-sm text-muted">
             <Spinner size="sm" /> Loading…
           </div>
+        ) : detail.servers === null ? (
+          <p className="mt-3 text-sm text-danger">
+            Couldn&apos;t load servers — retrying automatically.
+          </p>
         ) : detail.servers.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
             No servers yet — create one from the Varde app on any linked
@@ -225,6 +248,10 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
           <div className="mt-3 flex items-center gap-2 text-sm text-muted">
             <Spinner size="sm" /> Loading…
           </div>
+        ) : detail.nodes === null ? (
+          <p className="mt-3 text-sm text-danger">
+            Couldn&apos;t load machines — retrying automatically.
+          </p>
         ) : detail.nodes.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
             No machines linked — install Varde on a computer and link it to add
@@ -336,7 +363,7 @@ function JoinInline({ onJoined }: { onJoined: () => void }) {
     setErr(null);
     try {
       const res = await fetch(
-        `/api/cp/invites/${encodeURIComponent(code.trim())}/accept`,
+        `/api/cp/invites/${encodeURIComponent(parseInviteCode(code))}/accept`,
         { method: "POST" },
       );
       if (!res.ok) {
