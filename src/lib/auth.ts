@@ -93,19 +93,28 @@ const polarPlugins = polarCore
  * Billing (Polar) is wired but dormant until POLAR_ACCESS_TOKEN + product
  * IDs are set; see src/lib/polar.ts.
  */
+// Explicit BETTER_AUTH_URL wins. In production fall back to the canonical
+// domain — VERCEL_URL is the *.vercel.app deployment URL, which must never
+// end up in emailed verify/reset links. Previews fall back to their own
+// deployment URL so auth works on temp domains; dev falls back to local.
+const baseURL =
+  process.env.BETTER_AUTH_URL ??
+  (process.env.VERCEL_ENV === "production"
+    ? "https://varde.games"
+    : process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
+
+// Domain-wide session cookies let cp.varde.games recognize a varde.games
+// sign-in with no second login. Only on the real domain — previews and local
+// dev keep host-scoped cookies.
+const baseHost = new URL(baseURL).hostname;
+const shareAcrossSubdomains =
+  baseHost === "varde.games" || baseHost.endsWith(".varde.games");
+
 export const auth = betterAuth({
   appName: "Varde",
-  // Explicit BETTER_AUTH_URL wins. In production fall back to the canonical
-  // domain — VERCEL_URL is the *.vercel.app deployment URL, which must never
-  // end up in emailed verify/reset links. Previews fall back to their own
-  // deployment URL so auth works on temp domains; dev falls back to local.
-  baseURL:
-    process.env.BETTER_AUTH_URL ??
-    (process.env.VERCEL_ENV === "production"
-      ? "https://varde.games"
-      : process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000"),
+  baseURL,
   secret: process.env.BETTER_AUTH_SECRET,
   // Origins allowed to POST to the auth endpoints. The baseURL origin is
   // implied; cover the custom domain, its www variant, local dev, and
@@ -146,6 +155,12 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       if (mailCooldownActive(`reset:${user.email}`)) return;
       await sendPasswordResetEmail(user.email, url);
+    },
+  },
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: shareAcrossSubdomains,
+      domain: "varde.games",
     },
   },
   user: {
