@@ -27,6 +27,7 @@ export function isResponse(x: unknown): x is Response {
 
 export function cpErrorResponse(e: unknown): Response {
   if (e instanceof CpUnavailable) {
+    console.error(`cp unavailable: ${e.detail}`, e.cause ?? "");
     return Response.json({ error: "unavailable", message: e.message }, { status: 503 });
   }
   if (e instanceof CpError) {
