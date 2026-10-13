@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { EditProfile } from "@/components/edit-profile";
 import { HostingDashboard } from "@/components/hosting-dashboard";
 import { PortalButton } from "@/components/portal-button";
 import { Item, Reveal, Stagger } from "@/components/reveal";
@@ -81,15 +82,12 @@ async function AccountContent({
         <Item>
           <Card className="h-full rounded-2xl border border-separator bg-surface p-6">
             <h2 className="font-display text-lg font-semibold">Profile</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="text-muted">Name</dt>
-                <dd className="mt-0.5 text-foreground">{user.name || "Not set"}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Email</dt>
-                <dd className="mt-0.5 text-foreground">{user.email}</dd>
-              </div>
+            <EditProfile
+              name={user.name}
+              email={user.email}
+              image={user.image}
+            />
+            <dl className="mt-3 text-sm">
               <div>
                 <dt className="text-muted">Member since</dt>
                 <dd className="mt-0.5 text-foreground">
