@@ -67,16 +67,35 @@ const prose: CSSProperties = {
   color: colors.muted,
 };
 
+// The mouve "raised" CTA (accent border + white inset highlights + drop
+// shadow + 5% white sheen) translated to email-safe inline styles: the
+// border and the lighter top edge survive every client, and the sheen
+// gradient and shadow stack layer on top where supported.
 const cta: CSSProperties = {
   display: "inline-block",
   backgroundColor: colors.glod,
+  backgroundImage:
+    "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
   // Accent foreground is near-black on the site (--accent-foreground ≈ natt).
   color: colors.natt,
   textDecoration: "none",
   fontWeight: 600,
   fontSize: "14px",
   padding: "12px 24px",
+  border: `1px solid ${colors.glod}`,
+  // The spec's `inset 0 1px 0 #fff3` top highlight, as a real border so it
+  // also shows in clients that ignore box-shadow.
+  borderTop: "1px solid rgba(255,255,255,0.2)",
   borderRadius: "32px",
+  boxShadow:
+    "inset 0 1px 0 0 rgba(255,255,255,0.2), " +
+    "inset 0 1px 2px -0.5px rgba(255,255,255,0.14), " +
+    "inset 0 8px 24px -4px rgba(255,255,255,0.10), " +
+    "0 0 0 1px rgba(0,0,0,0.4), " +
+    "0 1px 1px -0.5px rgba(0,0,0,0.3), " +
+    "0 3px 3px -1.5px rgba(0,0,0,0.3), " +
+    "0 6px 6px -3px rgba(0,0,0,0.3), " +
+    "0 12px 12px -6px rgba(0,0,0,0.3)",
 };
 
 const fallback: CSSProperties = {
