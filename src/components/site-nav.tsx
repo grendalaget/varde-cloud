@@ -1,9 +1,8 @@
 import { Navbar } from "@heroui-pro/react/navbar";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { auth } from "@/lib/auth";
+import { getServerSession } from "@/lib/session";
 
 import { Logo } from "./brand";
 import { NavSignOutMenuItem, NavUserMenu } from "./nav-user-menu";
@@ -45,7 +44,7 @@ function SignInMenuItems() {
 }
 
 async function NavAuthItems() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getServerSession();
   if (!session) {
     return <SignInItems />;
   }
@@ -55,7 +54,7 @@ async function NavAuthItems() {
 }
 
 async function NavAuthMenuItems() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getServerSession();
   if (!session) {
     return <SignInMenuItems />;
   }

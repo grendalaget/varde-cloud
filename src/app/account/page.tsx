@@ -1,6 +1,5 @@
 import { Alert, Button, Card, Chip, Link } from "@heroui/react";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -8,8 +7,8 @@ import { Mark } from "@/components/brand";
 import { PortalButton } from "@/components/portal-button";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 import { SignOutButton } from "@/components/sign-out-button";
-import { auth } from "@/lib/auth";
 import { BILLING_ENABLED } from "@/lib/polar";
+import { getServerSession } from "@/lib/session";
 
 const PLAN_LABELS: Record<string, string> = {
   free: "Free",
@@ -50,7 +49,7 @@ async function AccountContent({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getServerSession();
   if (!session) {
     redirect("/auth/sign-in");
   }

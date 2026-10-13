@@ -1,12 +1,11 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { federationSecret } from "@/lib/federation";
+import { getServerSession } from "@/lib/session";
 import { DesktopHandoff } from "./desktop-handoff";
 
 async function DesktopAuthContent() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getServerSession();
   if (!session) {
     redirect("/auth/sign-in?next=/auth/desktop");
   }
