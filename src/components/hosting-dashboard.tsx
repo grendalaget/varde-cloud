@@ -11,7 +11,7 @@ import {
   Spinner,
   TextField,
 } from "@heroui/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface CpGroup {
   id: string;
@@ -75,6 +75,10 @@ export function HostingDashboard() {
   const [details, setDetails] = useState<Record<string, GroupDetail>>({});
   const [error, setError] = useState<string | null>(null);
   const [needsLink, setNeedsLink] = useState(false);
+  const [stale, setStale] = useState(false);
+  // A transient refresh failure must not unmount loaded content (it would
+  // wipe in-progress form input) — only the initial load uses the error card.
+  const hasData = useRef(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -91,11 +95,17 @@ export function HostingDashboard() {
         message?: string;
       };
       if (!res.ok || !data.groups) {
-        setError(data.message ?? "Could not reach the control plane");
-        setGroups([]);
+        if (!hasData.current) {
+          setError(data.message ?? "Could not reach the control plane");
+          setGroups([]);
+        } else {
+          setStale(true);
+        }
         return;
       }
       setGroups(data.groups);
+      hasData.current = true;
+      setStale(false);
       const entries = await Promise.all(
         data.groups.map(async (g) => {
           const gid = encodeURIComponent(g.id);
@@ -115,8 +125,12 @@ export function HostingDashboard() {
       );
       setDetails(Object.fromEntries(entries));
     } catch {
-      setError("Could not reach the control plane");
-      setGroups([]);
+      if (!hasData.current) {
+        setError("Could not reach the control plane");
+        setGroups([]);
+      } else {
+        setStale(true);
+      }
     }
   }, []);
 
@@ -179,6 +193,11 @@ export function HostingDashboard() {
       {groups.map((g) => (
         <GroupCard key={g.id} group={g} detail={details[g.id]} />
       ))}
+      {stale ? (
+        <p className="text-xs text-muted">
+          Couldn&apos;t refresh — retrying automatically.
+        </p>
+      ) : null}
       <JoinInline onJoined={() => void load()} />
     </div>
   );
