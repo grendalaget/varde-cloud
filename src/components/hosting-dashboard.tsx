@@ -109,18 +109,22 @@ export function HostingDashboard() {
       const entries = await Promise.all(
         data.groups.map(async (g) => {
           const gid = encodeURIComponent(g.id);
-          const [nodesRes, serversRes] = await Promise.all([
-            fetch(`/api/cp/groups/${gid}/nodes`, { cache: "no-store" }),
-            fetch(`/api/cp/groups/${gid}/servers`, { cache: "no-store" }),
-          ]);
-          const nodes = nodesRes.ok
-            ? (((await nodesRes.json()) as { nodes?: CpNode[] }).nodes ?? null)
-            : null;
-          const servers = serversRes.ok
-            ? (((await serversRes.json()) as { servers?: CpServer[] }).servers ??
-                null)
-            : null;
-          return [g.id, { nodes, servers }] as const;
+          try {
+            const [nodesRes, serversRes] = await Promise.all([
+              fetch(`/api/cp/groups/${gid}/nodes`, { cache: "no-store" }),
+              fetch(`/api/cp/groups/${gid}/servers`, { cache: "no-store" }),
+            ]);
+            const nodes = nodesRes.ok
+              ? (((await nodesRes.json()) as { nodes?: CpNode[] }).nodes ?? null)
+              : null;
+            const servers = serversRes.ok
+              ? (((await serversRes.json()) as { servers?: CpServer[] })
+                  .servers ?? null)
+              : null;
+            return [g.id, { nodes, servers }] as const;
+          } catch {
+            return [g.id, { nodes: null, servers: null }] as const;
+          }
         }),
       );
       setDetails(Object.fromEntries(entries));
@@ -185,7 +189,7 @@ export function HostingDashboard() {
   }
 
   if (groups.length === 0) {
-    return <EmptyGroups onChanged={() => void load()} />;
+    return <EmptyGroups stale={stale} onChanged={() => void load()} />;
   }
 
   return (
@@ -309,7 +313,13 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
   );
 }
 
-function EmptyGroups({ onChanged }: { onChanged: () => void }) {
+function EmptyGroups({
+  stale,
+  onChanged,
+}: {
+  stale: boolean;
+  onChanged: () => void;
+}) {
   return (
     <Card className="rounded-2xl border border-separator bg-surface p-6">
       <h2 className="font-display text-lg font-semibold">Your groups</h2>
@@ -317,6 +327,11 @@ function EmptyGroups({ onChanged }: { onChanged: () => void }) {
         A group is where your game servers and machines live. Create one, or
         join a friend&apos;s with an invite code.
       </p>
+      {stale ? (
+        <p className="mt-3 text-xs text-muted">
+          Couldn&apos;t refresh — retrying automatically.
+        </p>
+      ) : null}
       <CreateGroupForm onCreated={onChanged} />
       <JoinInline onJoined={onChanged} />
     </Card>
