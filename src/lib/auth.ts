@@ -107,10 +107,13 @@ const baseURL =
 
 // Domain-wide session cookies let cp.varde.games recognize a varde.games
 // sign-in with no second login. Only on the real domain — previews and local
-// dev keep host-scoped cookies.
+// dev keep host-scoped cookies. A Vercel preview can point BETTER_AUTH_URL at
+// prod while serving *.vercel.app; a .varde.games cookie there is rejected by
+// browsers, which would break preview sign-ins, so the env must be prod too.
 const baseHost = new URL(baseURL).hostname;
 const shareAcrossSubdomains =
-  baseHost === "varde.games" || baseHost.endsWith(".varde.games");
+  (process.env.VERCEL_ENV === "production" || !process.env.VERCEL_ENV) &&
+  (baseHost === "varde.games" || baseHost.endsWith(".varde.games"));
 
 export const auth = betterAuth({
   appName: "Varde",

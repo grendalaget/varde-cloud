@@ -35,10 +35,18 @@ export async function GET(req: Request) {
   }
   const token = await mintDesktopToken(session.user, secret);
   const target = new URL(next, CP_BASE_URL);
+  // Belt on top of safePath: the redirect (and its token) must stay on the CP.
+  if (target.origin !== new URL(CP_BASE_URL).origin) {
+    return Response.json({ error: "Invalid next path" }, { status: 400 });
+  }
   target.hash = `fed_token=${token}`;
   return Response.redirect(target.toString(), 302);
 }
 
 function safePath(p: string | null): string {
-  return p && p.startsWith("/") && !p.startsWith("//") ? p : "/";
+  // Must start with "/", but "//" is scheme-relative and WHATWG URL treats
+  // "\" as a slash for http(s) URLs — both would escape the CP origin.
+  return p && p.startsWith("/") && !p.startsWith("//") && !p.includes("\\")
+    ? p
+    : "/";
 }
