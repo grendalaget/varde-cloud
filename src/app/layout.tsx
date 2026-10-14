@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { MotionProvider } from "@/components/reveal";
+import { NavRouter } from "@/components/nav-router";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -55,7 +56,9 @@ export default function RootLayout({
         className={`${inter.variable} bg-background font-sans text-foreground antialiased`}
       >
         <div className="flex min-h-screen flex-col">
-          <SiteNav />
+          <NavRouter>
+            <SiteNav />
+          </NavRouter>
           <div className="flex-1">
             <MotionProvider>{children}</MotionProvider>
           </div>

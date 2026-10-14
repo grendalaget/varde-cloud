@@ -72,6 +72,13 @@ async function NavAuthMenuItems() {
   );
 }
 
+// The fallback must never render signed-out controls for a possibly-signed-in
+// user — a neutral reserved box (avatar footprint) swaps into either state
+// without flashing the wrong one.
+function AuthItemsFallback() {
+  return <div className="size-7" aria-hidden="true" />;
+}
+
 export function SiteNav() {
   return (
     <Navbar className="border-b border-separator bg-natt/80 backdrop-blur-md">
@@ -105,7 +112,7 @@ export function SiteNav() {
         <Navbar.Spacer />
 
         <Navbar.Content className="hidden sm:flex">
-          <Suspense fallback={<SignInItems />}>
+          <Suspense fallback={<AuthItemsFallback />}>
             <NavAuthItems />
           </Suspense>
         </Navbar.Content>
@@ -125,7 +132,7 @@ export function SiteNav() {
           >
             GitHub
           </Navbar.MenuItem>
-          <Suspense fallback={<SignInMenuItems />}>
+          <Suspense fallback={null}>
             <NavAuthMenuItems />
           </Suspense>
         </Navbar.Menu>

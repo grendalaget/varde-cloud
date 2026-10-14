@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { headers } from "next/headers";
+import { cache } from "react";
 
 import { auth } from "./auth";
 
@@ -14,7 +15,8 @@ import { auth } from "./auth";
  *
  * Route handlers are always request-time: call `auth.api.getSession` directly.
  */
-export async function getServerSession() {
+// Per-request memoized — the nav's two auth zones share one Turso lookup.
+export const getServerSession = cache(async () => {
   await connection();
   return auth.api.getSession({ headers: await headers() });
-}
+});
