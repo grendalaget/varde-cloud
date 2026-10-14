@@ -134,7 +134,17 @@ export function HostingDashboard() {
           }
         }),
       );
-      if (isCurrent()) setDetails(Object.fromEntries(entries));
+      // A stale load's details are still valid per-group data: merge them for
+      // groups lacking details instead of discarding, but never overwrite
+      // fresher entries.
+      const detailMap = Object.fromEntries(entries);
+      setDetails((prev) => {
+        const next = { ...prev };
+        for (const [gid, d] of Object.entries(detailMap)) {
+          if (isCurrent() || !(gid in next)) next[gid] = d;
+        }
+        return next;
+      });
     } catch {
       if (!isCurrent()) return;
       if (!hasData.current) {
