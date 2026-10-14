@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Avatar,
   Button,
   Description,
   Dropdown,
@@ -32,6 +31,7 @@ function initialsFor(user: NavUser) {
 export function NavUserMenu({ user }: { user: NavUser }) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <Dropdown>
@@ -41,10 +41,20 @@ export function NavUserMenu({ user }: { user: NavUser }) {
         aria-label="Account menu"
         className="rounded-full"
       >
-        <Avatar className="size-7">
-          {user.image ? <Avatar.Image src={user.image} alt="" /> : null}
-          <Avatar.Fallback>{initialsFor(user)}</Avatar.Fallback>
-        </Avatar>
+        {/* Plain img, not Radix Avatar — it remounts on soft navigations and
+            re-checks load state, flashing the fallback for a frame or two. */}
+        <span className="relative flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-secondary text-[10px] font-semibold">
+          {initialsFor(user)}
+          {user.image && !imageFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.image}
+              alt=""
+              onError={() => setImageFailed(true)}
+              className="absolute inset-0 size-full object-cover"
+            />
+          ) : null}
+        </span>
       </Button>
       <Dropdown.Popover className="min-w-[220px]" placement="bottom end">
         <Dropdown.Menu
