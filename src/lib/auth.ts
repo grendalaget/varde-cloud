@@ -34,9 +34,13 @@ const mailSentAt = new Map<string, number>();
 
 function mailCooldownActive(key: string) {
   const last = mailSentAt.get(key);
-  if (last && Date.now() - last < MAIL_COOLDOWN_MS) return true;
+  return last !== undefined && Date.now() - last < MAIL_COOLDOWN_MS;
+}
+
+// Record only after the send actually succeeded — a send() throw must
+// not lock the user out of retrying while pretending the mail went out.
+function recordMailSent(key: string) {
   mailSentAt.set(key, Date.now());
-  return false;
 }
 
 const polarPlugins = polarCore
@@ -135,8 +139,10 @@ export const auth = betterAuth({
   }),
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      if (mailCooldownActive(`verify:${user.email}`)) return;
+      const key = `verify:${user.email}`;
+      if (mailCooldownActive(key)) return;
       await sendVerificationEmail(user.email, url);
+      recordMailSent(key);
     },
     // Verification mail goes out on sign-up and again whenever an unverified
     // user tries to sign in — that retry is how pre-verification users
@@ -156,8 +162,10 @@ export const auth = betterAuth({
     // generic response instead of USER_ALREADY_EXISTS.
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
-      if (mailCooldownActive(`reset:${user.email}`)) return;
+      const key = `reset:${user.email}`;
+      if (mailCooldownActive(key)) return;
       await sendPasswordResetEmail(user.email, url);
+      recordMailSent(key);
     },
   },
   advanced: {
