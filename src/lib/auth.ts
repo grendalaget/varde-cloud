@@ -32,15 +32,19 @@ async function syncPlan(userId: string | null | undefined, active: boolean, prod
 const MAIL_COOLDOWN_MS = 5 * 60 * 1000;
 const mailSentAt = new Map<string, number>();
 
+// Claims the cooldown slot atomically (check + stamp in one sync step, so
+// two concurrent requests can't both win). A send() throw must clear the
+// slot via clearMailSent or retries would be locked out while the caller
+// is told the mail went out.
 function mailCooldownActive(key: string) {
   const last = mailSentAt.get(key);
-  return last !== undefined && Date.now() - last < MAIL_COOLDOWN_MS;
+  if (last !== undefined && Date.now() - last < MAIL_COOLDOWN_MS) return true;
+  mailSentAt.set(key, Date.now());
+  return false;
 }
 
-// Record only after the send actually succeeded — a send() throw must
-// not lock the user out of retrying while pretending the mail went out.
-function recordMailSent(key: string) {
-  mailSentAt.set(key, Date.now());
+function clearMailSent(key: string) {
+  mailSentAt.delete(key);
 }
 
 const polarPlugins = polarCore
@@ -141,8 +145,12 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       const key = `verify:${user.email}`;
       if (mailCooldownActive(key)) return;
-      await sendVerificationEmail(user.email, url);
-      recordMailSent(key);
+      try {
+        await sendVerificationEmail(user.email, url);
+      } catch (err) {
+        clearMailSent(key);
+        throw err;
+      }
     },
     // Verification mail goes out on sign-up and again whenever an unverified
     // user tries to sign in — that retry is how pre-verification users
@@ -164,8 +172,12 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       const key = `reset:${user.email}`;
       if (mailCooldownActive(key)) return;
-      await sendPasswordResetEmail(user.email, url);
-      recordMailSent(key);
+      try {
+        await sendPasswordResetEmail(user.email, url);
+      } catch (err) {
+        clearMailSent(key);
+        throw err;
+      }
     },
   },
   advanced: {
