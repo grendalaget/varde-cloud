@@ -79,13 +79,19 @@ export function HostingDashboard() {
   // A transient refresh failure must not unmount loaded content (it would
   // wipe in-progress form input) — only the initial load uses the error card.
   const hasData = useRef(false);
+  // Latest-call wins: an older overlapping load (e.g. the 30s poll started
+  // before a create/join refresh) must not clobber a newer group list.
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    const isCurrent = () => seq === loadSeq.current;
     setError(null);
     setNeedsLink(false);
     try {
       const res = await fetch("/api/cp/groups", { cache: "no-store" });
       if (res.status === 409) {
+        if (!isCurrent()) return;
         setNeedsLink(true);
         setGroups([]);
         return;
@@ -94,6 +100,7 @@ export function HostingDashboard() {
         groups?: CpGroup[];
         message?: string;
       };
+      if (!isCurrent()) return;
       if (!res.ok || !data.groups) {
         if (!hasData.current) {
           setError(data.message ?? "Could not reach the control plane");
@@ -127,8 +134,19 @@ export function HostingDashboard() {
           }
         }),
       );
-      setDetails(Object.fromEntries(entries));
+      // A stale load's details are still valid per-group data: merge them for
+      // groups lacking details instead of discarding, but never overwrite
+      // fresher entries.
+      const detailMap = Object.fromEntries(entries);
+      setDetails((prev) => {
+        const next = { ...prev };
+        for (const [gid, d] of Object.entries(detailMap)) {
+          if (isCurrent() || !(gid in next)) next[gid] = d;
+        }
+        return next;
+      });
     } catch {
+      if (!isCurrent()) return;
       if (!hasData.current) {
         setError("Could not reach the control plane");
         setGroups([]);

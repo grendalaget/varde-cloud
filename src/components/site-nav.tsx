@@ -1,11 +1,11 @@
+"use client";
+
 import { Navbar } from "@heroui-pro/react/navbar";
 import Link from "next/link";
-import { Suspense } from "react";
-
-import { getServerSession } from "@/lib/session";
+import { useRouter } from "next/navigation";
 
 import { Logo } from "./brand";
-import { NavSignOutMenuItem, NavUserMenu } from "./nav-user-menu";
+import { NavAuthItems, NavAuthMenuItems } from "./nav-auth";
 
 export const NAV_LINKS = [
   { href: "/#how-it-works", label: "How it works" },
@@ -15,66 +15,19 @@ export const NAV_LINKS = [
   { href: "/docs", label: "Docs" },
 ];
 
-function SignInItems() {
-  return (
-    <>
-      <Navbar.Item
-        href="/auth/sign-in"
-        className="text-sm text-muted transition-colors hover:text-foreground"
-      >
-        Sign in
-      </Navbar.Item>
-      <Navbar.Item
-        href="/download"
-        className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:bg-[#ff6f3d] active:scale-[0.96]"
-      >
-        Get started
-      </Navbar.Item>
-    </>
-  );
-}
-
-function SignInMenuItems() {
-  return (
-    <>
-      <Navbar.MenuItem href="/auth/sign-in">Sign in</Navbar.MenuItem>
-      <Navbar.MenuItem href="/download">Get started</Navbar.MenuItem>
-    </>
-  );
-}
-
-async function NavAuthItems() {
-  const session = await getServerSession();
-  if (!session) {
-    return <SignInItems />;
-  }
-
-  const { name, email, image } = session.user;
-  return <NavUserMenu user={{ name, email, image }} />;
-}
-
-async function NavAuthMenuItems() {
-  const session = await getServerSession();
-  if (!session) {
-    return <SignInMenuItems />;
-  }
-
-  return (
-    <>
-      <Navbar.MenuItem href="/account">
-        <span className="flex flex-col">
-          <span>Account</span>
-          <span className="text-xs text-muted">{session.user.email}</span>
-        </span>
-      </Navbar.MenuItem>
-      <NavSignOutMenuItem />
-    </>
-  );
-}
-
+// The auth zone is client-side (nav-auth.tsx): better-auth's client store
+// persists across soft navigations, so the avatar/sign-in state renders
+// instantly on every nav. The `navigate` prop is what makes Navbar.Item
+// soft-navigate — without it every nav click is a full document reload
+// (React Aria RouterProvider is NOT what Navbar items read).
 export function SiteNav() {
+  const router = useRouter();
+
   return (
-    <Navbar className="border-b border-separator bg-natt/80 backdrop-blur-md">
+    <Navbar
+      navigate={(href) => router.push(href)}
+      className="border-b border-separator bg-natt/80 backdrop-blur-md"
+    >
       <Navbar.Header>
         <Navbar.Brand>
           <Link href="/" aria-label="Varde home" className="shrink-0">
@@ -105,9 +58,7 @@ export function SiteNav() {
         <Navbar.Spacer />
 
         <Navbar.Content className="hidden sm:flex">
-          <Suspense fallback={<SignInItems />}>
-            <NavAuthItems />
-          </Suspense>
+          <NavAuthItems />
         </Navbar.Content>
 
         <Navbar.MenuToggle className="md:hidden" />
@@ -125,9 +76,7 @@ export function SiteNav() {
           >
             GitHub
           </Navbar.MenuItem>
-          <Suspense fallback={<SignInMenuItems />}>
-            <NavAuthMenuItems />
-          </Suspense>
+          <NavAuthMenuItems />
         </Navbar.Menu>
       </Navbar.Header>
     </Navbar>
