@@ -35,7 +35,10 @@ export function EditProfile({
     setBusy(true);
     setErr(null);
     const img = newImage.trim();
-    if (img && !/^(https?:\/\/|\/)\S+$/i.test(img)) {
+    // Only validate a changed value — an existing avatar may use any
+    // scheme (data:, oauth provider URLs, ...) and shouldn't block a
+    // name-only edit.
+    if (img !== (image ?? "") && img && !/^(https?:\/\/|\/)\S+$/i.test(img)) {
       setErr("Avatar must be a full URL (https://…) or a path starting with /");
       setBusy(false);
       return;
