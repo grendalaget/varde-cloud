@@ -59,8 +59,6 @@ async function exchange(user: SessionUser): Promise<string> {
   if (res.status === 404) throw new CpUnavailable("federation is not enabled");
   if (!res.ok) {
     const msg = await errorMessage(res);
-    // 409 = a local CP account holds this email; the user can still sign in
-    // to that CP directly, so surface it as an error not "unavailable".
     throw new CpError(res.status, "external_login_failed", msg);
   }
   const body = (await res.json()) as { token?: string };

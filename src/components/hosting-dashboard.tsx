@@ -7,7 +7,6 @@ import {
   Chip,
   Input,
   Label,
-  Link,
   Spinner,
   TextField,
 } from "@heroui/react";
@@ -74,7 +73,6 @@ export function HostingDashboard() {
   const [groups, setGroups] = useState<CpGroup[] | null>(null);
   const [details, setDetails] = useState<Record<string, GroupDetail>>({});
   const [error, setError] = useState<string | null>(null);
-  const [needsLink, setNeedsLink] = useState(false);
   const [stale, setStale] = useState(false);
   // A transient refresh failure must not unmount loaded content (it would
   // wipe in-progress form input) — only the initial load uses the error card.
@@ -87,15 +85,8 @@ export function HostingDashboard() {
     const seq = ++loadSeq.current;
     const isCurrent = () => seq === loadSeq.current;
     setError(null);
-    setNeedsLink(false);
     try {
       const res = await fetch("/api/cp/groups", { cache: "no-store" });
-      if (res.status === 409) {
-        if (!isCurrent()) return;
-        setNeedsLink(true);
-        setGroups([]);
-        return;
-      }
       const data = (await res.json()) as {
         groups?: CpGroup[];
         message?: string;
@@ -161,22 +152,6 @@ export function HostingDashboard() {
     const id = setInterval(() => void load(), 30_000);
     return () => clearInterval(id);
   }, [load]);
-
-  if (needsLink) {
-    return (
-      <Card className="rounded-2xl border border-separator bg-surface p-6">
-        <h2 className="font-display text-lg font-semibold">Your groups</h2>
-        <p className="mt-3 text-sm text-muted">
-          This email already has an account on the hosted control plane. Sign in
-          once at{" "}
-          <Link href="https://cp.varde.games" target="_blank" rel="noreferrer">
-            cp.varde.games
-          </Link>{" "}
-          to link it — after that your groups show up here.
-        </p>
-      </Card>
-    );
-  }
 
   if (error) {
     return (
