@@ -1,5 +1,18 @@
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
-import { withCp } from "@/lib/cp";
+import { listGroups, withCp } from "@/lib/cp";
+
+// The signed-in user's groups on the hosted CP — the account dashboard lists
+// them and the docs demos read them.
+export async function GET() {
+  const user = await cpUser();
+  if (isResponse(user)) return user;
+  try {
+    const groups = await listGroups(user);
+    return Response.json({ groups });
+  } catch (e) {
+    return cpErrorResponse(e);
+  }
+}
 
 // Create a group on the hosted CP (caller becomes its owner). Used when a
 // signed-in docs reader has no group yet — the demo makes one inline.

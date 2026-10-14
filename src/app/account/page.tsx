@@ -1,9 +1,9 @@
-import { Alert, Button, Card, Chip, Link } from "@heroui/react";
+import { Alert, Card, Chip, Link } from "@heroui/react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { Mark } from "@/components/brand";
+import { HostingDashboard } from "@/components/hosting-dashboard";
 import { PortalButton } from "@/components/portal-button";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -124,22 +124,9 @@ async function AccountContent({
             {BILLING_ENABLED ? <PortalButton /> : null}
           </Card>
 
-          <Card className="rounded-2xl border border-dashed border-separator bg-surface/50 p-6">
-            <div className="flex items-center gap-3">
-              <Mark className="h-8 w-8" title="Varde" />
-              <h2 className="font-display text-lg font-semibold">
-                Link your Varde account
-              </h2>
-            </div>
-            <p className="mt-3 text-sm text-muted">
-              Your in-game Varde account lives in the control plane today. Once
-              accounts unify, you&apos;ll link it here to manage groups, anchors
-              and billing from varde.games.
-            </p>
-            <Button isDisabled variant="secondary" className="mt-5 text-muted">
-              Coming soon
-            </Button>
-          </Card>
+        </Item>
+        <Item className="md:col-span-2">
+          <HostingDashboard />
         </Item>
       </Stagger>
     </main>
