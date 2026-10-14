@@ -37,7 +37,12 @@ async function send(
     body: JSON.stringify({ from: FROM, to: [to], subject, ...body }),
   });
   if (!res.ok) {
-    console.error(`[email] Resend failed (${res.status}): ${await res.text()}`);
+    // Mail is load-bearing (requireEmailVerification): a Resend rejection
+    // surfaced as success would claim the email was sent while nothing
+    // was — the throw makes the caller's signup/reset fail visibly.
+    const detail = await res.text();
+    console.error(`[email] Resend failed (${res.status}): ${detail}`);
+    throw new Error(`[email] Resend rejected the send (${res.status})`);
   }
 }
 

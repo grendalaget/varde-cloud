@@ -25,18 +25,35 @@ async function syncPlan(userId: string | null | undefined, active: boolean, prod
     .where(eq(schema.user.id, userId));
 }
 
-// Per-account mail cooldown: unauthenticated callers can mint mail tokens at
+// Per-account mail guard: unauthenticated callers can mint mail tokens at
 // will (reset links, verification links via sign-in attempts and the resend
 // endpoint), so cap how often we actually send. In-memory is a best-effort
 // limit (per warm instance); Resend-side rate rules are the durable backstop.
 const MAIL_COOLDOWN_MS = 5 * 60 * 1000;
 const mailSentAt = new Map<string, number>();
+const mailInFlight = new Map<string, Promise<void>>();
 
-function mailCooldownActive(key: string) {
+// Skips sends inside the cooldown window and coalesces concurrent requests
+// onto the in-flight send, so every caller observes that send's real
+// outcome — never a suppressed request reported as success. A failed send
+// stamps no cooldown, so the next request retries.
+async function sendWithCooldown(key: string, send: () => Promise<void>) {
   const last = mailSentAt.get(key);
-  if (last && Date.now() - last < MAIL_COOLDOWN_MS) return true;
-  mailSentAt.set(key, Date.now());
-  return false;
+  if (last !== undefined && Date.now() - last < MAIL_COOLDOWN_MS) return;
+  const inFlight = mailInFlight.get(key);
+  if (inFlight) return inFlight;
+  const p = send().then(
+    () => {
+      mailSentAt.set(key, Date.now());
+      mailInFlight.delete(key);
+    },
+    (err) => {
+      mailInFlight.delete(key);
+      throw err;
+    },
+  );
+  mailInFlight.set(key, p);
+  return p;
 }
 
 const polarPlugins = polarCore
@@ -135,8 +152,9 @@ export const auth = betterAuth({
   }),
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      if (mailCooldownActive(`verify:${user.email}`)) return;
-      await sendVerificationEmail(user.email, url);
+      await sendWithCooldown(`verify:${user.email}`, () =>
+        sendVerificationEmail(user.email, url),
+      );
     },
     // Verification mail goes out on sign-up and again whenever an unverified
     // user tries to sign in — that retry is how pre-verification users
@@ -156,8 +174,9 @@ export const auth = betterAuth({
     // generic response instead of USER_ALREADY_EXISTS.
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
-      if (mailCooldownActive(`reset:${user.email}`)) return;
-      await sendPasswordResetEmail(user.email, url);
+      await sendWithCooldown(`reset:${user.email}`, () =>
+        sendPasswordResetEmail(user.email, url),
+      );
     },
   },
   advanced: {
