@@ -33,7 +33,7 @@ export class AnchorDb {
       FROM cloud_anchor a
       JOIN user u ON u.id = a.user_id
       WHERE (a.desired = 'provisioned' AND u.plan IN ('anchor','anchor+'))
-         OR (a.status NOT IN ('gone'))
+         OR (a.status NOT IN ('gone','deprovisioning'))
     `);
     return res.rows as unknown as AnchorRow[];
   }

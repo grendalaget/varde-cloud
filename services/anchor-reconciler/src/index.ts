@@ -46,6 +46,16 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       await db.setStatus(r.id, "pending");
       return;
     case "pending": {
+      // Adopt a machine from an earlier attempt (its create succeeded but
+      // the status write failed) instead of leaking a second volume.
+      const existing = await provider.find(machineName(r));
+      if (existing) {
+        await db.setStatus(r.id, "provisioning", {
+          fly_machine_id: existing.id,
+          fly_volume_id: existing.volumeId,
+        });
+        return;
+      }
       const token = await cp.createAnchorEnrollToken(r.group_id);
       const m = await provider.create({
         name: machineName(r),
@@ -77,8 +87,12 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       return;
     }
     case "online":
-    case "error":
       return; // TODO(v1.5): suspend-on-idle once wake semantics are proven
+    case "error":
+      // A single transient failure must not strand a paid anchor; the
+      // attempts counter still parks it after repeated failures.
+      await db.setStatus(r.id, "pending");
+      return;
     default:
       await db.setStatus(r.id, "pending");
   }

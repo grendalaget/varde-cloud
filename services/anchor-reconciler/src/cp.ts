@@ -26,12 +26,15 @@ export class CpClient {
   }
 
   // One-use anchor enrollment token; the secret is passed to the new
-  // machine's env and consumed by `varde-agent enroll --token`.
+  // machine's env and consumed by `varde-agent enroll --token`. Short
+  // expiry: it only needs to live until first boot, and the machine env
+  // it sits in is visible to anyone with Fly machine-config access.
   createAnchorEnrollToken(groupId: string): Promise<{ id: string; token: string }> {
     return this.call("POST", `/v1/groups/${groupId}/enrollment-tokens`, {
       anchor: true,
       hosting_enabled: false, // anchors replicate; they never host the game
       max_uses: 1,
+      expires_at: Date.now() + 15 * 60_000,
       labels: { managed: "cloud" },
     });
   }
