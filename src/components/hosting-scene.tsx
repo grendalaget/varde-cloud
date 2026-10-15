@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { Mark } from "./brand";
 
@@ -645,6 +645,7 @@ function MachineChip({
       aria-pressed={!offline}
       aria-label={`${NAMES[id]}'s machine, ${status.toLowerCase()}. Click to ${offline ? "bring it back online" : "knock it offline"}.`}
       onClick={() => onToggle(id)}
+      data-obstacle
       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
       className={`group absolute z-10 w-fit -translate-x-1/2 -translate-y-1/2 rounded-lg border outline-none transition-[border-color,box-shadow,opacity,left,top] duration-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod ${
         hover
@@ -710,6 +711,7 @@ function NodeChip({
 }) {
   return (
     <div
+      data-obstacle
       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
       className={`absolute z-10 w-fit -translate-x-1/2 -translate-y-1/2 rounded-lg border transition-opacity ${
         lit ? "border-separator" : "border-separator/60 opacity-50"
@@ -759,6 +761,7 @@ export function HostingScene() {
   const hostRef = useRef(host);
   const failTimer = useRef<number>(0);
   const dragPosRef = useRef<Pt | null>(null);
+  const labelEls = useRef(new Map<string, HTMLSpanElement>());
   useEffect(() => {
     offlineRef.current = offline;
   }, [offline]);
@@ -875,6 +878,79 @@ export function HostingScene() {
   };
 
   useEffect(() => () => window.clearTimeout(failTimer.current), []);
+
+  /* Nerd-label declutter: labels default to each edge's midpoint, then this
+     pass slides each along its own bezier (plus small perpendicular
+     offsets) until it clears every card and previously placed label.
+     Runs before paint, so the default position never flashes. */
+  useLayoutEffect(() => {
+    if (!nerd) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const R = stage.getBoundingClientRect();
+    if (!R.width || !R.height) return;
+    const toPct = (r: DOMRect, pad: number) => ({
+      x: ((r.left - R.left) / R.width) * 100 - pad,
+      y: ((r.top - R.top) / R.height) * 100 - pad,
+      w: (r.width / R.width) * 100 + pad * 2,
+      h: (r.height / R.height) * 100 + pad * 2,
+    });
+    const obstacles = Array.from(
+      stage.querySelectorAll<HTMLElement>("[data-obstacle]"),
+    ).map((el) => toPct(el.getBoundingClientRect(), 1.4));
+    const placed: typeof obstacles = [];
+    const overlap = (c: (typeof obstacles)[number]) => {
+      let a = 0;
+      for (const o of [...obstacles, ...placed]) {
+        const ox = Math.max(0, Math.min(c.x + c.w, o.x + o.w) - Math.max(c.x, o.x));
+        const oy = Math.max(0, Math.min(c.y + c.h, o.y + o.h) - Math.max(c.y, o.y));
+        a += ox * oy;
+      }
+      return a;
+    };
+    for (const e of geomEdges) {
+      const el = labelEls.current.get(e.edge.id);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const lw = (r.width / R.width) * 100;
+      const lh = (r.height / R.height) * 100;
+      const [p0, pc, p1] = e.geom;
+      let best = { score: Infinity, pt: quadAt(p0, pc, p1, 0.5) };
+      for (const t of [0.5, 0.45, 0.55, 0.4, 0.6, 0.35, 0.65, 0.3, 0.7, 0.25, 0.75, 0.2, 0.8, 0.15, 0.85]) {
+        const p = quadAt(p0, pc, p1, t);
+        const q = quadAt(p0, pc, p1, Math.min(t + 0.02, 1));
+        let tx = q.x - p.x;
+        let ty = q.y - p.y;
+        const tl = Math.hypot(tx, ty) || 1;
+        tx /= tl;
+        ty /= tl;
+        for (const off of [0, -5, 5, -10, 10, -16, 16]) {
+          const cx = p.x - ty * off;
+          const cy = p.y + tx * off;
+          const c = { x: cx - lw / 2, y: cy - lh / 2, w: lw, h: lh };
+          const out =
+            Math.max(0, -c.x) +
+            Math.max(0, c.x + c.w - 100) +
+            Math.max(0, -c.y) +
+            Math.max(0, c.y + c.h - 100);
+          const score =
+            overlap(c) * 40 +
+            out * 60 +
+            Math.abs(t - 0.5) * 6 +
+            Math.abs(off) * 0.8;
+          if (score < best.score) best = { score, pt: { x: cx, y: cy } };
+        }
+      }
+      el.style.left = `${best.pt.x}%`;
+      el.style.top = `${best.pt.y}%`;
+      placed.push({
+        x: best.pt.x - lw / 2,
+        y: best.pt.y - lh / 2,
+        w: lw,
+        h: lh,
+      });
+    }
+  }, [nerd, geomEdges]);
 
   /* Ember position: dragged point, or hovering above the host chip. */
   const emberPos: Pt = drag ?? {
@@ -1023,7 +1099,9 @@ export function HostingScene() {
           </svg>
         )}
 
-        {/* Nerd-mode edge labels, placed at each bezier's midpoint. */}
+        {/* Nerd-mode edge labels — default to the bezier midpoint, then the
+            declutter effect slides each along its curve until it clears every
+            card and previously placed label. */}
         {nerd &&
           geomEdges.map((e) => {
             const label = edgeLabel(e.edge);
@@ -1032,9 +1110,15 @@ export function HostingScene() {
             return (
               <span
                 key={`lbl-${e.edge.id}`}
+                ref={(el) => {
+                  if (el) labelEls.current.set(e.edge.id, el);
+                  else labelEls.current.delete(e.edge.id);
+                }}
                 aria-hidden
                 style={{ left: `${mid.x}%`, top: `${mid.y}%` }}
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-md border border-separator bg-surface-100/90 px-1.5 py-0.5 font-mono text-[9px] text-muted"
+                className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-separator bg-surface-100 font-mono text-muted ${
+                  compact ? "px-1 py-px text-[8px]" : "px-1.5 py-0.5 text-[9px]"
+                }`}
               >
                 {label}
               </span>
@@ -1106,6 +1190,7 @@ export function HostingScene() {
           onPointerMove={onEmberMove}
           onPointerUp={onEmberUp}
           onKeyDown={onEmberKey}
+          data-obstacle
           style={{
             left: `${emberPos.x}%`,
             top: `${emberPos.y}%`,
