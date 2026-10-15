@@ -15,7 +15,7 @@ import { MARK_STONES } from "./brand";
  * prefers-reduced-motion, and the CSS gradient beneath is all you see.
  */
 
-const CELL = 16; // css px per glyph cell
+const CELL = 10; // css px per glyph cell
 const MAX_RIPPLES = 8;
 const DPR_MAX = 2;
 const MONO = `ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace`;
@@ -83,7 +83,8 @@ void main() {
 
   /* Cloud field: slow drift through domain-warped value noise. Sampled per
    * cell so every glyph in a cell shares the cloud value. */
-  vec2 q = cid * 0.085;
+  /* Scale tied to CSS px (cell-invariant): 0.085 at the old 16px cell. */
+  vec2 q = cid * 0.053;
   vec2 warp = vec2(
     vnoise(q * 0.7 + vec2(t * 0.020, 0.0)),
     vnoise(q * 0.7 + vec2(0.0, t * 0.017) + 19.7));
@@ -124,7 +125,7 @@ void main() {
   }
   float inMark = mk.r + mk.g;
   float inHost = mk.g;
-  float markV = 0.72 + 0.28 * vnoise(cid * 0.35 + vec2(t * 0.05, -t * 0.04));
+  float markV = 0.72 + 0.28 * vnoise(cid * 0.22 + vec2(t * 0.05, -t * 0.04));
   v = mix(v, markV, inMark);
 
   /* Glyph selection: per-cell hash picks the char, cloud value biases it
@@ -304,13 +305,13 @@ export function AsciiClouds({
 
     const resize = () => {
       const r = section.getBoundingClientRect();
-      // Snap dpr to 0.25 steps so CELL*dpr stays an integer — crisp cells.
+      // Snap dpr to 0.25 steps and round the device-px cell — crisp cells.
       dpr = Math.floor(Math.min(devicePixelRatio || 1, DPR_MAX) * 4) / 4 || 1;
       canvas.width = Math.round(r.width * dpr);
       canvas.height = Math.round(r.height * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(loc.u_res!, canvas.width, canvas.height);
-      gl.uniform1f(loc.u_cell!, CELL * dpr);
+      gl.uniform1f(loc.u_cell!, Math.round(CELL * dpr));
       measureMark();
       if (reduced) render(0); // static frame
     };
