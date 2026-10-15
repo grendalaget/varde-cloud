@@ -248,9 +248,11 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
         ) : (
           <ul className="mt-3 divide-y divide-separator">
             {detail.servers.map((s) => {
+              // resume needs the newest save — show/evaluate its holders,
+              // not the older committed save's
               const holders =
-                s.summary?.latest_safe_save?.replicas ??
                 s.summary?.latest_save?.replicas ??
+                s.summary?.latest_safe_save?.replicas ??
                 [];
               const allOffline =
                 holders.length > 0 && holders.every((h) => !h.online);
