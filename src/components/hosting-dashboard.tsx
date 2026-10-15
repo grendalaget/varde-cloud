@@ -27,6 +27,14 @@ interface CpNode {
   os?: string;
 }
 
+interface CpSaveHolder {
+  node_id: string;
+  name: string;
+  anchor: boolean;
+  online: boolean;
+  last_seen_at?: number | null;
+}
+
 interface CpServer {
   id: string;
   name: string;
@@ -36,6 +44,16 @@ interface CpServer {
   summary?: {
     address?: string | null;
     only_on_one_machine?: boolean;
+    latest_safe_save?: {
+      snapshot_id: string;
+      created_at: number;
+      replicas?: CpSaveHolder[];
+    } | null;
+    latest_save?: {
+      snapshot_id: string;
+      created_at: number;
+      replicas?: CpSaveHolder[];
+    } | null;
   } | null;
 }
 
@@ -229,29 +247,49 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-separator">
-            {detail.servers.map((s) => (
-              <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {s.name}
-                  </p>
-                  <p className="truncate text-xs text-muted">
-                    {s.game_id}
-                    {s.summary?.address ? `, ${s.summary.address}` : ""}
-                    {s.summary?.only_on_one_machine
-                      ? ", save on one machine"
-                      : ""}
-                  </p>
-                </div>
-                <Chip
-                  size="sm"
-                  color={STATE_COLORS[s.observed_state] ?? "default"}
-                  variant="soft"
-                >
-                  <Chip.Label>{s.observed_state}</Chip.Label>
-                </Chip>
-              </li>
-            ))}
+            {detail.servers.map((s) => {
+              const holders =
+                s.summary?.latest_safe_save?.replicas ??
+                s.summary?.latest_save?.replicas ??
+                [];
+              const allOffline =
+                holders.length > 0 && holders.every((h) => !h.online);
+              return (
+                <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {s.name}
+                    </p>
+                    <p className="truncate text-xs text-muted">
+                      {s.game_id}
+                      {s.summary?.address ? `, ${s.summary.address}` : ""}
+                      {holders.length > 0
+                        ? `, save on ${holders
+                            .map((h) =>
+                              h.online ? h.name : `${h.name} (offline)`,
+                            )
+                            .join(", ")}`
+                        : s.summary?.only_on_one_machine
+                          ? ", save on one machine"
+                          : ""}
+                    </p>
+                    {allOffline ? (
+                      <p className="truncate text-xs text-warning">
+                        No machine with the latest save is online — it
+                        can&apos;t resume until one comes back.
+                      </p>
+                    ) : null}
+                  </div>
+                  <Chip
+                    size="sm"
+                    color={STATE_COLORS[s.observed_state] ?? "default"}
+                    variant="soft"
+                  >
+                    <Chip.Label>{s.observed_state}</Chip.Label>
+                  </Chip>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
