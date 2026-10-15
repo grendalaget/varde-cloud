@@ -106,3 +106,43 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// Managed cloud anchors: one row per anchor a paying user attaches to a
+// group. `desired` is what the user asked for; the reconciler in
+// services/anchor-reconciler drives `status` toward it (see
+// docs/cloud-anchor.md).
+export const cloudAnchor = sqliteTable(
+  "cloud_anchor",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    groupId: text("group_id").notNull(),
+    desired: text("desired").notNull().default("provisioned"), // provisioned | detached
+    status: text("status").notNull().default("pending"), // pending | provisioning | online | deprovisioning | gone | error
+    flyMachineId: text("fly_machine_id"),
+    flyVolumeId: text("fly_volume_id"),
+    nodeId: text("node_id"),
+    error: text("error"),
+    attempts: integer("attempts").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("cloud_anchor_user_idx").on(table.userId),
+    index("cloud_anchor_group_idx").on(table.groupId),
+  ],
+);
+
+export const cloudAnchorRelations = relations(cloudAnchor, ({ one }) => ({
+  user: one(user, {
+    fields: [cloudAnchor.userId],
+    references: [user.id],
+  }),
+}));

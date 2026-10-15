@@ -1,0 +1,17 @@
+# anchor-reconciler: one small always-on machine in the CP's org.
+# Env (secrets): TURSO_AUTH_TOKEN, VARDE_CP_SERVICE_TOKEN, FLY_API_TOKEN.
+app = "varde-anchor-reconciler"
+primary_region = "arn"
+
+[env]
+VARDE_CP_URL = "https://cp.varde.games"
+FLY_ANCHORS_APP = "varde-anchors"
+ANCHOR_REGION = "arn"
+ANCHOR_VOLUME_GB = "10"
+POLL_INTERVAL_MS = "15000"
+# Turso URL is config, not a secret:
+TURSO_DATABASE_URL = "libsql://<site-db>.turso.io"
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "256mb"
