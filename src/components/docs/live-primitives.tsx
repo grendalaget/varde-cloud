@@ -179,7 +179,7 @@ export function LiveHint({ status }: { status: CpStatus }) {
   if (status === "unavailable") {
     return (
       <p className="mt-3 text-center text-xs text-muted">
-        Live actions are offline right now — this is what the dashboard shows.
+        Live actions are offline right now, so this is what the dashboard shows.
       </p>
     );
   }
@@ -261,7 +261,7 @@ export function CreateGroupInline({
   return (
     <div className="rounded-lg border border-separator bg-surface-secondary p-4">
       <p className="text-xs leading-relaxed text-muted">
-        Everything on Varde happens inside a group — you and your friends.
+        Everything on Varde happens inside a group: you and your friends.
         Name yours to continue.
       </p>
       <div className="mt-3 flex items-end gap-2">
@@ -279,7 +279,7 @@ export function CreateGroupInline({
           isDisabled={busy || !name.trim()}
           onPress={() => void create()}
         >
-          {busy ? "Creating…" : "Create group"}
+          {busy ? "Creating" : "Create group"}
         </Button>
       </div>
       {err ? <p className="mt-2 text-xs text-danger">{err}</p> : null}

@@ -39,7 +39,7 @@ export function EditProfile({
     // scheme (data:, oauth provider URLs, ...) and shouldn't block a
     // name-only edit.
     if (img !== (image ?? "") && img && !/^(https?:\/\/|\/)\S+$/i.test(img)) {
-      setErr("Avatar must be a full URL (https://…) or a path starting with /");
+      setErr("Avatar must be a full https:// URL or a path starting with /");
       setBusy(false);
       return;
     }
@@ -106,7 +106,7 @@ export function EditProfile({
       </TextField>
       <TextField value={newImage} onChange={setNewImage}>
         <Label>Avatar URL</Label>
-        <Input placeholder="https://… (optional)" />
+        <Input placeholder="https://example.com/me.png" />
       </TextField>
       <div>
         <p className="text-sm text-muted">Email</p>

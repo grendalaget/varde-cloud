@@ -100,7 +100,7 @@ export function NavUserMenu({ user }: { user: NavUser }) {
             variant="danger"
             isDisabled={signingOut}
           >
-            <Label>{signingOut ? "Signing out…" : "Sign out"}</Label>
+            <Label>{signingOut ? "Signing out" : "Sign out"}</Label>
           </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown.Popover>
@@ -131,7 +131,7 @@ export function NavSignOutMenuItem() {
         router.refresh();
       }}
     >
-      {signingOut ? "Signing out…" : "Sign out"}
+      {signingOut ? "Signing out" : "Sign out"}
     </Navbar.MenuItem>
   );
 }

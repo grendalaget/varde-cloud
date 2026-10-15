@@ -84,7 +84,7 @@ export default function Home() {
             <Item className="mb-4">
               <Chip variant="secondary" size="sm">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-glod" />
-                <Chip.Label>Open source · AGPL-3.0-or-later</Chip.Label>
+                <Chip.Label>Open source, AGPL-3.0-or-later</Chip.Label>
               </Chip>
             </Item>
             <Item>
@@ -112,7 +112,7 @@ export default function Home() {
             </Item>
             <Item>
               <p className="mt-6 text-sm text-muted">
-                Available for Windows, macOS, and Linux ·{" "}
+                Available for Windows, macOS, and Linux:{" "}
                 <HLink
                   href="https://github.com/grendalaget/varde"
                   target="_blank"
@@ -247,10 +247,10 @@ export default function Home() {
                 </p>
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted">
-                <li>· ~25 GB deduplicated save storage</li>
-                <li>· Every server in the group</li>
-                <li>· Always-on replicated saves</li>
-                <li>· 1 region</li>
+                <li>- ~25 GB deduplicated save storage</li>
+                <li>- Every server in the group</li>
+                <li>- Always-on replicated saves</li>
+                <li>- 1 region</li>
               </ul>
             </Card>
           </Reveal>

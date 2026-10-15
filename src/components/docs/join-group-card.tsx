@@ -114,7 +114,7 @@ export function JoinGroupCard() {
               Join your friends&rsquo; group
             </p>
             <p className="mt-0.5 text-xs text-muted">
-              Paste the invite link they sent you — or just the code at the
+              Paste the invite link they sent you, or just the code at the
               end.
             </p>
             <div className="mt-3">
@@ -144,7 +144,7 @@ export function JoinGroupCard() {
                   {invite.uses} joined so far
                   {invite.max_uses ? ` of up to ${invite.max_uses}` : ""}
                   {invite.expires_at
-                    ? ` — expires ${new Date(invite.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                    ? `, expires ${new Date(invite.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
                     : ""}
                 </p>
               </div>
@@ -160,8 +160,8 @@ export function JoinGroupCard() {
             >
               {busy
                 ? invite
-                  ? "Joining…"
-                  : "Checking…"
+                  ? "Joining"
+                  : "Checking"
                 : invite
                   ? "Join group"
                   : "Check invite"}
@@ -171,10 +171,10 @@ export function JoinGroupCard() {
       </Card>
       <figcaption className="mt-3 text-center text-sm text-muted">
         {joined
-          ? "Done — you're in the group now."
+          ? "Done, you're in the group now."
           : live
             ? "Signed in: paste a real invite and you join for real."
-            : "The dashboard's join field. Sample only — paste yours there."}
+            : "The dashboard's join field. Sample only: paste yours there."}
       </figcaption>
       <LiveHint status={status} />
     </figure>

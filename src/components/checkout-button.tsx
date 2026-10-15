@@ -72,7 +72,7 @@ export function CheckoutButton({
         {({ isPending }) => (
           <>
             {isPending ? <Spinner color="current" size="sm" /> : null}
-            {isPending && !isLink ? "Opening checkout…" : label}
+            {isPending && !isLink ? "Opening checkout" : label}
           </>
         )}
       </Button>
