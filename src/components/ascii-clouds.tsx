@@ -86,9 +86,9 @@ void main() {
   /* Scale tied to CSS px (cell-invariant): 0.085 at the old 16px cell. */
   vec2 q = cid * 0.053;
   vec2 warp = vec2(
-    vnoise(q * 0.7 + vec2(t * 0.020, 0.0)),
-    vnoise(q * 0.7 + vec2(0.0, t * 0.017) + 19.7));
-  float v = fbm(q + warp * 0.9 + vec2(t * 0.028, t * 0.011));
+    vnoise(q * 0.7 + vec2(t * 0.050, 0.0)),
+    vnoise(q * 0.7 + vec2(0.0, t * 0.040) + 19.7));
+  float v = fbm(q + warp * 0.9 + vec2(t * 0.100, t * 0.042));
   v = clamp(v + (hash21(cid) - 0.5) * 0.18, 0.0, 1.0);
 
   /* Shockwaves: noise-wobbled expanding ring plus a smaller echo band. The
@@ -130,8 +130,8 @@ void main() {
 
   /* Glyph selection: per-cell hash picks the char, cloud value biases it
    * denser — peaks literally become heavier type. */
-  float vis  = smoothstep(0.50, 0.70, v);
-  float peak = smoothstep(0.76, 0.97, v);
+  float vis  = smoothstep(0.36, 0.60, v);
+  float peak = smoothstep(0.72, 0.94, v);
   float h = hash21(cid * 1.31 + 7.7);
   int idx = clamp(
     1 + int(floor((h * 0.6 + v * 0.5) * float(u_atlasN - 1))),
@@ -146,7 +146,9 @@ void main() {
   float fadeUp = smoothstep(0.02 * u_res.y, 0.40 * u_res.y, frag.y);
   float a = texture(u_atlas,
       vec2((float(idx) + cuv.x) / float(u_atlasN), 1.0 - cuv.y)).r;
-  float alpha = a * ((vis * 0.20 + peak * 0.28 + I * 1.15) * fadeUp
+  /* Slow per-cell shimmer so the field breathes between cloud passes. */
+  float tw = 0.86 + 0.14 * vnoise(cid * 0.31 + vec2(t * 0.50, t * 0.34));
+  float alpha = a * (((vis * 0.34 + peak * 0.46) * tw + I * 1.15) * fadeUp
                      + inMark * (0.85 + I * 1.15));
 
   fragColor = vec4(col * alpha, alpha);   // premultiplied
