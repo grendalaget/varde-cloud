@@ -40,9 +40,11 @@ the feature needs from them.
 1. Polar webhook (`subscription.active`) -> `user.plan = "anchor"` and a row
    in `cloud_anchors` with `desired = 'provisioning'` for the chosen group.
 2. Reconciler picks up the row: creates a Fly Machine + volume in
-   `varde-anchors`, asks the CP for a one-use enrollment token
-   (`anchor: true`) via the service token, boots the agent with
-   `VARDE_ENROLL_TOKEN` + `VARDE_CP_URL` in its env.
+   `varde-anchors`, boots the agent with `VARDE_CP_URL` +
+   `VARDE_BOOTSTRAP_URL` in its env. The agent's first act is a GET on the
+   bootstrap endpoint over 6PN, which verifies the caller's private IP
+   against the machine record and returns a one-use enroll token — no CP
+   credential ever sits in readable machine config.
 3. Agent enrolls, heartbeats show it online on the group, reconciler marks
    `actual = 'online'`. Site reads the same row for status.
 
@@ -73,11 +75,15 @@ exercised.
 
 - The reconciler authenticates to the CP with a **service token** (`vst_…`,
   hashed at rest, scoped). Scopes: `enroll` (enrollment-token CRUD on any
-  group) and `nodes` (node read/delete for lifecycle). Service tokens are
+  group), `members` (member read — the reconciler re-verifies that the
+  subscriber is still a group admin each pass and tears the anchor down if
+  not), and `nodes` (node read/delete for lifecycle). Service tokens are
   minted by an operator with `varde-control-plane service-token create` and
   are auditable in `audit_log` under `service:<name>`. This is deliberately
   narrow: it cannot touch users, groups, servers, or billing.
-- Anchor machines get a one-use enrollment token at create time via env.
+- Anchor machines fetch a one-use enrollment token at boot from the
+  reconciler's 6PN bootstrap endpoint (private-IP verified), so machine
+  config holds no CP credential.
   The token expires unused; the enrolled node gets a normal node identity.
 - No public ingress on anchor Machines: no Fly `services` config, no
   anycast IP. Outbound QUIC to peers plus relay fallback, CP traffic over

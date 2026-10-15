@@ -43,6 +43,19 @@ export class CpClient {
     return this.call("GET", `/v1/groups/${groupId}/nodes`);
   }
 
+  listMembers(groupId: string): Promise<{ members: CpMember[] }> {
+    return this.call("GET", `/v1/groups/${groupId}/members`);
+  }
+
+  // Subscriber still an owner/admin? If not, the managed anchor should be
+  // torn down: the anchor serves the group but the paying user can no
+  // longer administer it.
+  async isGroupAdmin(groupId: string, userId: string): Promise<boolean> {
+    const { members } = await this.listMembers(groupId);
+    const m = members.find((x) => x.user_id === userId);
+    return m?.role === "owner" || m?.role === "admin";
+  }
+
   deleteNode(nodeId: string): Promise<void> {
     return this.call("DELETE", `/v1/nodes/${nodeId}`);
   }
@@ -53,4 +66,9 @@ export interface CpNode {
   name: string;
   anchor: boolean;
   online: boolean;
+}
+
+export interface CpMember {
+  user_id: string;
+  role: string;
 }

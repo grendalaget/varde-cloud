@@ -39,6 +39,17 @@ export class AnchorDb {
     return res.rows as unknown as AnchorRow[];
   }
 
+  // The row a bootstrap request acts on: the live anchor for a group.
+  async rowByGroup(groupId: string): Promise<AnchorRow | null> {
+    const res = await this.client.execute({
+      sql: `SELECT a.*, u.plan AS plan FROM cloud_anchor a
+            JOIN user u ON u.id = a.user_id
+            WHERE a.group_id = ? AND a.status != 'gone' LIMIT 1`,
+      args: [groupId],
+    });
+    return (res.rows[0] as unknown as AnchorRow) ?? null;
+  }
+
   async setStatus(
     id: string,
     status: string,

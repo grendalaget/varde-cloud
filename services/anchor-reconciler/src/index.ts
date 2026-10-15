@@ -6,6 +6,7 @@
 import { AnchorDb, type AnchorRow } from "./db";
 import { CpClient } from "./cp";
 import { FlyMachinesProvider } from "./fly";
+import { startBootstrap } from "./bootstrap";
 import type { AnchorProvider } from "./provider";
 
 const env = (k: string, dflt?: string): string => {
@@ -18,6 +19,10 @@ const CP_URL = env("VARDE_CP_URL", "https://cp.varde.games").replace(/\/$/, "");
 const REGION = env("ANCHOR_REGION", "arn");
 const VOLUME_GB = Number(env("ANCHOR_VOLUME_GB", "10"));
 const POLL_MS = Number(env("POLL_INTERVAL_MS", "15000"));
+// Machines fetch their enroll token from this 6PN address at boot instead
+// of carrying a CP credential in machine env (see src/bootstrap.ts).
+const BOOTSTRAP_PORT = Number(env("BOOTSTRAP_PORT", "8080"));
+const BOOTSTRAP_HOST = env("BOOTSTRAP_HOST", "varde-anchor-reconciler.internal");
 // Retry backoff: repeated failures park a row for a while instead of
 // hammering the provider. attempts is bumped on every status write.
 const MAX_BACKOFF_ATTEMPTS = 20;
@@ -38,7 +43,11 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   if (r.error && r.attempts >= MAX_BACKOFF_ATTEMPTS && r.status === "error") {
     return; // parked until a human flips desired or raises the cap
   }
-  if (wantsAnchor(r)) {
+  // The anchor serves the group but is billed to the subscriber: if they
+  // are no longer a group admin, tear it down. A members-list failure
+  // throws rather than tearing anchors out on a transient CP error.
+  const admin = wantsAnchor(r) ? await cp.isGroupAdmin(r.group_id, r.user_id) : false;
+  if (wantsAnchor(r) && admin) {
     await provision(r, db, cp, provider);
   } else {
     await teardown(r, db, cp, provider);
@@ -61,14 +70,13 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
         });
         return;
       }
-      const token = await cp.createAnchorEnrollToken(r.group_id);
       const m = await provider.create({
         name: machineName(r),
         region: REGION,
         volumeGb: VOLUME_GB,
         env: {
           VARDE_CP_URL: CP_URL,
-          VARDE_ENROLL_TOKEN: token.token,
+          VARDE_BOOTSTRAP_URL: `http://${BOOTSTRAP_HOST}:${BOOTSTRAP_PORT}/bootstrap/${r.group_id}`,
         },
       });
       await db.setStatus(r.id, "provisioning", {
@@ -78,7 +86,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       return;
     }
     case "provisioning": {
-      // The agent enrolls with the token we baked into the machine env; a
+      // The agent enrolls with the token it fetched from bootstrap; a
       // managed anchor node appearing in the group is the success signal.
       // Correlation: Fly sets the VM hostname to the machine name and the
       // agent reports it at enroll, so the node name is anchor-<groupId>.
@@ -147,6 +155,7 @@ async function main() {
     env("FLY_ANCHORS_APP", "varde-anchors"),
     env("ANCHOR_IMAGE"),
   );
+  startBootstrap(db, cp, provider, CP_URL, BOOTSTRAP_PORT);
 
   console.log(`anchor-reconciler: app=${env("FLY_ANCHORS_APP", "varde-anchors")} region=${REGION} poll=${POLL_MS}ms`);
   for (;;) {

@@ -5,6 +5,7 @@
 export interface AnchorMachine {
   id: string;
   volumeId?: string;
+  privateIp?: string; // 6PN address; bootstrap verifies callers against it
   status: string; // provider-native: created|started|stopped|destroyed|...
 }
 
