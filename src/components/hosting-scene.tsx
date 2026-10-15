@@ -53,14 +53,17 @@ const LAYOUT_WIDE: Record<NodeId, Pt> = {
   kim: { x: 63.7, y: 90 },
   ada: { x: 91, y: 88 },
 };
+/* Portrait-native layout: machines stagger down the stage in a zigzag
+   column instead of a cramped grid — each gets its own edge lane, and
+   Ada's relay hop becomes a long detour down the right side. */
 const LAYOUT_NARROW: Record<NodeId, Pt> = {
-  cp: { x: 23, y: 8 },
-  relay: { x: 77, y: 8 },
-  cairn: { x: 50, y: 38 },
-  you: { x: 23, y: 71 },
-  sara: { x: 77, y: 71 },
-  kim: { x: 23, y: 91 },
-  ada: { x: 77, y: 91 },
+  cp: { x: 21, y: 5 },
+  relay: { x: 79, y: 5 },
+  cairn: { x: 50, y: 20 },
+  you: { x: 26, y: 40 },
+  sara: { x: 74, y: 53 },
+  kim: { x: 26, y: 66 },
+  ada: { x: 74, y: 79 },
 };
 
 /* ------------------------------------------------------------------ */
@@ -876,7 +879,7 @@ export function HostingScene() {
   /* Ember position: dragged point, or hovering above the host chip. */
   const emberPos: Pt = drag ?? {
     x: layout[host].x,
-    y: layout[host].y - (compact ? 15 : 13),
+    y: layout[host].y - (compact ? 10 : 13),
   };
 
   const nearestMachine = (p: Pt): MachineId | null => {
@@ -934,10 +937,16 @@ export function HostingScene() {
 
   /* Nerd-mode edge labels: tag every game edge; one sync and one cp edge
      carry the longer protocol strings so the diagram stays readable. */
-  const seen = new Set<EdgeKind>();
+  const seen = new Set<string>();
   const edgeLabel = (e: Edge): string | null => {
-    if (e.kind === "game")
-      return e.a === "relay" || e.b === "relay" ? "Relayed" : "QUIC · TLS 1.3";
+    if (e.kind === "game") {
+      const relayed = e.a === "relay" || e.b === "relay";
+      const key = relayed ? "relay" : "game";
+      // Compact: one label per protocol; wide: every game edge.
+      if (compact && seen.has(key)) return null;
+      seen.add(key);
+      return relayed ? "Relayed" : "QUIC · TLS 1.3";
+    }
     if (e.kind === "sync" && !seen.has("sync")) {
       seen.add("sync");
       return "FastCDC · zstd · BLAKE3";
