@@ -9,8 +9,8 @@ FLY_ANCHORS_APP = "varde-anchors"
 ANCHOR_REGION = "arn"
 ANCHOR_VOLUME_GB = "10"
 POLL_INTERVAL_MS = "15000"
-# Turso URL is config, not a secret:
-TURSO_DATABASE_URL = "libsql://<site-db>.turso.io"
+# TURSO_DATABASE_URL is set as a fly secret (keeps the db hostname out of
+# the public repo): fly secrets set TURSO_DATABASE_URL=libsql://...
 
 [[vm]]
 size = "shared-cpu-1x"

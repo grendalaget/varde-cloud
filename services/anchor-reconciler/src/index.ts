@@ -22,7 +22,15 @@ const POLL_MS = Number(env("POLL_INTERVAL_MS", "15000"));
 // Machines fetch their enroll token from this 6PN address at boot instead
 // of carrying a CP credential in machine env (see src/bootstrap.ts).
 const BOOTSTRAP_PORT = Number(env("BOOTSTRAP_PORT", "8080"));
-const BOOTSTRAP_HOST = env("BOOTSTRAP_HOST", "varde-anchor-reconciler.internal");
+// Self-referencing 6PN name works in any app layout and survives machine
+// replacement: <id>.vm.<app>.internal always resolves this machine. A
+// dedicated varde-anchor-reconciler app also answers at <app>.internal.
+const BOOTSTRAP_HOST = env(
+  "BOOTSTRAP_HOST",
+  process.env.FLY_MACHINE_ID && process.env.FLY_APP_NAME
+    ? `${process.env.FLY_MACHINE_ID}.vm.${process.env.FLY_APP_NAME}.internal`
+    : "varde-anchor-reconciler.internal",
+);
 // Retry backoff: repeated failures park a row for a while instead of
 // hammering the provider. attempts is bumped on every status write.
 const MAX_BACKOFF_ATTEMPTS = 20;
