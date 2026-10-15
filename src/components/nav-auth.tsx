@@ -1,10 +1,10 @@
 "use client";
 
 import { Navbar } from "@heroui-pro/react/navbar";
-import { Button } from "@heroui/react";
-import { useRouter } from "next/navigation";
 
 import { useEffect } from "react";
+
+import { LinkButton } from "./link-button";
 
 import { useSession } from "@/lib/auth-client";
 
@@ -15,7 +15,6 @@ import {
 } from "./nav-user-menu";
 
 function SignInItems() {
-  const router = useRouter();
   return (
     <>
       <Navbar.Item
@@ -24,9 +23,9 @@ function SignInItems() {
       >
         Sign in
       </Navbar.Item>
-      <Button size="sm" onPress={() => router.push("/download")}>
+      <LinkButton href="/download" size="sm">
         Get started
-      </Button>
+      </LinkButton>
     </>
   );
 }
