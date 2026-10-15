@@ -1,6 +1,7 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { AsciiClouds } from "@/components/ascii-clouds";
+import { Mark } from "@/components/brand";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 
 const HOW_IT_WORKS = [
@@ -135,15 +136,16 @@ export default function Home() {
               aria-hidden
               className="vd-cairn-glow pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full"
             />
-            {/* Slot only — the ASCII field draws the cairn here, stone cells
-                lit Tåke with the host stone Glød. Keeps the mark's size and
-                responsive behavior without an SVG element. */}
-            <div
-              id="vd-hero-mark"
-              role="img"
-              aria-label="A cairn; the lit stone moves between friends"
-              className="relative h-48 w-48 sm:h-64 sm:w-64 md:h-80 md:w-80"
-            />
+            {/* The ASCII field draws the cairn into this slot (stones lit
+                Tåke, host stone Glød); the SVG stays as the no-WebGL/no-JS
+                fallback and is hidden by the field when it can render. */}
+            <div id="vd-hero-mark" className="relative h-48 w-48 sm:h-64 sm:w-64 md:h-80 md:w-80">
+              <Mark
+                animated
+                title="A cairn; the lit stone moves between friends"
+                className="absolute inset-0 h-full w-full text-skifer-100"
+              />
+            </div>
           </div>
         </div>
       </section>

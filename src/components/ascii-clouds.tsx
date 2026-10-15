@@ -140,10 +140,13 @@ void main() {
   col = mix(col, u_colGlod, inHost);
   col = mix(col, u_colGlod, clamp(I * 1.5, 0.0, 0.95));
 
+  /* Field dissolves toward the section's bottom edge; the mark is exempt
+   * so the cairn never fades into the next section (it sits low on mobile). */
+  float fadeUp = smoothstep(0.02 * u_res.y, 0.40 * u_res.y, frag.y);
   float a = texture(u_atlas,
       vec2((float(idx) + cuv.x) / float(u_atlasN), 1.0 - cuv.y)).r;
-  float alpha = a * (vis * 0.20 + peak * 0.28 + inMark * 0.85);
-  alpha += a * I * 1.15;
+  float alpha = a * ((vis * 0.20 + peak * 0.28 + I * 1.15) * fadeUp
+                     + inMark * (0.85 + I * 1.15));
 
   fragColor = vec4(col * alpha, alpha);   // premultiplied
 }`;
@@ -261,10 +264,6 @@ export function AsciiClouds({
     if (!canvas || !host || !section) return;
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let dead = false;
-    let raf = 0;
-    let visible = true;
-
     const gl = canvas.getContext("webgl2", {
       alpha: true,
       antialias: false,
@@ -272,53 +271,26 @@ export function AsciiClouds({
       stencil: false,
       powerPreference: "low-power",
     });
-    if (!gl) return; // CSS gradient fallback stays
+    if (!gl) return; // gradient + SVG mark are the fallback
 
-    let program: WebGLProgram;
-    try {
-      program = gl.createProgram()!;
-      gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
-      gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
-      gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS))
-        throw new Error(gl.getProgramInfoLog(program) ?? "link failed");
-    } catch (e) {
-      console.warn("ascii-clouds: shader setup failed", e);
-      return;
-    }
-    gl.useProgram(program);
-
-    const U = (n: string) => gl.getUniformLocation(program, n);
-    const uRes = U("u_res")!;
-    const uTime = U("u_time")!;
-    const uCell = U("u_cell")!;
-    const uAtlasN = U("u_atlasN")!;
-    const uMark = U("u_mark")!;
-    const uRipples = U("u_ripples[0]")!;
-    const uColBase = U("u_colBase")!;
-    const uColPeak = U("u_colPeak")!;
-    const uColGlod = U("u_colGlod")!;
-
-    gl.activeTexture(gl.TEXTURE0);
-    makeAtlas(gl);
-    gl.activeTexture(gl.TEXTURE1);
-    makeMarkMask(gl);
-    gl.uniform1i(U("u_atlas")!, 0);
-    gl.uniform1i(U("u_markTex")!, 1);
-    gl.uniform1i(uAtlasN, GLYPHS.length);
-    gl.uniform3fv(uColBase, COL.base);
-    gl.uniform3fv(uColPeak, COL.peak);
-    gl.uniform3fv(uColGlod, COL.glod);
-
-    const ripples = new Float32Array(MAX_RIPPLES * 4).fill(-1);
-    gl.uniform4fv(uRipples, ripples); // t0 = -1 → shader skips every slot
-    let slot = 0;
+    let dead = false;
+    let raf = 0;
+    let visible = true;
     let dpr = 1;
+    let markSvg: SVGGraphicsElement | null = null;
+    const loc: Record<string, WebGLUniformLocation | null> = {};
+    const ripples = new Float32Array(MAX_RIPPLES * 4).fill(-1);
+    let slot = 0;
+
+    const render = (now: number) => {
+      gl.uniform1f(loc.u_time!, now / 1000);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
 
     const measureMark = () => {
       const m = document.querySelector(markSelector);
       if (!m) {
-        gl.uniform4f(uMark, 0, 0, 0, 0);
+        gl.uniform4f(loc.u_mark!, 0, 0, 0, 0);
         return;
       }
       const sr = section.getBoundingClientRect();
@@ -327,12 +299,7 @@ export function AsciiClouds({
       const yTop = (mr.top - sr.top) * dpr;
       const w = mr.width * dpr;
       const h = mr.height * dpr;
-      gl.uniform4f(uMark, x, canvas.height - yTop - h, w, h);
-    };
-
-    const render = (now: number) => {
-      gl.uniform1f(uTime, now / 1000);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.uniform4f(loc.u_mark!, x, canvas.height - yTop - h, w, h);
     };
 
     const resize = () => {
@@ -342,18 +309,66 @@ export function AsciiClouds({
       canvas.width = Math.round(r.width * dpr);
       canvas.height = Math.round(r.height * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uCell, CELL * dpr);
+      gl.uniform2f(loc.u_res!, canvas.width, canvas.height);
+      gl.uniform1f(loc.u_cell!, CELL * dpr);
       measureMark();
       if (reduced) render(0); // static frame
     };
-    resize();
 
-    if (reduced) {
-      const roStatic = new ResizeObserver(resize);
-      roStatic.observe(section);
-      return () => roStatic.disconnect();
+    /* All GL objects die on context loss, so the whole setup lives in
+       init() — program, textures, uniforms — re-run on restore. */
+    const init = () => {
+      const program = gl.createProgram()!;
+      gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
+      gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS))
+        throw new Error(gl.getProgramInfoLog(program) ?? "link failed");
+      gl.useProgram(program);
+
+      const U = (n: string) => gl.getUniformLocation(program, n);
+      for (const n of [
+        "u_res", "u_time", "u_cell", "u_atlasN", "u_mark", "u_ripples[0]",
+        "u_colBase", "u_colPeak", "u_colGlod", "u_atlas", "u_markTex",
+      ])
+        loc[n] = U(n);
+
+      gl.activeTexture(gl.TEXTURE0);
+      makeAtlas(gl);
+      gl.activeTexture(gl.TEXTURE1);
+      makeMarkMask(gl);
+      gl.uniform1i(loc.u_atlas!, 0);
+      gl.uniform1i(loc.u_markTex!, 1);
+      gl.uniform1i(loc.u_atlasN!, GLYPHS.length);
+      gl.uniform3fv(loc.u_colBase!, COL.base);
+      gl.uniform3fv(loc.u_colPeak!, COL.peak);
+      gl.uniform3fv(loc.u_colGlod!, COL.glod);
+      gl.uniform4fv(loc["u_ripples[0]"]!, ripples); // t0 = -1 → skipped
+
+      /* The field draws the cairn — retire the SVG fallback. */
+      const m = document.querySelector(markSelector);
+      markSvg = m?.querySelector("svg") ?? null;
+      if (markSvg) {
+        markSvg.style.transition = "opacity .3s";
+        markSvg.style.opacity = "0";
+      }
+      resize();
+    };
+    try {
+      init();
+    } catch (e) {
+      console.warn("ascii-clouds: shader setup failed", e);
+      return;
     }
+
+    /* Show the SVG again whenever the field cannot draw — unmount, or a
+       lost context waiting on restore. */
+    const restoreMark = () => {
+      if (markSvg) {
+        markSvg.style.transition = "";
+        markSvg.style.opacity = "";
+      }
+    };
 
     const onDown = (e: PointerEvent) => {
       const sr = section.getBoundingClientRect();
@@ -367,12 +382,8 @@ export function AsciiClouds({
         slot * 4,
       );
       slot = (slot + 1) % MAX_RIPPLES;
-      gl.uniform4fv(uRipples, ripples);
+      gl.uniform4fv(loc["u_ripples[0]"]!, ripples);
     };
-    section.addEventListener("pointerdown", onDown);
-
-    const ro = new ResizeObserver(resize);
-    ro.observe(section);
 
     const tick = (now: number) => {
       raf = 0;
@@ -380,6 +391,44 @@ export function AsciiClouds({
       render(now);
       raf = requestAnimationFrame(tick);
     };
+
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      dead = true;
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+      restoreMark(); // field can't draw until the context is back
+    };
+    const onRestored = () => {
+      try {
+        init();
+      } catch (e) {
+        console.warn("ascii-clouds: restore failed", e);
+        return; // dead stays true; SVG mark remains visible
+      }
+      dead = false;
+      if (reduced) render(0);
+      else if (visible && !raf) raf = requestAnimationFrame(tick);
+    };
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
+
+    if (reduced) {
+      const roStatic = new ResizeObserver(resize);
+      roStatic.observe(section);
+      return () => {
+        roStatic.disconnect();
+        canvas.removeEventListener("webglcontextlost", onLost);
+        canvas.removeEventListener("webglcontextrestored", onRestored);
+        restoreMark();
+      };
+    }
+
+    section.addEventListener("pointerdown", onDown);
+    const ro = new ResizeObserver(resize);
+    ro.observe(section);
     const io = new IntersectionObserver(
       ([e]) => {
         visible = e.isIntersecting;
@@ -390,12 +439,6 @@ export function AsciiClouds({
     io.observe(canvas);
     raf = requestAnimationFrame(tick);
 
-    const onLost = (e: Event) => {
-      e.preventDefault();
-      dead = true;
-    };
-    canvas.addEventListener("webglcontextlost", onLost);
-
     return () => {
       dead = true;
       if (raf) cancelAnimationFrame(raf);
@@ -403,6 +446,8 @@ export function AsciiClouds({
       io.disconnect();
       section.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("webglcontextlost", onLost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
+      restoreMark();
       // No loseContext(): StrictMode re-runs this effect on the same canvas
       // element; a lost context would come back dead on the second mount.
     };
@@ -412,12 +457,6 @@ export function AsciiClouds({
     <div
       aria-hidden
       className={`pointer-events-none absolute inset-0 ${className}`}
-      style={{
-        maskImage:
-          "linear-gradient(to bottom, black 55%, transparent 98%)",
-        WebkitMaskImage:
-          "linear-gradient(to bottom, black 55%, transparent 98%)",
-      }}
     >
       <canvas ref={ref} className="block h-full w-full" />
     </div>
