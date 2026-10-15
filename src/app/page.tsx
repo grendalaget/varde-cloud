@@ -2,6 +2,7 @@ import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { LinkButton } from "@/components/link-button";
 import { AsciiClouds } from "@/components/ascii-clouds";
+import { HostingScene } from "@/components/hosting-scene";
 import { Mark } from "@/components/brand";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 
@@ -158,6 +159,9 @@ export default function Home() {
               collective. A cairn belongs to no one, and neither does your
               server.
             </p>
+          </Reveal>
+          <Reveal y={24} className="mt-10">
+            <HostingScene />
           </Reveal>
           <Stagger inView className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {HOW_IT_WORKS.map((f) => (
