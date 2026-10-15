@@ -99,11 +99,11 @@ const BOW: Record<EdgeKind, number> = { game: 0.16, sync: 0.07, cp: 0.1 };
 /* Compact nerd view swaps floating edge pills for this legend strip —
    same edge colors as the SVG/GL layers so the key reads visually. */
 const NERD_LEGEND: { text: string; cls: string; dashed?: boolean }[] = [
-  { text: "QUIC · TLS 1.3", cls: "text-skifer-200" },
+  { text: "QUIC/TLS 1.3", cls: "text-skifer-200" },
   { text: "Relayed", cls: "text-skifer-200", dashed: true },
-  { text: "FastCDC · zstd · BLAKE3", cls: "text-glod/70" },
-  { text: "HTTPS · OpenAPI", cls: "text-separator" },
-  { text: "gRPC/UDS · 127.77.x.y", cls: "text-muted" },
+  { text: "FastCDC/zstd/BLAKE3", cls: "text-glod/70" },
+  { text: "HTTPS/OpenAPI", cls: "text-separator" },
+  { text: "gRPC/UDS on 127.77.x.y", cls: "text-muted" },
 ];
 
 /** The edge set the current state wants. Game paths to Ada detour via the
@@ -573,19 +573,19 @@ function caption(ev: SceneEvent, nerd: boolean, host: MachineId): string {
   switch (ev.kind) {
     case "idle":
       return nerd
-        ? "Every machine runs an agent (gRPC/UDS + mesh node). Game traffic rides QUIC/TLS 1.3 streams — direct, or relayed for Ada. Snapshot chunks (FastCDC, zstd, BLAKE3) keep each replica identical; agents reach the control plane over HTTPS/OpenAPI. Your 127.77.x.y loopback never changes."
-        : `${H}'s PC is hosting — everyone plays on her machine, and every machine holds a synced copy of the world. Drag the ember to hand hosting to someone else; click a machine to knock it offline.`;
+        ? "Every machine runs an agent (gRPC/UDS + mesh node). Game traffic rides QUIC/TLS 1.3 streams, direct or relayed for Ada. Snapshot chunks (FastCDC, zstd, BLAKE3) keep each replica identical; agents reach the control plane over HTTPS/OpenAPI. Your 127.77.x.y loopback never changes."
+        : `${H}'s PC is hosting, so everyone plays on her machine, and every machine holds a synced copy of the world. Drag the ember to hand hosting to someone else; click a machine to knock it offline.`;
     case "move":
       return nerd
-        ? `Host lease moved to ${NAMES[ev.to]}: QUIC streams retarget while everyone's 127.77.x.y route stays stable. Only changed chunks shipped — dedupe did the rest.`
-        : `${NAMES[ev.to]} takes the ember — her copy of the world was already synced, so only the server moves. Everyone reconnects automatically; the address on each PC never changed.`;
+        ? `Host lease moved to ${NAMES[ev.to]}: QUIC streams retarget while everyone's 127.77.x.y route stays stable. Only changed chunks shipped; dedupe did the rest.`
+        : `${NAMES[ev.to]} takes the ember. Her copy of the world was already synced, so only the server moves. Everyone reconnects automatically; the address on each PC never changed.`;
     case "fail":
       return nerd
         ? `${NAMES[ev.dead]}'s lease expired; the fencing watchdog elects ${NAMES[ev.to]} (most-synced replica). GameDriver boots, QUIC streams re-establish, loopback routes retarget.`
-        : `${NAMES[ev.dead]} dropped offline mid-game. The world was never only on her machine — ${NAMES[ev.to]}'s synced copy picks up hosting and the group reconnects.`;
+        : `${NAMES[ev.dead]} dropped offline mid-game. The world was never only on her machine, so ${NAMES[ev.to]}'s synced copy picks up hosting and the group reconnects.`;
     case "offline":
       return nerd
-        ? `${NAMES[ev.m]} left the mesh: her streams close and her replica goes stale — the world copy stays on her disk.`
+        ? `${NAMES[ev.m]} left the mesh: her streams close and her replica goes stale; the world copy stays on her disk.`
         : `${NAMES[ev.m]} went offline. Her copy of the world stays on her disk, ready for when she's back.`;
     case "rejoin":
       return nerd
@@ -593,21 +593,21 @@ function caption(ev: SceneEvent, nerd: boolean, host: MachineId): string {
         : `${NAMES[ev.m]} is back. The chunks she missed stream over, and she's a candidate to host again.`;
     case "wake":
       return nerd
-        ? `${NAMES[ev.m]} rejoins with a current replica — the fencing watchdog hands her the lease and the world wakes on her node.`
-        : `${NAMES[ev.m]} is back — and her synced copy wakes the world, so she picks up hosting.`;
+        ? `${NAMES[ev.m]} rejoins with a current replica, so the fencing watchdog hands her the lease and the world wakes on her node.`
+        : `${NAMES[ev.m]} is back, and her synced copy wakes the world, so she picks up hosting.`;
     case "reject":
       return nerd
-        ? `${NAMES[ev.m]} is offline — no peer, no lease. Rejoin first.`
-        : `${NAMES[ev.m]} is offline — she can't host. Click her machine to bring her back.`;
+        ? `${NAMES[ev.m]} is offline: no peer, no lease. Rejoin first.`
+        : `${NAMES[ev.m]} is offline, so she can't host. Click her machine to bring her back.`;
     case "sleep":
       return nerd
         ? "All replicas offline: state persists in each snapshot store. No lease, no host, until a node returns."
-        : "Everyone's offline — the world sleeps on their disks, synced and safe. An always-on anchor (soon) keeps it live instead.";
+        : "Everyone's offline, so the world sleeps on their disks, synced and safe. An always-on anchor (soon) keeps it live instead.";
   }
 }
 
 const LONGEST_CAPTION =
-  "Every machine runs an agent (gRPC/UDS + mesh node). Game traffic rides QUIC/TLS 1.3 streams — direct, or relayed for Ada. Snapshot chunks (FastCDC, zstd, BLAKE3) keep each replica identical; agents reach the control plane over HTTPS/OpenAPI. Your 127.77.x.y loopback never changes.";
+  "Every machine runs an agent (gRPC/UDS + mesh node). Game traffic rides QUIC/TLS 1.3 streams, direct or relayed for Ada. Snapshot chunks (FastCDC, zstd, BLAKE3) keep each replica identical; agents reach the control plane over HTTPS/OpenAPI. Your 127.77.x.y loopback never changes.";
 
 /* ------------------------------------------------------------------ */
 /* Chips                                                               */
@@ -691,10 +691,10 @@ function MachineChip({
             {NAMES[id]}
           </span>
           <span className="mt-1 whitespace-nowrap text-[10px] leading-tight text-muted">
-            {hosting ? "Agent + GameDriver" : "Agent · mesh"}
+            {hosting ? "Agent + GameDriver" : "Agent + mesh"}
           </span>
           <span className="whitespace-nowrap text-[10px] leading-tight text-muted">
-            {offline ? "Replica on disk" : "gRPC/UDS · 127.77.x.y"}
+            {offline ? "Replica on disk" : "gRPC/UDS on 127.77.x.y"}
           </span>
         </div>
       </div>
@@ -1031,15 +1031,15 @@ export function HostingScene() {
       // Compact: one label per protocol; wide: every game edge.
       if (compact && seen.has(key)) return null;
       seen.add(key);
-      return relayed ? "Relayed" : "QUIC · TLS 1.3";
+      return relayed ? "Relayed" : "QUIC/TLS 1.3";
     }
     if (e.kind === "sync" && !seen.has("sync")) {
       seen.add("sync");
-      return "FastCDC · zstd · BLAKE3";
+      return "FastCDC/zstd/BLAKE3";
     }
     if (e.kind === "cp" && !seen.has("cp")) {
       seen.add("cp");
-      return "HTTPS · OpenAPI";
+      return "HTTPS/OpenAPI";
     }
     return null;
   };
@@ -1143,7 +1143,7 @@ export function HostingScene() {
           sub="Address book"
           lit
           nerd={nerd}
-          nerdLines={["Control plane", "OpenAPI · fed JWT"]}
+          nerdLines={["Control plane", "OpenAPI + fed JWT"]}
           icon={
             <svg viewBox="0 0 24 24" className="size-4 sm:size-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
               <rect x="4" y="5" width="16" height="14" rx="2.5" />
@@ -1171,7 +1171,7 @@ export function HostingScene() {
           sub="Shared save"
           lit
           nerd={nerd}
-          nerdLines={["Snapshot store", "FastCDC · zstd · BLAKE3"]}
+          nerdLines={["Snapshot store", "FastCDC/zstd/BLAKE3"]}
           icon={
             <Mark
               className="size-7 text-skifer-100 sm:size-9"
