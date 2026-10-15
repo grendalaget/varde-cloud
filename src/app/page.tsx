@@ -131,15 +131,16 @@ export default function Home() {
           </Stagger>
 
           <div className="relative flex justify-center md:justify-end">
-            {/* Soft Glød halo radiating from the cairn itself */}
-            <div
-              aria-hidden
-              className="vd-cairn-glow pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-            />
             {/* The ASCII field draws the cairn into this slot (stones lit
                 Tåke, host stone Glød); the SVG stays as the no-WebGL/no-JS
                 fallback and is hidden by the field when it can render. */}
             <div id="vd-hero-mark" className="relative h-48 w-48 sm:h-64 sm:w-64 md:h-80 md:w-80">
+              {/* Glød halo anchored to the host stone (~66%/36% of the
+                  512 viewBox), not the mark's geometric center. */}
+              <div
+                aria-hidden
+                className="vd-cairn-glow pointer-events-none absolute left-[66.5%] top-[36%] aspect-square w-[200%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+              />
               <Mark
                 animated
                 title="A cairn; the lit stone moves between friends"
