@@ -175,7 +175,7 @@ export function HostingDashboard() {
       <Card className="rounded-2xl border border-separator bg-surface p-6">
         <h2 className="font-display text-lg font-semibold">Your groups</h2>
         <div className="mt-6 flex items-center gap-3 text-sm text-muted">
-          <Spinner size="sm" /> Loading your groups…
+          <Spinner size="sm" /> Loading your groups
         </div>
       </Card>
     );
@@ -192,7 +192,7 @@ export function HostingDashboard() {
       ))}
       {stale ? (
         <p className="text-xs text-muted">
-          Couldn&apos;t refresh — retrying automatically.
+          Couldn&apos;t refresh, retrying automatically.
         </p>
       ) : null}
       <JoinInline onJoined={() => void load()} />
@@ -216,15 +216,15 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
         </h3>
         {!detail ? (
           <div className="mt-3 flex items-center gap-2 text-sm text-muted">
-            <Spinner size="sm" /> Loading…
+            <Spinner size="sm" /> Loading
           </div>
         ) : detail.servers === null ? (
           <p className="mt-3 text-sm text-danger">
-            Couldn&apos;t load servers — retrying automatically.
+            Couldn&apos;t load servers, retrying automatically.
           </p>
         ) : detail.servers.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
-            No servers yet — create one from the Varde app on any linked
+            No servers yet. Create one from the Varde app on any linked
             machine.
           </p>
         ) : (
@@ -237,9 +237,9 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
                   </p>
                   <p className="truncate text-xs text-muted">
                     {s.game_id}
-                    {s.summary?.address ? ` · ${s.summary.address}` : ""}
+                    {s.summary?.address ? `, ${s.summary.address}` : ""}
                     {s.summary?.only_on_one_machine
-                      ? " · save on one machine"
+                      ? ", save on one machine"
                       : ""}
                   </p>
                 </div>
@@ -262,15 +262,15 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
         </h3>
         {!detail ? (
           <div className="mt-3 flex items-center gap-2 text-sm text-muted">
-            <Spinner size="sm" /> Loading…
+            <Spinner size="sm" /> Loading
           </div>
         ) : detail.nodes === null ? (
           <p className="mt-3 text-sm text-danger">
-            Couldn&apos;t load machines — retrying automatically.
+            Couldn&apos;t load machines, retrying automatically.
           </p>
         ) : detail.nodes.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
-            No machines linked — install Varde on a computer and link it to add
+            No machines linked. Install Varde on a computer and link it to add
             one.
           </p>
         ) : (
@@ -295,7 +295,7 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
                 </div>
                 <span className="shrink-0 text-xs text-muted">
                   {n.online ? "online" : (n.liveness ?? "offline")}
-                  {n.os ? ` · ${n.os}` : ""}
+                  {n.os ? `, ${n.os}` : ""}
                 </span>
               </li>
             ))}
@@ -322,7 +322,7 @@ function EmptyGroups({
       </p>
       {stale ? (
         <p className="mt-3 text-xs text-muted">
-          Couldn&apos;t refresh — retrying automatically.
+          Couldn&apos;t refresh, retrying automatically.
         </p>
       ) : null}
       <CreateGroupForm onCreated={onChanged} />
@@ -433,7 +433,7 @@ function JoinInline({ onJoined }: { onJoined: () => void }) {
     >
       <TextField className="flex-1" value={code} onChange={setCode} isRequired>
         <Label>Invite code</Label>
-        <Input placeholder="x7k2m9…" />
+        <Input placeholder="x7k2m9" />
       </TextField>
       <Button type="submit" variant="secondary" isPending={busy} isDisabled={!code.trim()}>
         {busy ? <Spinner color="current" size="sm" /> : null}

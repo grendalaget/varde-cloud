@@ -84,7 +84,7 @@ export function LinkFlowMock() {
         `/api/cp/device-links/${encodeURIComponent(c)}`,
       );
       if (data.link.state !== "pending") {
-        setErr(`That code is ${data.link.state} — ask the app for a fresh one.`);
+        setErr(`That code is ${data.link.state}, ask the app for a fresh one.`);
         return;
       }
       setLink(data.link);
@@ -248,7 +248,7 @@ export function LinkFlowMock() {
         >
           <div className="mb-4 flex items-center gap-2">
             <span className="flex-1 truncate rounded-md bg-surface-secondary px-2 py-1 font-mono text-[10px] text-muted">
-              {live ? "varde.games — approve a PC" : "varde.games/link"}
+              {live ? "varde.games | approve a PC" : "varde.games/link"}
             </span>
           </div>
           <div className="flex h-56 flex-col overflow-y-auto">
@@ -264,8 +264,8 @@ export function LinkFlowMock() {
                     Linked to {approved.group} as {approved.name}
                   </p>
                   <p className="mt-2 text-xs leading-relaxed text-muted">
-                    The Varde service on that PC finishes linking itself —
-                    nothing left to do here.
+                    The Varde service on that PC finishes linking itself.
+                    Nothing left to do here.
                   </p>
                   <Button
                     variant="ghost"
@@ -289,7 +289,7 @@ export function LinkFlowMock() {
                       {link.hostname}
                     </p>
                     <p className="mt-0.5 text-muted">
-                      {link.os} · {link.arch} · code {link.user_code}
+                      {link.os}, {link.arch}, code {link.user_code}
                     </p>
                   </div>
                   {groups.length === 0 ? (
@@ -319,7 +319,7 @@ export function LinkFlowMock() {
                           isDisabled={busy}
                           className="flex-1"
                         >
-                          {busy ? "Approving…" : "Approve"}
+                          {busy ? "Approving" : "Approve"}
                         </Button>
                         <Button
                           variant="ghost"
@@ -361,7 +361,7 @@ export function LinkFlowMock() {
                     className="mt-4"
                     fullWidth
                   >
-                    {busy ? "Checking…" : "Check code"}
+                    {busy ? "Checking" : "Check code"}
                   </Button>
                 </motion.div>
               )
@@ -400,7 +400,7 @@ export function LinkFlowMock() {
       <figcaption className="mt-4 flex min-h-10 items-start justify-center text-center text-sm text-muted">
         {live
           ? approved
-            ? "Linked for real — that PC is part of your group now."
+            ? "Linked for real, that PC is part of your group now."
             : "Signed in: approving here really links your PC."
           : stage === "form"
             ? "Try it: press Continue, the same thing the real installer does."

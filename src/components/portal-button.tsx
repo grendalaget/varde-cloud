@@ -31,7 +31,7 @@ export function PortalButton() {
         {({ isPending }) => (
           <>
             {isPending ? <Spinner color="current" size="sm" /> : null}
-            {isPending ? "Opening…" : "Manage billing"}
+            {isPending ? "Opening" : "Manage billing"}
           </>
         )}
       </Button>

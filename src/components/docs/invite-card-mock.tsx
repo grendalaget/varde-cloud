@@ -69,7 +69,7 @@ export function InviteCardMock() {
     live && invite
       ? invite.url.replace(/^https?:\/\//, "")
       : live
-        ? "cp.varde.games/invite/······"
+        ? "cp.varde.games/invite/x7k2m9"
         : SAMPLE;
   const liveInvite = live && invite;
 
@@ -79,7 +79,7 @@ export function InviteCardMock() {
         <p className="text-sm font-semibold text-foreground">Invite link</p>
         <p className="mt-0.5 text-xs text-muted">
           {liveInvite
-            ? `For ${invite.group_name} — ${
+            ? `For ${invite.group_name}: ${
                 invite.expires_at
                   ? `valid until ${new Date(invite.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
                   : "no expiry"
@@ -126,7 +126,7 @@ export function InviteCardMock() {
                 isDisabled={busy}
                 onPress={() => void create()}
               >
-                {busy ? "Creating…" : `Create an invite for ${group?.name}`}
+                {busy ? "Creating" : `Create an invite for ${group?.name}`}
               </Button>
             </>
           )
@@ -147,10 +147,10 @@ export function InviteCardMock() {
       </Card>
       <figcaption className="mt-3 text-center text-sm text-muted">
         {liveInvite
-          ? "That's a real invite — send it to your friends and they're in."
+          ? "That's a real invite: send it to your friends and they're in."
           : live
             ? "Signed in: this mints a real invite for your group."
-            : "What your friends receive. Sample only — it joins nothing."}
+            : "What your friends receive. Sample only: it joins nothing."}
       </figcaption>
       <LiveHint status={status} />
     </figure>

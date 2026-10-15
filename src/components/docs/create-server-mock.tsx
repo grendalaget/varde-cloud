@@ -194,7 +194,7 @@ export function CreateServerMock() {
               </p>
               <p className="mt-2 text-xs text-muted">
                 {running
-                  ? "A linked machine in your group picks it up and starts it — usually within a minute."
+                  ? "A linked machine in your group picks it up and starts it, usually within a minute."
                   : created.startError
                     ? `Created, but it couldn't start yet: ${created.startError}. Start it from the dashboard when a machine is online.`
                     : "Created but not started yet. Start it from the dashboard when you are ready."}
@@ -379,7 +379,7 @@ export function CreateServerMock() {
                       }}
                       isDisabled={!live || busy || !name.trim()}
                     >
-                      {busy ? "Creating…" : "Create server"}
+                      {busy ? "Creating" : "Create server"}
                     </Button>
                   </div>
                 </>
@@ -390,7 +390,7 @@ export function CreateServerMock() {
       </div>
       <figcaption className="mt-4 flex min-h-10 items-start justify-center text-center text-sm text-muted">
         {stage === "created" && created
-          ? `Done — that's a real server in ${group?.name ?? "your group"}.`
+          ? `Done, that's a real server in ${group?.name ?? "your group"}.`
           : live
             ? "Signed in: this creates a real server in your group."
             : "The dashboard's New server form."}

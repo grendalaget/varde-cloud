@@ -26,7 +26,7 @@ export function SmartScreenMock() {
         </p>
         <p className="mt-3 text-xs text-muted">
           App: <span className="text-foreground">VardeSetup.exe</span>
-          <span className="mx-2 text-muted/50">·</span>
+          <span className="mx-2 text-muted/50">|</span>
           Publisher: <span className="text-foreground">Unknown publisher</span>
         </p>
 
