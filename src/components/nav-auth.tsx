@@ -4,6 +4,8 @@ import { Navbar } from "@heroui-pro/react/navbar";
 
 import { useEffect } from "react";
 
+import { LinkButton } from "./link-button";
+
 import { useSession } from "@/lib/auth-client";
 
 import {
@@ -21,12 +23,9 @@ function SignInItems() {
       >
         Sign in
       </Navbar.Item>
-      <Navbar.Item
-        href="/download"
-        className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:bg-[#ff6f3d] active:scale-[0.96]"
-      >
+      <LinkButton href="/download" size="sm">
         Get started
-      </Navbar.Item>
+      </LinkButton>
     </>
   );
 }

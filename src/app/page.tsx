@@ -1,5 +1,7 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
+import { LinkButton } from "@/components/link-button";
+import { AsciiClouds } from "@/components/ascii-clouds";
 import { Mark } from "@/components/brand";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 
@@ -71,9 +73,12 @@ export default function Home() {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.09), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(56,49,47,0.35), transparent 70%)",
+              "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.05), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(56,49,47,0.35), transparent 70%)",
           }}
         />
+        {/* Glyph field: drifting ASCII clouds + click shockwave; the cairn
+            below is drawn by the field itself. Falls back to the gradient. */}
+        <AsciiClouds markSelector="#vd-hero-mark" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 md:grid-cols-2 md:pb-28 md:pt-24">
           <Stagger stagger={0.08}>
             <Item className="mb-4">
@@ -97,18 +102,12 @@ export default function Home() {
             </Item>
             <Item>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/download"
-                  className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-[#ff6f3d] hover:shadow-lg hover:shadow-glod/25 active:scale-[0.98]"
-                >
+                <LinkButton href="/download" size="lg">
                   Download Varde
-                </Link>
-                <Link
-                  href="#how-it-works"
-                  className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-surface-tertiary active:scale-[0.98]"
-                >
+                </LinkButton>
+                <LinkButton href="#how-it-works" variant="secondary" size="lg">
                   How it works
-                </Link>
+                </LinkButton>
               </div>
             </Item>
             <Item>
@@ -127,16 +126,22 @@ export default function Home() {
           </Stagger>
 
           <div className="relative flex justify-center md:justify-end">
-            {/* Soft Glød halo radiating from the cairn itself */}
-            <div
-              aria-hidden
-              className="vd-cairn-glow pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-            />
-            <Mark
-              animated
-              title="A cairn; the lit stone moves between friends"
-              className="relative h-48 w-48 text-skifer-100 drop-shadow-[0_0_40px_rgba(255,91,31,0.2)] sm:h-64 sm:w-64 md:h-80 md:w-80"
-            />
+            {/* The ASCII field draws the cairn into this slot (stones lit
+                Tåke, host stone Glød); the SVG stays as the no-WebGL/no-JS
+                fallback and is hidden by the field when it can render. */}
+            <div id="vd-hero-mark" className="relative h-48 w-48 sm:h-64 sm:w-64 md:h-80 md:w-80">
+              {/* Glød halo anchored to the host stone (~66%/36% of the
+                  512 viewBox), not the mark's geometric center. */}
+              <div
+                aria-hidden
+                className="vd-cairn-glow pointer-events-none absolute left-[66.5%] top-[36%] aspect-square w-[200%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+              />
+              <Mark
+                animated
+                title="A cairn; the lit stone moves between friends"
+                className="absolute inset-0 h-full w-full text-skifer-100"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -274,22 +279,21 @@ export default function Home() {
                 optional managed hosting lives here.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
+                <LinkButton
                   href="https://github.com/grendalaget/varde"
                   target="_blank"
-                  rel="noreferrer"
-                  className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-[#ff6f3d] hover:shadow-lg hover:shadow-glod/25 active:scale-[0.98]"
+                  size="lg"
                 >
                   Star on GitHub
-                </a>
-                <a
+                </LinkButton>
+                <LinkButton
                   href="https://github.com/grendalaget/varde/tree/main/docs"
                   target="_blank"
-                  rel="noreferrer"
-                  className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-surface-tertiary active:scale-[0.98]"
+                  variant="secondary"
+                  size="lg"
                 >
                   Read the docs
-                </a>
+                </LinkButton>
               </div>
             </Card>
           </Reveal>

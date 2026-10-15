@@ -18,6 +18,17 @@ const HOST =
 const CAP =
   "M184.38 114.89L186.94 100.39C187.14 99.26 187.49 98.3 188.06 97.31L206.36 65.76C207.93 63.05 210.35 61.48 213.46 61.13L303.44 51.27C306.84 50.89 309.77 52.13 311.87 54.83L342.79 94.49C343.34 95.18 343.73 95.86 344.07 96.68L349.1 108.88C351.81 115.43 347.93 121.55 340.85 121.9L196.87 129.05C188.52 129.46 182.93 123.13 184.38 114.89Z";
 
+/** Stone paths in paint order, flagged for the lit host stone. Used by the
+ *  hero glyph field to rasterize the mark as a mask — keep in sync with the
+ *  Mark geometry above. */
+export const MARK_STONES: { d: string; host?: boolean }[] = [
+  { d: BASE },
+  { d: SLAB },
+  { d: PEER },
+  { d: HOST, host: true },
+  { d: CAP },
+];
+
 export function Mark({
   animated = false,
   className = "h-10 w-10",
