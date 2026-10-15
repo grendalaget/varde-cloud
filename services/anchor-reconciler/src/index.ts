@@ -36,6 +36,14 @@ const STUCK_PROVISION_MS = 30 * 60_000;
 // idempotency key for re-provision.
 const machineName = (r: AnchorRow) => `anchor-${r.group_id}`;
 
+// Consecutive members-check failures per row. A transient CP error must
+// not burn the error/retry budget, but a permanent failure (e.g. the
+// service token lost its members scope) has to become visible instead of
+// leaving the row pending forever — past this streak the error is
+// recorded normally, which eventually parks the row for a human.
+const memberCheckFails = new Map<string, number>();
+const MEMBER_CHECK_STREAK = 10;
+
 async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   if (r.error && r.attempts >= MAX_BACKOFF_ATTEMPTS && r.status === "error") {
     return; // parked until a human flips desired or raises the cap
@@ -47,11 +55,18 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   // transient CP error.
   const admin = wantsAnchor(r)
     ? await cp.isGroupAdmin(r.group_id, r.user_id).catch((e) => {
-        console.warn(`anchor ${r.id} group ${r.group_id}: members check failed, skipping:`, e);
+        const streak = (memberCheckFails.get(r.id) ?? 0) + 1;
+        memberCheckFails.set(r.id, streak);
+        if (streak >= MEMBER_CHECK_STREAK) {
+          memberCheckFails.delete(r.id);
+          throw new Error(`group members check failing persistently (${streak}x): ${e}`);
+        }
+        console.warn(`anchor ${r.id} group ${r.group_id}: members check failed (${streak}x), skipping:`, e);
         return null;
       })
     : false;
   if (admin === null) return;
+  memberCheckFails.delete(r.id);
   if (wantsAnchor(r) && admin) {
     await provision(r, db, cp, provider);
   } else {
