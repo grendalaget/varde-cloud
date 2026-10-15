@@ -13,6 +13,7 @@ export interface AnchorRow {
   node_id: string | null;
   error: string | null;
   attempts: number;
+  updated_at: number;
   plan: string; // joined from user.plan
 }
 

@@ -21,6 +21,11 @@ const POLL_MS = Number(env("POLL_INTERVAL_MS", "15000"));
 // Retry backoff: repeated failures park a row for a while instead of
 // hammering the provider. attempts is bumped on every status write.
 const MAX_BACKOFF_ATTEMPTS = 20;
+// A machine that has not enrolled within this window never will: its
+// enroll token has expired (or it crashed). Destroy it so the retry
+// path provisions a fresh machine with a fresh token instead of
+// waiting on a node that cannot appear.
+const STUCK_PROVISION_MS = 30 * 60_000;
 
 const wantsAnchor = (r: AnchorRow) =>
   r.desired === "provisioned" && (r.plan === "anchor" || r.plan === "anchor+");
@@ -82,6 +87,13 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       if (managed) {
         await db.setStatus(r.id, managed.online ? "online" : "provisioning", {
           node_id: managed.id,
+        });
+        return;
+      }
+      if (r.fly_machine_id && Date.now() - r.updated_at > STUCK_PROVISION_MS) {
+        await provider.destroy(r.fly_machine_id);
+        await db.setStatus(r.id, "error", {
+          error: "agent did not enroll within 30m; reprovisioning",
         });
       }
       return;
