@@ -17,6 +17,12 @@ export interface AnchorRow {
   plan: string; // joined from user.plan
 }
 
+// A row only wants its anchor while the subscription still includes one:
+// desired is user intent, plan is the live entitlement. Cancel/revoke
+// flips plan to free and teardown follows without touching desired.
+export const wantsAnchor = (r: AnchorRow) =>
+  r.desired === "provisioned" && (r.plan === "anchor" || r.plan === "anchor+");
+
 export class AnchorDb {
   private client: Client;
 
@@ -39,12 +45,16 @@ export class AnchorDb {
     return res.rows as unknown as AnchorRow[];
   }
 
-  // The row a bootstrap request acts on: the live anchor for a group.
+  // The row a bootstrap request acts on: the live provisioned anchor for
+  // a group. Detached/deprovisioning rows from an earlier anchor must not
+  // shadow a replacement, so filter to the active one explicitly.
   async rowByGroup(groupId: string): Promise<AnchorRow | null> {
     const res = await this.client.execute({
       sql: `SELECT a.*, u.plan AS plan FROM cloud_anchor a
             JOIN user u ON u.id = a.user_id
-            WHERE a.group_id = ? AND a.status != 'gone' LIMIT 1`,
+            WHERE a.group_id = ? AND a.desired = 'provisioned'
+              AND a.status NOT IN ('gone','deprovisioning')
+            ORDER BY a.updated_at DESC LIMIT 1`,
       args: [groupId],
     });
     return (res.rows[0] as unknown as AnchorRow) ?? null;

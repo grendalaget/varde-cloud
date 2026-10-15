@@ -5,7 +5,7 @@
 // machine the reconciler created for that group — a stolen URL is useless
 // anywhere else on the network.
 import { createServer, type Server } from "node:http";
-import type { AnchorDb } from "./db";
+import { wantsAnchor, type AnchorDb } from "./db";
 import type { CpClient } from "./cp";
 import type { AnchorProvider } from "./provider";
 
@@ -27,9 +27,10 @@ export function startBootstrap(
       }
       const groupId = m[1];
       const row = await db.rowByGroup(groupId);
-      // Only serve while a provision is actually expected: a detached or
-      // finished row gets nothing.
-      if (!row || row.desired !== "provisioned" || !row.fly_machine_id) {
+      // Only serve while a provision is actually expected AND the
+      // subscription still includes an anchor: a canceled plan stops
+      // minting tokens immediately, before teardown destroys the machine.
+      if (!row || !wantsAnchor(row) || !row.fly_machine_id) {
         res.writeHead(404).end();
         return;
       }

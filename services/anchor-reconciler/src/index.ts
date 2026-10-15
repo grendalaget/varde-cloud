@@ -3,7 +3,7 @@
 // the source of truth; each pass drives one row toward its desired state
 // through the AnchorProvider (Fly Machines) and the CP service token.
 // See docs/cloud-anchor.md.
-import { AnchorDb, type AnchorRow } from "./db";
+import { AnchorDb, wantsAnchor, type AnchorRow } from "./db";
 import { CpClient } from "./cp";
 import { FlyMachinesProvider } from "./fly";
 import { startBootstrap } from "./bootstrap";
@@ -32,9 +32,6 @@ const MAX_BACKOFF_ATTEMPTS = 20;
 // waiting on a node that cannot appear.
 const STUCK_PROVISION_MS = 30 * 60_000;
 
-const wantsAnchor = (r: AnchorRow) =>
-  r.desired === "provisioned" && (r.plan === "anchor" || r.plan === "anchor+");
-
 // Machine name is the group id: unique, stable, and makes find() the
 // idempotency key for re-provision.
 const machineName = (r: AnchorRow) => `anchor-${r.group_id}`;
@@ -45,8 +42,16 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   }
   // The anchor serves the group but is billed to the subscriber: if they
   // are no longer a group admin, tear it down. A members-list failure
-  // throws rather than tearing anchors out on a transient CP error.
-  const admin = wantsAnchor(r) ? await cp.isGroupAdmin(r.group_id, r.user_id) : false;
+  // skips this pass without a status write — the row keeps its state and
+  // retries next poll instead of burning its error/retry budget on a
+  // transient CP error.
+  const admin = wantsAnchor(r)
+    ? await cp.isGroupAdmin(r.group_id, r.user_id).catch((e) => {
+        console.warn(`anchor ${r.id} group ${r.group_id}: members check failed, skipping:`, e);
+        return null;
+      })
+    : false;
+  if (admin === null) return;
   if (wantsAnchor(r) && admin) {
     await provision(r, db, cp, provider);
   } else {
