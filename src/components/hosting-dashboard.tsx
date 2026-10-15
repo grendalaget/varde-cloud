@@ -254,8 +254,11 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
                 s.summary?.latest_save?.replicas ??
                 s.summary?.latest_safe_save?.replicas ??
                 [];
+              // resume needs the newest save; no ready holders at all is
+              // just as blocked as all-offline
               const allOffline =
-                holders.length > 0 && holders.every((h) => !h.online);
+                s.summary?.latest_save != null &&
+                (holders.length === 0 || holders.every((h) => !h.online));
               return (
                 <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
@@ -277,8 +280,9 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
                     </p>
                     {allOffline ? (
                       <p className="truncate text-xs text-warning">
-                        No machine with the latest save is online — it
-                        can&apos;t resume until one comes back.
+                        No machine with the latest save is online — the
+                        newest save can&apos;t be restored until one comes
+                        back.
                       </p>
                     ) : null}
                   </div>
