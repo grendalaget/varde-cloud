@@ -1,5 +1,6 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
+import { LinkButton } from "@/components/link-button";
 import { AsciiClouds } from "@/components/ascii-clouds";
 import { Mark } from "@/components/brand";
 import { Item, Reveal, Stagger } from "@/components/reveal";
@@ -101,18 +102,12 @@ export default function Home() {
             </Item>
             <Item>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/download"
-                  className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-[#ff6f3d] hover:shadow-lg hover:shadow-glod/25 active:scale-[0.98]"
-                >
+                <LinkButton href="/download" size="lg">
                   Download Varde
-                </Link>
-                <Link
-                  href="#how-it-works"
-                  className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-surface-tertiary active:scale-[0.98]"
-                >
+                </LinkButton>
+                <LinkButton href="#how-it-works" variant="secondary" size="lg">
                   How it works
-                </Link>
+                </LinkButton>
               </div>
             </Item>
             <Item>
@@ -284,22 +279,21 @@ export default function Home() {
                 optional managed hosting lives here.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
+                <LinkButton
                   href="https://github.com/grendalaget/varde"
                   target="_blank"
-                  rel="noreferrer"
-                  className="rounded-lg bg-glod px-5 py-3 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-[#ff6f3d] hover:shadow-lg hover:shadow-glod/25 active:scale-[0.98]"
+                  size="lg"
                 >
                   Star on GitHub
-                </a>
-                <a
+                </LinkButton>
+                <LinkButton
                   href="https://github.com/grendalaget/varde/tree/main/docs"
                   target="_blank"
-                  rel="noreferrer"
-                  className="rounded-lg border border-separator bg-surface px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 ease-vd-out hover:-translate-y-0.5 hover:bg-surface-tertiary active:scale-[0.98]"
+                  variant="secondary"
+                  size="lg"
                 >
                   Read the docs
-                </a>
+                </LinkButton>
               </div>
             </Card>
           </Reveal>

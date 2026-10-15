@@ -1,6 +1,8 @@
 "use client";
 
 import { Navbar } from "@heroui-pro/react/navbar";
+import { Button } from "@heroui/react";
+import { useRouter } from "next/navigation";
 
 import { useEffect } from "react";
 
@@ -13,6 +15,7 @@ import {
 } from "./nav-user-menu";
 
 function SignInItems() {
+  const router = useRouter();
   return (
     <>
       <Navbar.Item
@@ -21,12 +24,9 @@ function SignInItems() {
       >
         Sign in
       </Navbar.Item>
-      <Navbar.Item
-        href="/download"
-        className="rounded-md bg-glod px-3.5 py-1.5 text-sm font-semibold text-natt transition-all duration-200 ease-vd-out hover:bg-[#ff6f3d] active:scale-[0.96]"
-      >
+      <Button size="sm" onPress={() => router.push("/download")}>
         Get started
-      </Navbar.Item>
+      </Button>
     </>
   );
 }
