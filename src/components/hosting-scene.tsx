@@ -610,10 +610,13 @@ function CairnsGlyph({ className }: { className?: string }) {
   );
 }
 
+/* Faces share one grid cell so the chip sizes to whichever face is larger —
+   fit-content on both sides of the flip. */
 const FLIP_INNER =
-  "relative h-full w-full rounded-2xl bg-surface-200 transform-3d transition-transform duration-500 ease-vd-spring";
-const FACE = "flex flex-col items-center justify-center p-2.5 text-center backface-hidden";
-const FACE_BACK = `${FACE} absolute inset-0 rotate-y-180 font-mono`;
+  "grid rounded-lg bg-surface-200 transform-3d transition-transform duration-500 ease-vd-spring";
+const FACE =
+  "col-start-1 row-start-1 flex flex-col items-center justify-center p-2.5 text-center backface-hidden";
+const FACE_BACK = `${FACE} rotate-y-180 font-mono`;
 
 function MachineChip({
   id,
@@ -622,7 +625,6 @@ function MachineChip({
   offline,
   nerd,
   hover,
-  compact,
   onToggle,
 }: {
   id: MachineId;
@@ -631,7 +633,6 @@ function MachineChip({
   offline: boolean;
   nerd: boolean;
   hover: boolean;
-  compact: boolean;
   onToggle: (m: MachineId) => void;
 }) {
   const status = offline ? "Offline" : hosting ? "Hosting" : "Playing";
@@ -642,9 +643,7 @@ function MachineChip({
       aria-label={`${NAMES[id]}'s machine, ${status.toLowerCase()}. Click to ${offline ? "bring it back online" : "knock it offline"}.`}
       onClick={() => onToggle(id)}
       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-      className={`group absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-2xl border outline-none transition-[border-color,box-shadow,opacity,left,top] duration-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod ${
-        compact ? "w-24" : "w-32"
-      } ${
+      className={`group absolute z-10 w-fit -translate-x-1/2 -translate-y-1/2 rounded-lg border outline-none transition-[border-color,box-shadow,opacity,left,top] duration-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glod ${
         hover
           ? "border-glod shadow-[0_0_0_4px_rgba(255,91,31,0.15)]"
           : hosting
@@ -709,7 +708,7 @@ function NodeChip({
   return (
     <div
       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-      className={`absolute z-10 w-24 -translate-x-1/2 -translate-y-1/2 rounded-2xl border transition-opacity sm:w-28 ${
+      className={`absolute z-10 w-fit -translate-x-1/2 -translate-y-1/2 rounded-lg border transition-opacity ${
         lit ? "border-separator" : "border-separator/60 opacity-50"
       }`}
     >
@@ -1086,7 +1085,6 @@ export function HostingScene() {
             offline={offline.has(m)}
             nerd={nerd}
             hover={hover === m}
-            compact={compact}
             onToggle={toggleMachine}
           />
         ))}
