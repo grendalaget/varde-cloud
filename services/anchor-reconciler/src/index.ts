@@ -84,16 +84,28 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       // agent reports it at enroll, so the node name is anchor-<groupId>.
       const { nodes } = await cp.listNodes(r.group_id);
       const managed = nodes.find((n) => n.anchor && n.name === machineName(r));
-      if (managed) {
-        await db.setStatus(r.id, managed.online ? "online" : "provisioning", {
-          node_id: managed.id,
-        });
+      if (managed?.online) {
+        await db.setStatus(r.id, "online", { node_id: managed.id, error: null });
         return;
       }
-      if (r.fly_machine_id && Date.now() - r.updated_at > STUCK_PROVISION_MS) {
-        await provider.destroy(r.fly_machine_id);
+      // Only record the node id once: rewriting the row each poll would
+      // refresh updated_at and keep an enrolled-but-offline anchor from
+      // ever reaching the stuck timeout below.
+      if (managed && !r.node_id) {
+        await db.setStatus(r.id, "provisioning", { node_id: managed.id });
+        return;
+      }
+      if (Date.now() - r.updated_at > STUCK_PROVISION_MS) {
+        // No usable node within the window: the enroll token expired, the
+        // machine never booted, or the agent enrolled then died. Rebuild
+        // from scratch; the volume is empty (nothing ever replicated).
+        if (r.fly_machine_id) await provider.destroy(r.fly_machine_id);
+        if (r.fly_volume_id) await provider.deleteVolume(r.fly_volume_id);
+        if (managed) {
+          await cp.deleteNode(managed.id).catch(() => {});
+        }
         await db.setStatus(r.id, "error", {
-          error: "agent did not enroll within 30m; reprovisioning",
+          error: "anchor not online within 30m; reprovisioning",
         });
       }
       return;
