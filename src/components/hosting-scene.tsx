@@ -250,7 +250,10 @@ function linkProgram(gl: WebGL2RenderingContext, vs: string, fs: string) {
 
 /** The GL layer behind the scene. Imperative: React pushes desired edges
  *  and burst events, the engine fades between them. */
-function createEngine(canvas: HTMLCanvasElement) {
+function createEngine(
+  canvas: HTMLCanvasElement,
+  cb?: { lost?(): void; restored?(): void },
+) {
   const gl = canvas.getContext("webgl2", {
     alpha: true,
     antialias: true,
@@ -380,6 +383,7 @@ function createEngine(canvas: HTMLCanvasElement) {
   const init = () => {
     progR = linkProgram(gl, RIBBON_VERT, RIBBON_FRAG);
     progP = linkProgram(gl, PART_VERT, PART_FRAG);
+    gl.enable(gl.BLEND); // context state — must be re-set after restore
 
     const UR = (n: string) => gl.getUniformLocation(progR, n);
     for (const n of ["u_res", "u_col", "u_alpha", "u_time", "u_speed", "u_seed"])
@@ -462,6 +466,7 @@ function createEngine(canvas: HTMLCanvasElement) {
     dead = true;
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
+    cb?.lost?.();
   };
   const onRestored = () => {
     try {
@@ -471,6 +476,7 @@ function createEngine(canvas: HTMLCanvasElement) {
       return;
     }
     dead = false;
+    cb?.restored?.();
     if (reduced) render(0);
     else if (visible && !raf) raf = requestAnimationFrame(tick);
   };
@@ -546,6 +552,7 @@ type SceneEvent =
   | { kind: "rejoin"; m: MachineId }
   | { kind: "offline"; m: MachineId }
   | { kind: "reject"; m: MachineId }
+  | { kind: "wake"; m: MachineId }
   | { kind: "sleep" };
 
 function caption(ev: SceneEvent, nerd: boolean, host: MachineId): string {
@@ -571,6 +578,10 @@ function caption(ev: SceneEvent, nerd: boolean, host: MachineId): string {
       return nerd
         ? `${ev.m} rejoins the mesh: QUIC re-establishes and the snapshot store catches her replica up by missing BLAKE3 chunks.`
         : `${NAMES[ev.m]} is back. The chunks she missed stream over, and she's a candidate to host again.`;
+    case "wake":
+      return nerd
+        ? `${ev.m} rejoins with a current replica — the fencing watchdog hands her the lease and the world wakes on her node.`
+        : `${NAMES[ev.m]} is back — and her synced copy wakes the world, so she picks up hosting.`;
     case "reject":
       return nerd
         ? `${ev.m} is offline — no peer, no lease. Rejoin first.`
@@ -737,16 +748,21 @@ export function HostingScene() {
   const [hover, setHover] = useState<MachineId | null>(null);
   const [ev, setEv] = useState<SceneEvent>({ kind: "idle" });
   const [glFailed, setGlFailed] = useState(false);
+  const [glLost, setGlLost] = useState(false);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<ReturnType<typeof createEngine> | null>(null);
   const offlineRef = useRef(offline);
+  const hostRef = useRef(host);
   const failTimer = useRef<number>(0);
   const dragPosRef = useRef<Pt | null>(null);
   useEffect(() => {
     offlineRef.current = offline;
   }, [offline]);
+  useEffect(() => {
+    hostRef.current = host;
+  }, [host]);
 
   const layout = compact ? LAYOUT_NARROW : LAYOUT_WIDE;
   const allOffline = offline.size === MACHINE_IDS.length;
@@ -768,7 +784,10 @@ export function HostingScene() {
     if (!canvas) return;
     let engine: ReturnType<typeof createEngine> | null = null;
     try {
-      engine = createEngine(canvas);
+      engine = createEngine(canvas, {
+        lost: () => setGlLost(true),
+        restored: () => setGlLost(false),
+      });
     } catch (e) {
       console.warn("hosting-scene: GL init failed", e);
     }
@@ -803,11 +822,15 @@ export function HostingScene() {
   );
 
   const migrate = useCallback(
-    (to: MachineId, via: "move" | "fail", from: MachineId) => {
+    (to: MachineId, via: "move" | "fail" | "wake", from: MachineId) => {
       setHost(to);
       burst(`sync-${to}`);
       setEv(
-        via === "fail" ? { kind: "fail", dead: from, to } : { kind: "move", to, from },
+        via === "fail"
+          ? { kind: "fail", dead: from, to }
+          : via === "wake"
+            ? { kind: "wake", m: to }
+            : { kind: "move", to, from },
       );
     },
     [burst],
@@ -818,7 +841,13 @@ export function HostingScene() {
     if (next.has(m)) {
       next.delete(m);
       setOffline(next);
-      setEv({ kind: "rejoin", m });
+      if (next.has(host)) {
+        // The host is still dead — the rejoining machine wakes the world.
+        window.clearTimeout(failTimer.current);
+        migrate(m, "wake", host);
+      } else {
+        setEv({ kind: "rejoin", m });
+      }
       window.setTimeout(() => burst(`sync-${m}`), 150);
     } else {
       next.add(m);
@@ -830,6 +859,8 @@ export function HostingScene() {
         setEv({ kind: "offline", m });
         window.clearTimeout(failTimer.current);
         failTimer.current = window.setTimeout(() => {
+          // Stale if the ember already moved or the machine came back.
+          if (hostRef.current !== m || !offlineRef.current.has(m)) return;
           const cand = MACHINE_IDS.filter((x) => !offlineRef.current.has(x));
           if (cand.length) {
             migrate(cand[(Math.random() * cand.length) | 0], "fail", m);
@@ -953,10 +984,10 @@ export function HostingScene() {
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
-        {glFailed && (
+        {(glFailed || glLost) && (
           <svg
             aria-hidden
-            className="absolute inset-0 h-full w-full"
+            className="absolute inset-0 h-full w-full bg-surface-100"
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
           >
