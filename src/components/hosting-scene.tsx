@@ -564,27 +564,27 @@ function caption(ev: SceneEvent, nerd: boolean, host: MachineId): string {
         : `${H}'s PC is hosting — everyone plays on her machine, and every machine holds a synced copy of the world. Drag the ember to hand hosting to someone else; click a machine to knock it offline.`;
     case "move":
       return nerd
-        ? `Host lease moved to ${ev.to}: QUIC streams retarget while everyone's 127.77.x.y route stays stable. Only changed chunks shipped — dedupe did the rest.`
+        ? `Host lease moved to ${NAMES[ev.to]}: QUIC streams retarget while everyone's 127.77.x.y route stays stable. Only changed chunks shipped — dedupe did the rest.`
         : `${NAMES[ev.to]} takes the ember — her copy of the world was already synced, so only the server moves. Everyone reconnects automatically; the address on each PC never changed.`;
     case "fail":
       return nerd
-        ? `${ev.dead}'s lease expired; the fencing watchdog elects ${ev.to} (most-synced replica). GameDriver boots, QUIC streams re-establish, loopback routes retarget.`
+        ? `${NAMES[ev.dead]}'s lease expired; the fencing watchdog elects ${NAMES[ev.to]} (most-synced replica). GameDriver boots, QUIC streams re-establish, loopback routes retarget.`
         : `${NAMES[ev.dead]} dropped offline mid-game. The world was never only on her machine — ${NAMES[ev.to]}'s synced copy picks up hosting and the group reconnects.`;
     case "offline":
       return nerd
-        ? `${ev.m} left the mesh: her streams close and her replica goes stale — the world copy stays on her disk.`
+        ? `${NAMES[ev.m]} left the mesh: her streams close and her replica goes stale — the world copy stays on her disk.`
         : `${NAMES[ev.m]} went offline. Her copy of the world stays on her disk, ready for when she's back.`;
     case "rejoin":
       return nerd
-        ? `${ev.m} rejoins the mesh: QUIC re-establishes and the snapshot store catches her replica up by missing BLAKE3 chunks.`
+        ? `${NAMES[ev.m]} rejoins the mesh: QUIC re-establishes and the snapshot store catches her replica up by missing BLAKE3 chunks.`
         : `${NAMES[ev.m]} is back. The chunks she missed stream over, and she's a candidate to host again.`;
     case "wake":
       return nerd
-        ? `${ev.m} rejoins with a current replica — the fencing watchdog hands her the lease and the world wakes on her node.`
+        ? `${NAMES[ev.m]} rejoins with a current replica — the fencing watchdog hands her the lease and the world wakes on her node.`
         : `${NAMES[ev.m]} is back — and her synced copy wakes the world, so she picks up hosting.`;
     case "reject":
       return nerd
-        ? `${ev.m} is offline — no peer, no lease. Rejoin first.`
+        ? `${NAMES[ev.m]} is offline — no peer, no lease. Rejoin first.`
         : `${NAMES[ev.m]} is offline — she can't host. Click her machine to bring her back.`;
     case "sleep":
       return nerd
@@ -677,10 +677,10 @@ function MachineChip({
             {NAMES[id]}
           </span>
           <span className="mt-1 whitespace-nowrap text-[10px] leading-tight text-muted">
-            {hosting ? "agent + GameDriver" : "agent · mesh"}
+            {hosting ? "Agent + GameDriver" : "Agent · mesh"}
           </span>
           <span className="whitespace-nowrap text-[10px] leading-tight text-muted">
-            {offline ? "replica on disk" : "gRPC/UDS · 127.77.x.y"}
+            {offline ? "Replica on disk" : "gRPC/UDS · 127.77.x.y"}
           </span>
         </div>
       </div>
@@ -937,7 +937,7 @@ export function HostingScene() {
   const seen = new Set<EdgeKind>();
   const edgeLabel = (e: Edge): string | null => {
     if (e.kind === "game")
-      return e.a === "relay" || e.b === "relay" ? "relayed" : "QUIC · TLS 1.3";
+      return e.a === "relay" || e.b === "relay" ? "Relayed" : "QUIC · TLS 1.3";
     if (e.kind === "sync" && !seen.has("sync")) {
       seen.add("sync");
       return "FastCDC · zstd · BLAKE3";
@@ -1039,7 +1039,7 @@ export function HostingScene() {
           sub="Address book"
           lit
           nerd={nerd}
-          nerdLines={["control plane", "OpenAPI · fed JWT"]}
+          nerdLines={["Control plane", "OpenAPI · fed JWT"]}
           icon={
             <svg viewBox="0 0 24 24" className="size-4 sm:size-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
               <rect x="4" y="5" width="16" height="14" rx="2.5" />
@@ -1053,7 +1053,7 @@ export function HostingScene() {
           sub="Encrypted detour"
           lit={relayLit}
           nerd={nerd}
-          nerdLines={["relay", "sealed QUIC"]}
+          nerdLines={["Relay", "Sealed QUIC"]}
           icon={
             <svg viewBox="0 0 24 24" className="size-4 sm:size-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
               <rect x="6" y="10" width="12" height="9" rx="2" />
@@ -1067,7 +1067,7 @@ export function HostingScene() {
           sub="Shared save"
           lit
           nerd={nerd}
-          nerdLines={["snapshot store", "FastCDC · zstd · BLAKE3"]}
+          nerdLines={["Snapshot store", "FastCDC · zstd · BLAKE3"]}
           icon={
             <Mark
               className="size-7 text-skifer-100 sm:size-9"
