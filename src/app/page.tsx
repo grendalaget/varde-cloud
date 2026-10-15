@@ -72,7 +72,7 @@ export default function Home() {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.09), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(56,49,47,0.35), transparent 70%)",
+              "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.05), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(56,49,47,0.35), transparent 70%)",
           }}
         />
         {/* Glyph field: drifting ASCII clouds + click shockwave; the cairn
