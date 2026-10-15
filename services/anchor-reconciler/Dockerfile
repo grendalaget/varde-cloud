@@ -1,10 +1,10 @@
 FROM node:22-slim AS build
 WORKDIR /app
 COPY package.json ./
-RUN npm install --omit=dev --ignore-scripts
+RUN npm install --ignore-scripts
 COPY tsconfig.json ./
 COPY src ./src
-RUN npm exec tsc -p tsconfig.json
+RUN ./node_modules/.bin/tsc -p tsconfig.json
 
 FROM node:22-slim
 WORKDIR /app
