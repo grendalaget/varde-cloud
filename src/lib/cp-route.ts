@@ -6,11 +6,9 @@ import { headers } from "next/headers";
 import { auth } from "./auth";
 import { CpError, CpUnavailable } from "./cp";
 
-export type CpSession = Awaited<
-  ReturnType<typeof auth.api.getSession>
-> extends { user: infer U }
-  ? U
-  : never;
+export type CpSession = NonNullable<
+  Awaited<ReturnType<typeof auth.api.getSession>>
+>["user"];
 
 // Returns the signed-in user or the 401/503 Response to return.
 export async function cpUser(): Promise<CpSession | Response> {
