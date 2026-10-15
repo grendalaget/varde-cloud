@@ -125,7 +125,7 @@ void main() {
   }
   float inMark = mk.r + mk.g;
   float inHost = mk.g;
-  float markV = 0.72 + 0.28 * vnoise(cid * 0.22 + vec2(t * 0.05, -t * 0.04));
+  float markV = 0.78 + 0.22 * vnoise(cid * 0.22 + vec2(t * 0.05, -t * 0.04));
   v = mix(v, markV, inMark);
 
   /* Glyph selection: per-cell hash picks the char, cloud value biases it
@@ -138,6 +138,9 @@ void main() {
     1, u_atlasN - 1);
 
   vec3 col = mix(u_colBase, u_colPeak, peak);
+  /* Inside the mark the ramp floor lifts to mid-gray: stones are clearly
+   * lighter than the field's darkest chars, still never pinned white. */
+  col = mix(col, mix(u_colBase, u_colPeak, 0.45 + 0.55 * peak), inMark);
   col = mix(col, u_colGlod, inHost);
   col = mix(col, u_colGlod, clamp(I * 1.5, 0.0, 0.95));
 
