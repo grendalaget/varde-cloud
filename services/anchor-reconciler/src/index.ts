@@ -22,13 +22,15 @@ const POLL_MS = Number(env("POLL_INTERVAL_MS", "15000"));
 // Machines fetch their enroll token from this 6PN address at boot instead
 // of carrying a CP credential in machine env (see src/bootstrap.ts).
 const BOOTSTRAP_PORT = Number(env("BOOTSTRAP_PORT", "8080"));
-// Self-referencing 6PN name works in any app layout and survives machine
-// replacement: <id>.vm.<app>.internal always resolves this machine. A
-// dedicated varde-anchor-reconciler app also answers at <app>.internal.
+// <app>.internal resolves the whole app, so anchors keep reaching the
+// bootstrap endpoint across reconciler redeploys (machine env is
+// immutable; a stale machine-id URL would sit until the 30-min stuck
+// timeout). If the reconciler ever shares an app, set BOOTSTRAP_HOST
+// explicitly to <machine-id>.vm.<app>.internal.
 const BOOTSTRAP_HOST = env(
   "BOOTSTRAP_HOST",
-  process.env.FLY_MACHINE_ID && process.env.FLY_APP_NAME
-    ? `${process.env.FLY_MACHINE_ID}.vm.${process.env.FLY_APP_NAME}.internal`
+  process.env.FLY_APP_NAME
+    ? `${process.env.FLY_APP_NAME}.internal`
     : "varde-anchor-reconciler.internal",
 );
 // Retry backoff: repeated failures park a row for a while instead of
