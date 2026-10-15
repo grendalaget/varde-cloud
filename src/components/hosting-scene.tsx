@@ -96,6 +96,16 @@ function quadAt(p0: Pt, c: Pt, p1: Pt, t: number): Pt {
 
 const BOW: Record<EdgeKind, number> = { game: 0.16, sync: 0.07, cp: 0.1 };
 
+/* Compact nerd view swaps floating edge pills for this legend strip —
+   same edge colors as the SVG/GL layers so the key reads visually. */
+const NERD_LEGEND: { text: string; cls: string; dashed?: boolean }[] = [
+  { text: "QUIC · TLS 1.3", cls: "text-skifer-200" },
+  { text: "Relayed", cls: "text-skifer-200", dashed: true },
+  { text: "FastCDC · zstd · BLAKE3", cls: "text-glod/70" },
+  { text: "HTTPS · OpenAPI", cls: "text-separator" },
+  { text: "gRPC/UDS · 127.77.x.y", cls: "text-muted" },
+];
+
 /** The edge set the current state wants. Game paths to Ada detour via the
  *  relay; the cairn's replica edges stay put regardless of who hosts —
  *  that is the whole point. */
@@ -1099,10 +1109,13 @@ export function HostingScene() {
           </svg>
         )}
 
-        {/* Nerd-mode edge labels — default to the bezier midpoint, then the
-            declutter effect slides each along its curve until it clears every
-            card and previously placed label. */}
+        {/* Nerd-mode edge labels — wide layout only. On compact the stage is
+            too small for floating pills, so the wiring key moves to a legend
+            strip below the diagram instead (see NERD_LEGEND). Labels default
+            to each bezier's midpoint, then the declutter effect slides each
+            along its curve until it clears every card and placed label. */}
         {nerd &&
+          !compact &&
           geomEdges.map((e) => {
             const label = edgeLabel(e.edge);
             if (!label) return null;
@@ -1116,9 +1129,7 @@ export function HostingScene() {
                 }}
                 aria-hidden
                 style={{ left: `${mid.x}%`, top: `${mid.y}%` }}
-                className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-separator bg-surface-100 font-mono text-muted ${
-                  compact ? "px-1 py-px text-[8px]" : "px-1.5 py-0.5 text-[9px]"
-                }`}
+                className="absolute z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-separator bg-surface-100 px-1.5 py-0.5 font-mono text-[9px] text-muted"
               >
                 {label}
               </span>
@@ -1207,6 +1218,27 @@ export function HostingScene() {
           <span className="pointer-events-none block size-3.5 rounded-full bg-glod shadow-[0_0_12px_rgba(255,91,31,0.9)]" />
         </button>
       </div>
+
+      {/* Compact nerd view: the wiring key as a legend strip — the stage is
+          too small for floating edge pills without colliding with cards. */}
+      {nerd && compact && (
+        <ul className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          {NERD_LEGEND.map((l) => (
+            <li key={l.text} className="flex items-center gap-1.5 font-mono text-[10px] text-muted">
+              <svg viewBox="0 0 18 4" className={`w-4 ${l.cls}`} aria-hidden>
+                <path
+                  d="M1 2h16"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeDasharray={l.dashed ? "3 2.5" : undefined}
+                />
+              </svg>
+              {l.text}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <figcaption
         aria-live="polite"
