@@ -1,6 +1,6 @@
 import { Card, Chip, Link as HLink } from "@heroui/react";
 import Link from "next/link";
-import { Mark } from "@/components/brand";
+import { AsciiClouds } from "@/components/ascii-clouds";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 
 const HOW_IT_WORKS = [
@@ -74,6 +74,9 @@ export default function Home() {
               "radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255,91,31,0.09), transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(56,49,47,0.35), transparent 70%)",
           }}
         />
+        {/* Glyph field: drifting ASCII clouds + click shockwave; the cairn
+            below is drawn by the field itself. Falls back to the gradient. */}
+        <AsciiClouds markSelector="#vd-hero-mark" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 md:grid-cols-2 md:pb-28 md:pt-24">
           <Stagger stagger={0.08}>
             <Item className="mb-4">
@@ -132,10 +135,14 @@ export default function Home() {
               aria-hidden
               className="vd-cairn-glow pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full"
             />
-            <Mark
-              animated
-              title="A cairn; the lit stone moves between friends"
-              className="relative h-48 w-48 text-skifer-100 drop-shadow-[0_0_40px_rgba(255,91,31,0.2)] sm:h-64 sm:w-64 md:h-80 md:w-80"
+            {/* Slot only — the ASCII field draws the cairn here, stone cells
+                lit Tåke with the host stone Glød. Keeps the mark's size and
+                responsive behavior without an SVG element. */}
+            <div
+              id="vd-hero-mark"
+              role="img"
+              aria-label="A cairn; the lit stone moves between friends"
+              className="relative h-48 w-48 sm:h-64 sm:w-64 md:h-80 md:w-80"
             />
           </div>
         </div>
