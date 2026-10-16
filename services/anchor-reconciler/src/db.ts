@@ -68,22 +68,30 @@ export class AnchorDb {
       Pick<AnchorRow, "fly_machine_id" | "fly_volume_id" | "node_id" | "error">
     > = {},
   ): Promise<void> {
+    // Absent keys keep their column value; explicit null clears it —
+    // COALESCE-style updates can't express that distinction.
+    const sets = ["status = ?", "error = ?", "attempts = attempts + 1", "updated_at = ?"];
+    const args: (string | number | null)[] = [
+      status,
+      patch.error ?? null,
+      Date.now(),
+    ];
+    if ("fly_machine_id" in patch) {
+      sets.push("fly_machine_id = ?");
+      args.push(patch.fly_machine_id ?? null);
+    }
+    if ("fly_volume_id" in patch) {
+      sets.push("fly_volume_id = ?");
+      args.push(patch.fly_volume_id ?? null);
+    }
+    if ("node_id" in patch) {
+      sets.push("node_id = ?");
+      args.push(patch.node_id ?? null);
+    }
+    args.push(id);
     await this.client.execute({
-      sql: `UPDATE cloud_anchor
-            SET status = ?, fly_machine_id = COALESCE(?, fly_machine_id),
-                fly_volume_id = COALESCE(?, fly_volume_id),
-                node_id = COALESCE(?, node_id), error = ?,
-                attempts = attempts + 1, updated_at = ?
-            WHERE id = ?`,
-      args: [
-        status,
-        patch.fly_machine_id ?? null,
-        patch.fly_volume_id ?? null,
-        patch.node_id ?? null,
-        patch.error ?? null,
-        Date.now(),
-        id,
-      ],
+      sql: `UPDATE cloud_anchor SET ${sets.join(", ")} WHERE id = ?`,
+      args,
     });
   }
 }
