@@ -625,11 +625,15 @@ function CairnsGlyph({ className }: { className?: string }) {
 
 /* Faces share one grid cell so the chip sizes to whichever face is larger —
    fit-content on both sides of the flip. */
-const FLIP_INNER =
-  "grid rounded-lg bg-surface-200 transform-3d transition-transform duration-500 ease-vd-spring";
+/* Faces flip on their own plane (each carries its own rotate-y) rather
+   than rotating the shared container: Safari/Firefox only cull
+   backface-visibility on elements that are themselves transformed, so a
+   rotated preserve-3d parent leaves the front face visible — mirrored —
+   on top of the back. */
+const FLIP_INNER = "grid rounded-lg bg-surface-200";
 const FACE =
-  "col-start-1 row-start-1 flex flex-col items-center justify-center p-2.5 text-center backface-hidden";
-const FACE_BACK = `${FACE} rotate-y-180 font-mono`;
+  "col-start-1 row-start-1 flex flex-col items-center justify-center p-2.5 text-center backface-hidden transition-transform duration-500 ease-vd-spring";
+const FACE_BACK = `${FACE} font-mono`;
 
 function MachineChip({
   id,
@@ -665,8 +669,8 @@ function MachineChip({
             : "border-separator hover:border-surface-400"
       } ${offline ? "opacity-45" : ""}`}
     >
-      <div className={`${FLIP_INNER} ${nerd ? "rotate-y-180" : ""}`}>
-        <div className={FACE}>
+      <div className={FLIP_INNER}>
+        <div className={`${FACE} ${nerd ? "rotate-y-180" : ""}`}>
           <span className="relative mb-1 flex items-center gap-1.5">
             <span
               className={`vd-blob block size-2.5 ${
@@ -686,7 +690,7 @@ function MachineChip({
             {status}
           </span>
         </div>
-        <div className={FACE_BACK}>
+        <div className={`${FACE_BACK} ${nerd ? "" : "rotate-y-180"}`}>
           <span className="whitespace-nowrap text-[11px] font-semibold text-foreground">
             {NAMES[id]}
           </span>
@@ -727,8 +731,8 @@ function NodeChip({
         lit ? "border-separator" : "border-separator/60 opacity-50"
       }`}
     >
-      <div className={`${FLIP_INNER} bg-surface-200/90 ${nerd ? "rotate-y-180" : ""}`}>
-        <div className={FACE}>
+      <div className={`${FLIP_INNER} bg-surface-200/90`}>
+        <div className={`${FACE} ${nerd ? "rotate-y-180" : ""}`}>
           <span className="mb-1 text-muted">{icon}</span>
           <span className="whitespace-nowrap text-xs font-semibold text-foreground sm:text-sm">
             {label}
@@ -737,7 +741,7 @@ function NodeChip({
             {sub}
           </span>
         </div>
-        <div className={FACE_BACK}>
+        <div className={`${FACE_BACK} ${nerd ? "" : "rotate-y-180"}`}>
           {nerdLines.map((l) => (
             <span key={l} className="whitespace-nowrap text-[10px] leading-tight text-muted">
               {l}
