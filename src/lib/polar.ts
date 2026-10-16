@@ -1,17 +1,24 @@
 import { createPolar, createPolarCore } from "@polar-sh/sdk/2026-10";
 
-// Billing is opt-in: without POLAR_ACCESS_TOKEN the site stays in
-// "coming soon" mode: no checkout buttons, no webhook expectations.
-export const BILLING_ENABLED = Boolean(process.env.POLAR_ACCESS_TOKEN);
-
 const environment =
   process.env.POLAR_SERVER === "production" ? ("production" as const) : ("sandbox" as const);
+
+// Production reads POLAR_PROD_ACCESS_TOKEN first so a project can hold both
+// tokens (sandbox for previews/dev, prod for production) without collisions.
+const accessToken =
+  environment === "production"
+    ? (process.env.POLAR_PROD_ACCESS_TOKEN ?? process.env.POLAR_ACCESS_TOKEN)
+    : process.env.POLAR_ACCESS_TOKEN;
+
+// Billing is opt-in: without an access token the site stays in
+// "coming soon" mode: no checkout buttons, no webhook expectations.
+export const BILLING_ENABLED = Boolean(accessToken);
 
 // PolarCore is what the better-auth plugin consumes;
 // the service client (customers, products, ...) is for our own calls.
 export const polarCore = BILLING_ENABLED
   ? createPolarCore({
-      accessToken: process.env.POLAR_ACCESS_TOKEN!,
+      accessToken: accessToken!,
       // "sandbox" until the production org + products exist.
       environment,
     })
@@ -19,7 +26,7 @@ export const polarCore = BILLING_ENABLED
 
 export const polar = BILLING_ENABLED
   ? createPolar({
-      accessToken: process.env.POLAR_ACCESS_TOKEN!,
+      accessToken: accessToken!,
       environment,
     })
   : null;
