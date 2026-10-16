@@ -67,7 +67,8 @@ export class FlyMachinesProvider implements AnchorProvider {
 
   async create(spec: CreateAnchorSpec): Promise<AnchorMachine> {
     const vol = await this.call<FlyVolume>("POST", "/volumes", {
-      name: `anchor-${spec.name}`,
+      // Volume names share the 30-char alnum+underscore rule.
+      name: `vol_${spec.name}`.slice(0, 30),
       size_gb: spec.volumeGb,
       region: spec.region,
     });

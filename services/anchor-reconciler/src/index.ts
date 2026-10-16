@@ -44,7 +44,10 @@ const STUCK_PROVISION_MS = 30 * 60_000;
 
 // Machine name is the group id: unique, stable, and makes find() the
 // idempotency key for re-provision.
-const machineName = (r: AnchorRow) => `anchor-${r.group_id}`;
+// Fly volume/machine names: lowercase alnum + underscores, max 30.
+// grp_* ids are grp_ + 20 chars, so anchor_ + the suffix fits with room.
+const machineName = (r: AnchorRow) =>
+  `anchor_${r.group_id.replace(/^grp_/, "")}`.slice(0, 30);
 
 // Consecutive members-check failures per row. A transient CP error must
 // not burn the error/retry budget, but a permanent failure (e.g. the
