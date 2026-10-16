@@ -64,7 +64,7 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   // retries next poll instead of burning its error/retry budget on a
   // transient CP error.
   const admin = wantsAnchor(r)
-    ? await cp.isGroupAdmin(r.group_id, r.user_id).catch((e) => {
+    ? await cp.isGroupAdmin(r.group_id, r.email).catch((e) => {
         const streak = (memberCheckFails.get(r.id) ?? 0) + 1;
         memberCheckFails.set(r.id, streak);
         if (streak >= MEMBER_CHECK_STREAK) {

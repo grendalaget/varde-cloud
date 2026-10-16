@@ -15,6 +15,7 @@ export interface AnchorRow {
   attempts: number;
   updated_at: number;
   plan: string; // joined from user.plan
+  email: string; // joined from user.email — CP members are matched by email
 }
 
 // A row only wants its anchor while the subscription still includes one:
@@ -36,7 +37,7 @@ export class AnchorDb {
   // re-subscribed user can re-attach cleanly.
   async due(): Promise<AnchorRow[]> {
     const res = await this.client.execute(`
-      SELECT a.*, u.plan AS plan
+      SELECT a.*, u.plan AS plan, u.email AS email
       FROM cloud_anchor a
       JOIN user u ON u.id = a.user_id
       WHERE (a.desired = 'provisioned' AND u.plan IN ('anchor','anchor+'))
@@ -50,7 +51,7 @@ export class AnchorDb {
   // shadow a replacement, so filter to the active one explicitly.
   async rowByGroup(groupId: string): Promise<AnchorRow | null> {
     const res = await this.client.execute({
-      sql: `SELECT a.*, u.plan AS plan FROM cloud_anchor a
+      sql: `SELECT a.*, u.plan AS plan, u.email AS email FROM cloud_anchor a
             JOIN user u ON u.id = a.user_id
             WHERE a.group_id = ? AND a.desired = 'provisioned'
               AND a.status NOT IN ('gone','deprovisioning')
