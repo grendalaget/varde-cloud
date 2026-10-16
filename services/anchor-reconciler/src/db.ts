@@ -15,6 +15,7 @@ export interface AnchorRow {
   attempts: number;
   updated_at: number;
   plan: string; // joined from user.plan
+  email: string; // joined from user.email — CP members are matched by email
 }
 
 // A row only wants its anchor while the subscription still includes one:
@@ -36,7 +37,7 @@ export class AnchorDb {
   // re-subscribed user can re-attach cleanly.
   async due(): Promise<AnchorRow[]> {
     const res = await this.client.execute(`
-      SELECT a.*, u.plan AS plan
+      SELECT a.*, u.plan AS plan, u.email AS email
       FROM cloud_anchor a
       JOIN user u ON u.id = a.user_id
       WHERE (a.desired = 'provisioned' AND u.plan IN ('anchor','anchor+'))
@@ -50,7 +51,7 @@ export class AnchorDb {
   // shadow a replacement, so filter to the active one explicitly.
   async rowByGroup(groupId: string): Promise<AnchorRow | null> {
     const res = await this.client.execute({
-      sql: `SELECT a.*, u.plan AS plan FROM cloud_anchor a
+      sql: `SELECT a.*, u.plan AS plan, u.email AS email FROM cloud_anchor a
             JOIN user u ON u.id = a.user_id
             WHERE a.group_id = ? AND a.desired = 'provisioned'
               AND a.status NOT IN ('gone','deprovisioning')
@@ -67,22 +68,30 @@ export class AnchorDb {
       Pick<AnchorRow, "fly_machine_id" | "fly_volume_id" | "node_id" | "error">
     > = {},
   ): Promise<void> {
+    // Absent keys keep their column value; explicit null clears it —
+    // COALESCE-style updates can't express that distinction.
+    const sets = ["status = ?", "error = ?", "attempts = attempts + 1", "updated_at = ?"];
+    const args: (string | number | null)[] = [
+      status,
+      patch.error ?? null,
+      Date.now(),
+    ];
+    if ("fly_machine_id" in patch) {
+      sets.push("fly_machine_id = ?");
+      args.push(patch.fly_machine_id ?? null);
+    }
+    if ("fly_volume_id" in patch) {
+      sets.push("fly_volume_id = ?");
+      args.push(patch.fly_volume_id ?? null);
+    }
+    if ("node_id" in patch) {
+      sets.push("node_id = ?");
+      args.push(patch.node_id ?? null);
+    }
+    args.push(id);
     await this.client.execute({
-      sql: `UPDATE cloud_anchor
-            SET status = ?, fly_machine_id = COALESCE(?, fly_machine_id),
-                fly_volume_id = COALESCE(?, fly_volume_id),
-                node_id = COALESCE(?, node_id), error = ?,
-                attempts = attempts + 1, updated_at = ?
-            WHERE id = ?`,
-      args: [
-        status,
-        patch.fly_machine_id ?? null,
-        patch.fly_volume_id ?? null,
-        patch.node_id ?? null,
-        patch.error ?? null,
-        Date.now(),
-        id,
-      ],
+      sql: `UPDATE cloud_anchor SET ${sets.join(", ")} WHERE id = ?`,
+      args,
     });
   }
 }

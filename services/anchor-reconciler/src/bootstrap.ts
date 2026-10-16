@@ -8,8 +8,7 @@ import { createServer, type Server } from "node:http";
 import { wantsAnchor, type AnchorDb } from "./db";
 import type { CpClient } from "./cp";
 import type { AnchorProvider } from "./provider";
-
-const machineName = (groupId: string) => `anchor-${groupId}`;
+import { machineName } from "./names";
 
 export function startBootstrap(
   db: AnchorDb,
@@ -35,7 +34,15 @@ export function startBootstrap(
         return;
       }
       const machine = await provider.find(machineName(groupId));
-      if (!machine || !machine.privateIp || req.socket.remoteAddress !== machine.privateIp) {
+      // Match the row's machine id, not just the name: a stale same-named
+      // machine lingering during a replacement must not fetch a fresh
+      // enroll token for its already-dead node.
+      if (
+        !machine ||
+        machine.id !== row.fly_machine_id ||
+        !machine.privateIp ||
+        req.socket.remoteAddress !== machine.privateIp
+      ) {
         res.writeHead(403).end();
         return;
       }

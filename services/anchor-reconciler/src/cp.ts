@@ -49,10 +49,13 @@ export class CpClient {
 
   // Subscriber still an owner/admin? If not, the managed anchor should be
   // torn down: the anchor serves the group but the paying user can no
-  // longer administer it.
-  async isGroupAdmin(groupId: string, userId: string): Promise<boolean> {
+  // longer administer it. CP member ids are local (usr_*), so match by
+  // email — unique on both sides and already in the members payload.
+  async isGroupAdmin(groupId: string, email: string): Promise<boolean> {
     const { members } = await this.listMembers(groupId);
-    const m = members.find((x) => x.user_id === userId);
+    const m = members.find(
+      (x) => x.email?.toLowerCase() === email.toLowerCase(),
+    );
     return m?.role === "owner" || m?.role === "admin";
   }
 
@@ -70,5 +73,6 @@ export interface CpNode {
 
 export interface CpMember {
   user_id: string;
+  email?: string;
   role: string;
 }
