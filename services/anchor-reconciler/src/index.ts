@@ -130,10 +130,12 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
         await db.setStatus(r.id, "online", { node_id: managed.id, error: null });
         return;
       }
-      // Only record the node id once: rewriting the row each poll would
-      // refresh updated_at and keep an enrolled-but-offline anchor from
-      // ever reaching the stuck timeout below.
-      if (managed && !r.node_id) {
+      // Track the node's id only while it is offline: rewriting the row
+      // each poll would refresh updated_at and keep an enrolled-but-
+      // offline anchor from ever reaching the stuck timeout below. Still
+      // adopt a different node id — a reprovisioned machine enrolls a
+      // new node while the old id points at a dead one.
+      if (managed && r.node_id !== managed.id) {
         await db.setStatus(r.id, "provisioning", { node_id: managed.id });
         return;
       }
@@ -146,7 +148,11 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
         if (managed) {
           await cp.deleteNode(managed.id).catch(() => {});
         }
+        if (r.node_id) await cp.deleteNode(r.node_id).catch(() => {});
         await db.setStatus(r.id, "error", {
+          fly_machine_id: null,
+          fly_volume_id: null,
+          node_id: null,
           error: "anchor not online within 30m; reprovisioning",
         });
       }
