@@ -7,6 +7,7 @@ import { AnchorDb, wantsAnchor, type AnchorRow } from "./db";
 import { CpClient } from "./cp";
 import { FlyMachinesProvider } from "./fly";
 import { startBootstrap } from "./bootstrap";
+import { machineName } from "./names";
 import type { AnchorProvider } from "./provider";
 
 const env = (k: string, dflt?: string): string => {
@@ -42,12 +43,9 @@ const MAX_BACKOFF_ATTEMPTS = 20;
 // waiting on a node that cannot appear.
 const STUCK_PROVISION_MS = 30 * 60_000;
 
-// Machine name is the group id: unique, stable, and makes find() the
-// idempotency key for re-provision.
-// Fly volume/machine names: lowercase alnum + underscores, max 30.
-// grp_* ids are grp_ + 20 chars, so anchor_ + the suffix fits with room.
-const machineName = (r: AnchorRow) =>
-  `anchor_${r.group_id.replace(/^grp_/, "")}`.slice(0, 30);
+// Machine name derives from the group id (see src/names.ts): unique,
+// stable, and makes find() the idempotency key for re-provision.
+const rowMachineName = (r: AnchorRow) => machineName(r.group_id);
 
 // Consecutive members-check failures per row. A transient CP error must
 // not burn the error/retry budget, but a permanent failure (e.g. the
@@ -95,7 +93,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
     case "pending": {
       // Adopt a machine from an earlier attempt (its create succeeded but
       // the status write failed) instead of leaking a second volume.
-      const existing = await provider.find(machineName(r));
+      const existing = await provider.find(rowMachineName(r));
       if (existing) {
         await db.setStatus(r.id, "provisioning", {
           fly_machine_id: existing.id,
@@ -104,7 +102,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
         return;
       }
       const m = await provider.create({
-        name: machineName(r),
+        name: rowMachineName(r),
         region: REGION,
         volumeGb: VOLUME_GB,
         env: {
@@ -121,10 +119,13 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
     case "provisioning": {
       // The agent enrolls with the token it fetched from bootstrap; a
       // managed anchor node appearing in the group is the success signal.
-      // Correlation: Fly sets the VM hostname to the machine name and the
-      // agent reports it at enroll, so the node name is anchor-<groupId>.
+      // Correlation: Fly sets the VM hostname to the machine ID (not the
+      // machine name) and the agent reports it at enroll — observed
+      // node.name = 8901e1b64320d8 — so match on fly_machine_id.
       const { nodes } = await cp.listNodes(r.group_id);
-      const managed = nodes.find((n) => n.anchor && n.name === machineName(r));
+      const managed = nodes.find(
+        (n) => n.anchor && r.fly_machine_id && n.name === r.fly_machine_id,
+      );
       if (managed?.online) {
         await db.setStatus(r.id, "online", { node_id: managed.id, error: null });
         return;
@@ -165,7 +166,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 
 async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   if (r.status === "gone") return;
-  const m = await provider.find(machineName(r));
+  const m = await provider.find(rowMachineName(r));
   if (m) await provider.destroy(m.id);
   if (r.node_id) {
     await cp.deleteNode(r.node_id).catch((e) => {

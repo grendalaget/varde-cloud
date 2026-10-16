@@ -8,8 +8,7 @@ import { createServer, type Server } from "node:http";
 import { wantsAnchor, type AnchorDb } from "./db";
 import type { CpClient } from "./cp";
 import type { AnchorProvider } from "./provider";
-
-const machineName = (groupId: string) => `anchor-${groupId}`;
+import { machineName } from "./names";
 
 export function startBootstrap(
   db: AnchorDb,
