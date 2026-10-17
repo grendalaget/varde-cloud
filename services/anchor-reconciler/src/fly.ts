@@ -88,7 +88,9 @@ export class FlyMachinesProvider implements AnchorProvider {
       return { id: m.id, volumeId: vol.id, status: m.state };
     } catch (e) {
       // Don't leak the volume on a failed machine create.
-      await this.deleteVolume(vol.id).catch(() => {});
+      try {
+        await this.deleteVolume(vol.id);
+      } catch {}
       throw e;
     }
   }
@@ -104,15 +106,19 @@ export class FlyMachinesProvider implements AnchorProvider {
   // Destroy/delete are idempotent: a 404 means the thing is already
   // gone, which is the desired end state.
   async destroy(id: string): Promise<void> {
-    await this.call("DELETE", `/machines/${id}?force=true`).catch((e) => {
+    try {
+      await this.call("DELETE", `/machines/${id}?force=true`);
+    } catch (e) {
       if (!(e instanceof FlyNotFound)) throw e;
-    });
+    }
   }
 
   async deleteVolume(volumeId: string): Promise<void> {
-    await this.call("DELETE", `/volumes/${volumeId}`).catch((e) => {
+    try {
+      await this.call("DELETE", `/volumes/${volumeId}`);
+    } catch (e) {
       if (!(e instanceof FlyNotFound)) throw e;
-    });
+    }
   }
 }
 

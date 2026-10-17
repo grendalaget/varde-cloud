@@ -97,10 +97,12 @@ async function call<T>(
     throw new CpUnavailable(`api call failed: ${method} ${path}`, { cause: e });
   }
   if (!res.ok) {
-    const body2 = (await res.json().catch(() => null)) as {
-      code?: string;
-      message?: string;
-    } | null;
+    let body2: { code?: string; message?: string } | null;
+    try {
+      body2 = (await res.json()) as { code?: string; message?: string };
+    } catch {
+      body2 = null;
+    }
     throw new CpError(
       res.status,
       body2?.code ?? "error",

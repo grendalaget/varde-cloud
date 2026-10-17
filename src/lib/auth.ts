@@ -42,16 +42,14 @@ async function sendWithCooldown(key: string, send: () => Promise<void>) {
   if (last !== undefined && Date.now() - last < MAIL_COOLDOWN_MS) return;
   const inFlight = mailInFlight.get(key);
   if (inFlight) return inFlight;
-  const p = send().then(
-    () => {
+  const p = (async () => {
+    try {
+      await send();
       mailSentAt.set(key, Date.now());
+    } finally {
       mailInFlight.delete(key);
-    },
-    (err) => {
-      mailInFlight.delete(key);
-      throw err;
-    },
-  );
+    }
+  })();
   mailInFlight.set(key, p);
   return p;
 }

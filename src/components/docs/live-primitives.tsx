@@ -92,24 +92,24 @@ function fetchState(userId: string): Promise<unknown> {
     return inflight;
   }
   inflightUser = userId;
-  inflight = fetch("/api/cp/state", { cache: "no-store" })
-    .then((r) =>
-      r.ok ? r.json() : { enabled: false, groups: [] as CpGroup[] },
-    )
-    .then((d: { enabled: boolean; groups: CpGroup[] }) => {
+  inflight = (async () => {
+    try {
+      const r = await fetch("/api/cp/state", { cache: "no-store" });
+      const d = r.ok
+        ? ((await r.json()) as { enabled: boolean; groups: CpGroup[] })
+        : { enabled: false, groups: [] as CpGroup[] };
       shared = { userId, enabled: d.enabled, groups: d.groups, at: Date.now() };
-    })
-    .catch(() => {
+    } catch {
       shared = { userId, enabled: false, groups: [], at: Date.now() };
-    })
-    .finally(() => {
+    } finally {
       inflight = null;
       inflightUser = null;
       emit();
       const next = queuedUser;
       queuedUser = null;
       if (next) void fetchState(next);
-    });
+    }
+  })();
   return inflight;
 }
 
@@ -304,9 +304,12 @@ export async function cpFetch<T>(
   } catch {
     throw new Error("Couldn't reach the site. Check your connection and try again.");
   }
-  const data = (await res.json().catch(() => ({}))) as T & {
-    message?: string;
-  };
+  let data: T & { message?: string };
+  try {
+    data = (await res.json()) as typeof data;
+  } catch {
+    data = {} as typeof data;
+  }
   if (!res.ok) {
     throw new Error(data.message ?? "Something went wrong. Try again.");
   }
