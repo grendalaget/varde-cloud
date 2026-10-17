@@ -772,16 +772,11 @@ export function HostingScene() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<ReturnType<typeof createEngine> | null>(null);
   const offlineRef = useRef(offline);
-  const hostRef = useRef(host);
-  const failTimer = useRef<number>(0);
   const dragPosRef = useRef<Pt | null>(null);
   const labelEls = useRef(new Map<string, HTMLSpanElement>());
   useEffect(() => {
     offlineRef.current = offline;
   }, [offline]);
-  useEffect(() => {
-    hostRef.current = host;
-  }, [host]);
 
   const layout = compact ? LAYOUT_NARROW : LAYOUT_WIDE;
   const allOffline = offline.size === MACHINE_IDS.length;
@@ -862,7 +857,6 @@ export function HostingScene() {
       setOffline(next);
       if (next.has(host)) {
         // The host is still dead — the rejoining machine wakes the world.
-        window.clearTimeout(failTimer.current);
         migrate(m, "wake", host);
       } else {
         setEv({ kind: "rejoin", m });
@@ -871,27 +865,26 @@ export function HostingScene() {
     } else {
       next.add(m);
       setOffline(next);
-      if (next.size === MACHINE_IDS.length) {
-        setEv({ kind: "sleep" });
-      } else if (m === host) {
-        // Failover: the ember sits dark on the dead host for a beat, then hops.
-        setEv({ kind: "offline", m });
-        window.clearTimeout(failTimer.current);
-        failTimer.current = window.setTimeout(() => {
-          // Stale if the ember already moved or the machine came back.
-          if (hostRef.current !== m || !offlineRef.current.has(m)) return;
-          const cand = MACHINE_IDS.filter((x) => !offlineRef.current.has(x));
-          if (cand.length) {
-            migrate(cand[(Math.random() * cand.length) | 0], "fail", m);
-          }
-        }, 750);
-      } else {
-        setEv({ kind: "offline", m });
-      }
+      setEv(
+        next.size === MACHINE_IDS.length
+          ? { kind: "sleep" }
+          : { kind: "offline", m },
+      );
     }
   };
 
-  useEffect(() => () => window.clearTimeout(failTimer.current), []);
+  /* Failover: once the host is offline the ember sits dark on it for a beat,
+     then hops to a random live machine. The cleanup cancels a pending hop
+     when the ember has moved on or the host came back first. */
+  const hostDead = offline.has(host) && !allOffline;
+  useEffect(() => {
+    if (!hostDead) return;
+    const t = window.setTimeout(() => {
+      const cand = MACHINE_IDS.filter((x) => !offlineRef.current.has(x));
+      if (cand.length) migrate(cand[(Math.random() * cand.length) | 0], "fail", host);
+    }, 750);
+    return () => window.clearTimeout(t);
+  }, [hostDead, host, migrate]);
 
   /* Nerd-label declutter: labels default to each edge's midpoint, then this
      pass slides each along its own bezier (plus small perpendicular
