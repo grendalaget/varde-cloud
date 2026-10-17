@@ -64,7 +64,8 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   // skips this pass without a status write — the row keeps its state and
   // retries next poll instead of burning its error/retry budget on a
   // transient CP error.
-  const admin = wantsAnchor(r)
+  const want = wantsAnchor(r);
+  const admin = want
     ? await cp.isGroupAdmin(r.group_id, r.email).catch((e) => {
         const streak = (memberCheckFails.get(r.id) ?? 0) + 1;
         memberCheckFails.set(r.id, streak);
@@ -78,7 +79,7 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
     : false;
   if (admin === null) return;
   memberCheckFails.delete(r.id);
-  if (wantsAnchor(r) && admin) {
+  if (want && admin) {
     await provision(r, db, cp, provider);
   } else {
     await teardown(r, db, cp, provider);
@@ -172,8 +173,13 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 
 async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   if (r.status === "gone") return;
+  // Destroy every machine this row may own: a stale same-named machine
+  // can linger next to the row's recorded id during a replacement.
+  const ids = new Set<string>();
+  if (r.fly_machine_id) ids.add(r.fly_machine_id);
   const m = await provider.find(rowMachineName(r));
-  if (m) await provider.destroy(m.id);
+  if (m) ids.add(m.id);
+  for (const id of ids) await provider.destroy(id);
   if (r.node_id) {
     await cp.deleteNode(r.node_id).catch((e) => {
       // Node may already be gone; other errors surface via status=error.
