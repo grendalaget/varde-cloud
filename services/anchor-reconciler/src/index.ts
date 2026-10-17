@@ -65,18 +65,21 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   // retries next poll instead of burning its error/retry budget on a
   // transient CP error.
   const want = wantsAnchor(r);
-  const admin = want
-    ? await cp.isGroupAdmin(r.group_id, r.email).catch((e) => {
-        const streak = (memberCheckFails.get(r.id) ?? 0) + 1;
-        memberCheckFails.set(r.id, streak);
-        if (streak >= MEMBER_CHECK_STREAK) {
-          memberCheckFails.delete(r.id);
-          throw new Error(`group members check failing persistently (${streak}x): ${e}`);
-        }
-        console.warn(`anchor ${r.id} group ${r.group_id}: members check failed (${streak}x), skipping:`, e);
-        return null;
-      })
-    : false;
+  let admin: boolean | null = false;
+  if (want) {
+    try {
+      admin = await cp.isGroupAdmin(r.group_id, r.email);
+    } catch (e) {
+      const streak = (memberCheckFails.get(r.id) ?? 0) + 1;
+      memberCheckFails.set(r.id, streak);
+      if (streak >= MEMBER_CHECK_STREAK) {
+        memberCheckFails.delete(r.id);
+        throw new Error(`group members check failing persistently (${streak}x): ${e}`);
+      }
+      console.warn(`anchor ${r.id} group ${r.group_id}: members check failed (${streak}x), skipping:`, e);
+      admin = null;
+    }
+  }
   if (admin === null) return;
   memberCheckFails.delete(r.id);
   if (want && admin) {
@@ -147,9 +150,15 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
         if (r.fly_machine_id) await provider.destroy(r.fly_machine_id);
         if (r.fly_volume_id) await provider.deleteVolume(r.fly_volume_id);
         if (managed) {
-          await cp.deleteNode(managed.id).catch(() => {});
+          try {
+            await cp.deleteNode(managed.id);
+          } catch {}
         }
-        if (r.node_id) await cp.deleteNode(r.node_id).catch(() => {});
+        if (r.node_id) {
+          try {
+            await cp.deleteNode(r.node_id);
+          } catch {}
+        }
         await db.setStatus(r.id, "error", {
           fly_machine_id: null,
           fly_volume_id: null,
@@ -181,10 +190,12 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   if (m) ids.add(m.id);
   for (const id of ids) await provider.destroy(id);
   if (r.node_id) {
-    await cp.deleteNode(r.node_id).catch((e) => {
+    try {
+      await cp.deleteNode(r.node_id);
+    } catch (e) {
       // Node may already be gone; other errors surface via status=error.
       if (!String(e).includes("404")) throw e;
-    });
+    }
   }
   // Volume deletion waits for the recovery grace window — handled by a
   // scheduled sweep, not this hot loop (kept as a status for now).
@@ -210,9 +221,9 @@ async function main() {
         try {
           await reconcile(row, db, cp, provider);
         } catch (e) {
-          await db
-            .setStatus(row.id, "error", { error: String(e).slice(0, 500) })
-            .catch(() => {});
+          try {
+            await db.setStatus(row.id, "error", { error: String(e).slice(0, 500) });
+          } catch {}
           console.error(`anchor ${row.id} group ${row.group_id}:`, e);
         }
       }
@@ -223,7 +234,11 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+void (async () => {
+  try {
+    await main();
+  } catch (e) {
+    console.error(e);
+    process.exit(1);
+  }
+})();

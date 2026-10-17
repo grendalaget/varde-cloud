@@ -87,25 +87,31 @@ export function CreateServerMock() {
   // Live mode: real catalog + real machines of the picked group.
   useEffect(() => {
     if (!live) return;
-    cpFetch<{ games: CatalogGame[] }>("/api/cp/games")
-      .then((d) => {
+    void (async () => {
+      try {
+        const d = await cpFetch<{ games: CatalogGame[] }>("/api/cp/games");
         const real = d.games.filter((g) => g.id !== "testgame");
         if (real.length) {
           setGames(real);
           setGame((cur) => (real.some((g) => g.id === cur) ? cur : real[0].id));
         }
-      })
-      .catch(() => {});
+      } catch {}
+    })();
   }, [live]);
 
   useEffect(() => {
     if (!live || !group) return;
     const gid = group.id;
-    cpFetch<{ nodes: CpNode[] }>(
-      `/api/cp/groups/${encodeURIComponent(gid)}/nodes`,
-    )
-      .then((d) => setNodesData({ groupId: gid, nodes: d.nodes }))
-      .catch(() => setNodesData({ groupId: gid, nodes: [] }));
+    void (async () => {
+      try {
+        const d = await cpFetch<{ nodes: CpNode[] }>(
+          `/api/cp/groups/${encodeURIComponent(gid)}/nodes`,
+        );
+        setNodesData({ groupId: gid, nodes: d.nodes });
+      } catch {
+        setNodesData({ groupId: gid, nodes: [] });
+      }
+    })();
   }, [live, group]);
 
   const nodes =
