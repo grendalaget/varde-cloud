@@ -52,7 +52,10 @@ export function startBootstrap(
         .end(JSON.stringify({ enroll_token: token.token, cp_url: cpUrl }));
     })().catch((e) => {
       console.error("bootstrap:", e);
-      res.writeHead(500).end();
+      // the handler may have already ended the response — writeHead
+      // after end throws inside this catch and would crash the process
+      if (!res.headersSent) res.writeHead(500);
+      res.end();
     });
   });
   // 6PN only: bind the private address Fly assigns, never a public one.
