@@ -91,21 +91,23 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 
 async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   // Two paid rows on one group would fight over the group-derived machine
-  // name (adopt-or-create keys on it): adoption would claim the sibling's
-  // machine, and a later detach would then destroy a machine another
-  // subscriber still pays for. Park as 'conflict' until the other row is
-  // fully torn down — due() keeps the row in the loop, so it resumes
-  // automatically. 'conflict' itself is not a live sibling, so two rows
-  // parked against each other resolve on the next pass rather than
-  // deadlocking.
-  const sibling = await db.liveSiblingAnchor(r.group_id, r.id);
-  if (sibling) {
-    if (r.status !== "conflict") {
-      await db.setStatus(r.id, "conflict", {
-        error: `another anchor is already attached to this group (row ${sibling.id})`,
-      });
+  // name (adopt-or-create keys on it). Only a row still trying to acquire
+  // infra yields: once a row owns a machine it is the anchor of record —
+  // an online/provisioning row must never park itself for a mere pending
+  // sibling, or the sibling would adopt the still-running machine and the
+  // parked row's later teardown would destroy a machine another
+  // subscriber pays for. 'conflict' is not a live sibling, so two rows
+  // parked against each other resolve on the next pass.
+  if (r.status !== "online" && r.status !== "provisioning") {
+    const sibling = await db.liveSiblingAnchor(r.group_id, r.id);
+    if (sibling) {
+      if (r.status !== "conflict") {
+        await db.setStatus(r.id, "conflict", {
+          error: `another anchor is already attached to this group (row ${sibling.id})`,
+        });
+      }
+      return;
     }
-    return;
   }
   switch (r.status) {
     case "gone": // re-attach after full teardown
@@ -116,6 +118,15 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       // the status write failed) instead of leaking a second volume.
       const existing = await provider.find(rowMachineName(r));
       if (existing) {
+        // Only adopt a machine tagged for this row (or an untagged
+        // pre-tag orphan — siblings' machines are always tagged). A
+        // foreign tag means the sibling guard missed something: park.
+        if (existing.rowId && existing.rowId !== r.id) {
+          await db.setStatus(r.id, "conflict", {
+            error: `machine ${existing.id} belongs to anchor row ${existing.rowId}`,
+          });
+          return;
+        }
         await db.setStatus(r.id, "provisioning", {
           fly_machine_id: existing.id,
           fly_volume_id: existing.volumeId,
@@ -128,6 +139,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
         volumeGb: VOLUME_GB,
         env: {
           VARDE_CP_URL: CP_URL,
+          VARDE_ANCHOR_ROW: r.id,
           VARDE_BOOTSTRAP_URL: `http://${BOOTSTRAP_HOST}:${BOOTSTRAP_PORT}/bootstrap/${r.group_id}`,
         },
       });
@@ -207,9 +219,12 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   // running anchor somebody else pays for.
   const ids = new Set<string>();
   if (r.fly_machine_id) ids.add(r.fly_machine_id);
-  if (!(await db.liveSiblingAnchor(r.group_id, r.id))) {
-    const m = await provider.find(rowMachineName(r));
-    if (m) ids.add(m.id);
+  const m = await provider.find(rowMachineName(r));
+  if (m && m.rowId === r.id) {
+    ids.add(m.id); // tagged for this row: safe to destroy regardless
+  } else if (m && !m.rowId && !(await db.liveSiblingAnchor(r.group_id, r.id))) {
+    // Untagged pre-tag machine: only ours when no sibling could own it.
+    ids.add(m.id);
   }
   for (const id of ids) await provider.destroy(id);
   if (r.node_id) {

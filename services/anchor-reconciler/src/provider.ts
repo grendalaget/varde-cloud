@@ -7,6 +7,10 @@ export interface AnchorMachine {
   volumeId?: string;
   privateIp?: string; // 6PN address; bootstrap verifies callers against it
   status: string; // provider-native: created|started|stopped|destroyed|...
+  // The cloud_anchor row id the machine was created for (carried in its
+  // env as VARDE_ANCHOR_ROW). Ownership check for adopt/teardown: group-
+  // derived names can't distinguish a sibling subscriber's machine.
+  rowId?: string;
 }
 
 export interface CreateAnchorSpec {

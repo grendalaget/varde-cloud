@@ -49,6 +49,7 @@ export class FlyMachinesProvider implements AnchorProvider {
       volumeId: m.config?.mounts?.[0]?.volume,
       privateIp: m.private_ip,
       status: m.state,
+      rowId: m.config?.env?.VARDE_ANCHOR_ROW,
     };
   }
 
