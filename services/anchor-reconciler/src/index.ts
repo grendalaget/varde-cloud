@@ -118,12 +118,15 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       // the status write failed) instead of leaking a second volume.
       const existing = await provider.find(rowMachineName(r));
       if (existing) {
-        // Only adopt a machine tagged for this row (or an untagged
-        // pre-tag orphan — siblings' machines are always tagged). A
-        // foreign tag means the sibling guard missed something: park.
-        if (existing.rowId && existing.rowId !== r.id) {
+        // Only adopt a machine provably created for this row: the
+        // VARDE_ANCHOR_ROW tag is the ownership proof — the group-derived
+        // name alone can't distinguish a sibling subscriber's machine,
+        // and an untagged machine must never be claimed on name alone.
+        if (existing.rowId !== r.id) {
           await db.setStatus(r.id, "conflict", {
-            error: `machine ${existing.id} belongs to anchor row ${existing.rowId}`,
+            error: existing.rowId
+              ? `machine ${existing.id} belongs to anchor row ${existing.rowId}`
+              : `machine ${existing.id} has no row ownership tag`,
           });
           return;
         }
@@ -211,21 +214,15 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 
 async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   if (r.status === "gone") return;
-  // Destroy every machine this row may own: a stale same-named machine
-  // can linger next to the row's recorded id during a replacement. The
-  // name-derived candidate is only safe while no sibling subscriber's row
-  // is live on the group — names are group-derived, so it could be
-  // theirs, and a row that never owned a machine would destroy the
-  // running anchor somebody else pays for.
+  // Destroy every machine this row provably owns: the recorded id plus a
+  // stale same-named machine lingering from a replacement — but only when
+  // it carries this row's VARDE_ANCHOR_ROW tag. An untagged same-named
+  // machine may belong to a sibling subscriber and is never destroyed on
+  // name alone — leaking beats killing a machine another row pays for.
   const ids = new Set<string>();
   if (r.fly_machine_id) ids.add(r.fly_machine_id);
   const m = await provider.find(rowMachineName(r));
-  if (m && m.rowId === r.id) {
-    ids.add(m.id); // tagged for this row: safe to destroy regardless
-  } else if (m && !m.rowId && !(await db.liveSiblingAnchor(r.group_id, r.id))) {
-    // Untagged pre-tag machine: only ours when no sibling could own it.
-    ids.add(m.id);
-  }
+  if (m?.rowId === r.id) ids.add(m.id);
   for (const id of ids) await provider.destroy(id);
   if (r.node_id) {
     try {
