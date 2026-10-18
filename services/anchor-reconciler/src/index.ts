@@ -200,6 +200,16 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       }
       return;
     }
+    case "conflict": {
+      // Resume only when the obstruction is gone: the sibling row has
+      // left (checked above) AND no foreign/untagged machine still holds
+      // the group-derived name. Stays parked otherwise — no write, so the
+      // row neither churns statuses nor burns its retry budget.
+      const blocking = await provider.find(rowMachineName(r));
+      if (blocking && blocking.rowId !== r.id) return;
+      await db.setStatus(r.id, "pending");
+      return;
+    }
     case "online":
       return; // TODO(v1.5): suspend-on-idle once wake semantics are proven
     case "error":
@@ -224,6 +234,10 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   const m = await provider.find(rowMachineName(r));
   if (m?.rowId === r.id) ids.add(m.id);
   for (const id of ids) await provider.destroy(id);
+  const orphan = m && m.rowId !== r.id ? m : null;
+  if (orphan) {
+    console.warn(`anchor ${r.id}: machine ${orphan.id} left running — ownership tag doesn't match, destroy manually`);
+  }
   if (r.node_id) {
     try {
       await cp.deleteNode(r.node_id);
@@ -233,8 +247,13 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
     }
   }
   // Volume deletion waits for the recovery grace window — handled by a
-  // scheduled sweep, not this hot loop (kept as a status for now).
-  await db.setStatus(r.id, "deprovisioning", { error: null });
+  // scheduled sweep, not this hot loop (kept as a status for now). An
+  // unclaimed leftover machine is recorded so ops sees the leak.
+  await db.setStatus(r.id, "deprovisioning", {
+    error: orphan
+      ? `machine ${orphan.id} still running — no ownership tag match`
+      : null,
+  });
   // TODO: volume retention grace (~14d read-only) then provider.deleteVolume
   // and status 'gone'. MVP: mark deprovisioning; manual volume cleanup.
 }
