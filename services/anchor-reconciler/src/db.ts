@@ -82,6 +82,26 @@ export class AnchorDb {
     return (res.rows[0] as unknown as AnchorRow) ?? null;
   }
 
+  // Does any live row claim this machine id? The strongest ownership
+  // proof available: a row only records fly_machine_id after a
+  // tag-verified adopt or its own create. Torn-down rows (gone /
+  // deprovisioning) no longer count — their recorded ids point at
+  // machines they already released.
+  async machineClaimed(
+    groupId: string,
+    excludeId: string,
+    machineId: string,
+  ): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `SELECT 1 FROM cloud_anchor
+            WHERE group_id = ? AND id != ? AND fly_machine_id = ?
+              AND status NOT IN ('gone','deprovisioning')
+            LIMIT 1`,
+      args: [groupId, excludeId, machineId],
+    });
+    return res.rows.length > 0;
+  }
+
   async setStatus(
     id: string,
     status: string,

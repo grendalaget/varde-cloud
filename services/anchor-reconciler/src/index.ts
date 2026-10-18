@@ -84,7 +84,11 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   memberCheckFails.delete(r.id);
   if (want && admin) {
     await provision(r, db, cp, provider);
-  } else {
+  } else if (r.status !== "deprovisioning" && r.status !== "gone") {
+    // A torn-down row is settled: a former admin's paid row still looks
+    // due (desired=provisioned + paid plan), and without this guard it
+    // would re-run teardown — and re-label the replacement's machine an
+    // orphan — every poll forever.
     await teardown(r, db, cp, provider);
   }
 }
@@ -202,11 +206,17 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
     }
     case "conflict": {
       // Resume only when the obstruction is gone: the sibling row has
-      // left (checked above) AND no foreign/untagged machine still holds
-      // the group-derived name. Stays parked otherwise — no write, so the
-      // row neither churns statuses nor burns its retry budget.
+      // left (checked above) AND no foreign machine still holds the
+      // group-derived name. An unclaimed machine holding the name is an
+      // orphan — destroy it and the row resumes itself; a machine a live
+      // row claims is the anchor someone else pays for, so keep parked.
       const blocking = await provider.find(rowMachineName(r));
-      if (blocking && blocking.rowId !== r.id) return;
+      if (blocking && blocking.rowId !== r.id) {
+        if (!(await db.machineClaimed(r.group_id, r.id, blocking.id))) {
+          await provider.destroy(blocking.id);
+        }
+        return;
+      }
       await db.setStatus(r.id, "pending");
       return;
     }
@@ -224,20 +234,22 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 
 async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   if (r.status === "gone") return;
-  // Destroy every machine this row provably owns: the recorded id plus a
-  // stale same-named machine lingering from a replacement — but only when
-  // it carries this row's VARDE_ANCHOR_ROW tag. An untagged same-named
-  // machine may belong to a sibling subscriber and is never destroyed on
-  // name alone — leaking beats killing a machine another row pays for.
+  // Destroy every machine this row may own: the recorded id plus a
+  // same-named machine — but a same-named machine only when no live row
+  // claims its id. A claimed machine is the running anchor another
+  // subscriber pays for; an unclaimed one (untagged, or tagged for a
+  // torn-down row) is an orphan that would otherwise leak forever.
   const ids = new Set<string>();
   if (r.fly_machine_id) ids.add(r.fly_machine_id);
   const m = await provider.find(rowMachineName(r));
-  if (m?.rowId === r.id) ids.add(m.id);
-  for (const id of ids) await provider.destroy(id);
-  const orphan = m && m.rowId !== r.id ? m : null;
-  if (orphan) {
-    console.warn(`anchor ${r.id}: machine ${orphan.id} left running — ownership tag doesn't match, destroy manually`);
+  if (
+    m &&
+    (m.rowId === r.id ||
+      !(await db.machineClaimed(r.group_id, r.id, m.id)))
+  ) {
+    ids.add(m.id);
   }
+  for (const id of ids) await provider.destroy(id);
   if (r.node_id) {
     try {
       await cp.deleteNode(r.node_id);
@@ -247,13 +259,8 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
     }
   }
   // Volume deletion waits for the recovery grace window — handled by a
-  // scheduled sweep, not this hot loop (kept as a status for now). An
-  // unclaimed leftover machine is recorded so ops sees the leak.
-  await db.setStatus(r.id, "deprovisioning", {
-    error: orphan
-      ? `machine ${orphan.id} still running — no ownership tag match`
-      : null,
-  });
+  // scheduled sweep, not this hot loop (kept as a status for now).
+  await db.setStatus(r.id, "deprovisioning", { error: null });
   // TODO: volume retention grace (~14d read-only) then provider.deleteVolume
   // and status 'gone'. MVP: mark deprovisioning; manual volume cleanup.
 }
