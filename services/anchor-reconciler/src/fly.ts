@@ -9,6 +9,7 @@ interface FlyMachine {
   name: string;
   state: string;
   private_ip?: string;
+  created_at?: string;
   config?: { env?: Record<string, string>; mounts?: { volume: string; path: string }[] };
 }
 
@@ -50,6 +51,7 @@ export class FlyMachinesProvider implements AnchorProvider {
       privateIp: m.private_ip,
       status: m.state,
       rowId: m.config?.env?.VARDE_ANCHOR_ROW,
+      createdAt: m.created_at ? Date.parse(m.created_at) : undefined,
     };
   }
 

@@ -47,6 +47,14 @@ const STUCK_PROVISION_MS = 30 * 60_000;
 // stable, and makes find() the idempotency key for re-provision.
 const rowMachineName = (r: AnchorRow) => machineName(r.group_id);
 
+// A machine this young may have just been created by a row whose
+// status write hasn't landed yet — an unclaimed destroy inside the
+// window would kill an anchor mid-adoption. Past the window, unclaimed
+// means genuinely orphaned.
+const RECENT_MACHINE_MS = 120_000;
+const isRecent = (m: { createdAt?: number }) =>
+  m.createdAt !== undefined && Date.now() - m.createdAt < RECENT_MACHINE_MS;
+
 // Consecutive members-check failures per row. A transient CP error must
 // not burn the error/retry budget, but a permanent failure (e.g. the
 // service token lost its members scope) has to become visible instead of
@@ -212,7 +220,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       // row claims is the anchor someone else pays for, so keep parked.
       const blocking = await provider.find(rowMachineName(r));
       if (blocking && blocking.rowId !== r.id) {
-        if (!(await db.machineClaimed(r.group_id, r.id, blocking.id))) {
+        if (!isRecent(blocking) && !(await db.machineClaimed(r.group_id, r.id, blocking.id))) {
           await provider.destroy(blocking.id);
         }
         return;
@@ -242,11 +250,9 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   const ids = new Set<string>();
   if (r.fly_machine_id) ids.add(r.fly_machine_id);
   const m = await provider.find(rowMachineName(r));
-  if (
-    m &&
-    (m.rowId === r.id ||
-      !(await db.machineClaimed(r.group_id, r.id, m.id)))
-  ) {
+  if (m && m.rowId === r.id) {
+    ids.add(m.id);
+  } else if (m && !isRecent(m) && !(await db.machineClaimed(r.group_id, r.id, m.id))) {
     ids.add(m.id);
   }
   for (const id of ids) await provider.destroy(id);
