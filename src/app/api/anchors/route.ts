@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
 import { listGroups } from "@/lib/cp";
@@ -11,10 +11,29 @@ import * as schema from "@/db/schema";
 export async function GET() {
   const user = await cpUser();
   if (isResponse(user)) return user;
+  // Anchors are group infra: every group admin sees them, whoever the
+  // subscriber is. A CP outage degrades to own rows rather than failing
+  // the dashboard's whole refresh.
+  let adminGroupIds: string[] = [];
+  try {
+    const groups = await listGroups(user);
+    adminGroupIds = groups
+      .filter((g) => g.role === "owner" || g.role === "admin")
+      .map((g) => g.id);
+  } catch {
+    // CP unreachable: own rows still answer the common case.
+  }
   const anchors = await db
     .select()
     .from(schema.cloudAnchor)
-    .where(eq(schema.cloudAnchor.userId, user.id));
+    .where(
+      adminGroupIds.length
+        ? or(
+            eq(schema.cloudAnchor.userId, user.id),
+            inArray(schema.cloudAnchor.groupId, adminGroupIds),
+          )
+        : eq(schema.cloudAnchor.userId, user.id),
+    );
   return Response.json({ anchors });
 }
 
@@ -59,8 +78,10 @@ export async function POST(req: Request) {
     return cpErrorResponse(e);
   }
 
-  // One anchor per group: any live row (not fully deprovisioned) blocks a
-  // second attach, whoever owns it.
+  // One anchor per group: a row still converging blocks a second attach,
+  // whoever owns it. Torn-down rows ('deprovisioning' keeps the volume for
+  // the recovery grace, 'gone' is final) do not — they are revived by the
+  // same owner below instead of stacking duplicates.
   const existing = await db
     .select()
     .from(schema.cloudAnchor)
@@ -70,13 +91,37 @@ export async function POST(req: Request) {
         eq(schema.cloudAnchor.desired, "provisioned"),
       ),
     );
-  const live = existing.find((a) => a.status !== "gone");
+  const live = existing.find(
+    (a) => a.status !== "gone" && a.status !== "deprovisioning",
+  );
   if (live) {
     if (live.userId === user.id) return Response.json({ anchor: live });
     return Response.json(
       { error: "conflict", message: "This group already has a cloud anchor." },
       { status: 409 },
     );
+  }
+
+  // Re-attach on the caller's own row rather than inserting a second one:
+  // keeps the retained volume (and its chunks) reachable by name.
+  const mine = await db
+    .select()
+    .from(schema.cloudAnchor)
+    .where(
+      and(
+        eq(schema.cloudAnchor.groupId, groupId),
+        eq(schema.cloudAnchor.userId, user.id),
+      ),
+    )
+    .orderBy(desc(schema.cloudAnchor.updatedAt))
+    .limit(1);
+  if (mine[0]) {
+    const [anchor] = await db
+      .update(schema.cloudAnchor)
+      .set({ desired: "provisioned", status: "pending", error: null })
+      .where(eq(schema.cloudAnchor.id, mine[0].id))
+      .returning();
+    return Response.json({ anchor });
   }
 
   const [anchor] = await db

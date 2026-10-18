@@ -127,6 +127,7 @@ async function AccountContent({
           <HostingDashboard
             plan={user.plan as string}
             billingEnabled={BILLING_ENABLED}
+            userId={user.id}
           />
         </Item>
       </Stagger>

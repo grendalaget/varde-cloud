@@ -65,6 +65,7 @@ interface GroupDetail {
 // Row from /api/anchors — desired vs actual; the reconciler converges them.
 interface CloudAnchorRow {
   id: string;
+  userId: string;
   groupId: string;
   desired: string;
   status: string;
@@ -99,9 +100,11 @@ const STATE_COLORS: Record<string, "success" | "warning" | "danger" | "default">
 export function HostingDashboard({
   plan,
   billingEnabled,
+  userId,
 }: {
   plan: string;
   billingEnabled: boolean;
+  userId: string;
 }) {
   const [groups, setGroups] = useState<CpGroup[] | null>(null);
   const [details, setDetails] = useState<Record<string, GroupDetail>>({});
@@ -143,9 +146,14 @@ export function HostingDashboard({
         const aRes = await fetch("/api/anchors", { cache: "no-store" });
         const aData = (await aRes.json()) as { anchors?: CloudAnchorRow[] };
         if (isCurrent() && aRes.ok && aData.anchors) {
-          // Prefer a live row per group; only a detached row means the
-          // group currently has nothing running.
-          const live = aData.anchors.filter((a) => a.status !== "gone");
+          // Only rows still converging count: 'gone' is final and
+          // 'deprovisioning' means teardown finished (the volume alone is
+          // retained for the recovery grace) — both leave the group with
+          // no running anchor, so the card falls back to the attach
+          // affordance.
+          const live = aData.anchors.filter(
+            (a) => a.status !== "gone" && a.status !== "deprovisioning",
+          );
           setAnchors(Object.fromEntries(live.map((a) => [a.groupId, a])));
         }
       } catch {
@@ -242,6 +250,7 @@ export function HostingDashboard({
           anchor={anchors[g.id]}
           plan={plan}
           billingEnabled={billingEnabled}
+          userId={userId}
           onAnchorChanged={() => void load()}
         />
       ))}
@@ -261,6 +270,7 @@ function GroupCard({
   anchor,
   plan,
   billingEnabled,
+  userId,
   onAnchorChanged,
 }: {
   group: CpGroup;
@@ -268,6 +278,7 @@ function GroupCard({
   anchor?: CloudAnchorRow;
   plan: string;
   billingEnabled: boolean;
+  userId: string;
   onAnchorChanged: () => void;
 }) {
   return (
@@ -403,6 +414,7 @@ function GroupCard({
           group={group}
           anchor={anchor}
           plan={plan}
+          userId={userId}
           onChanged={onAnchorChanged}
         />
       ) : null}
@@ -414,17 +426,27 @@ function AnchorSection({
   group,
   anchor,
   plan,
+  userId,
   onChanged,
 }: {
   group: CpGroup;
   anchor?: CloudAnchorRow;
   plan: string;
+  userId: string;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const paid = plan === "anchor" || plan === "anchor+";
-  const live = anchor && anchor.status !== "gone";
+  // 'deprovisioning' means teardown already finished (the row only
+  // remains because the volume is kept for the recovery grace) — the
+  // group has no running anchor, so the attach affordance returns and
+  // POST revives this same row.
+  const live =
+    anchor && anchor.status !== "gone" && anchor.status !== "deprovisioning";
+  // Only the subscriber may detach; other group admins get read-only
+  // status for an anchor someone else is paying for.
+  const mine = anchor?.userId === userId;
 
   const call = async (method: "POST" | "DELETE") => {
     setBusy(true);
@@ -450,13 +472,15 @@ function AnchorSection({
     }
   };
 
+  // Error first: a failed teardown leaves desired='detached', which must
+  // not mask the recorded error behind a perpetual "removing".
   const statusText = live
-    ? anchor!.desired === "detached" || anchor!.status === "deprovisioning"
-      ? "removing"
-      : anchor!.status === "online"
-        ? "online"
-        : anchor!.status === "error"
-          ? "error"
+    ? anchor!.status === "error"
+      ? "error"
+      : anchor!.desired === "detached"
+        ? "removing"
+        : anchor!.status === "online"
+          ? "online"
           : "provisioning"
     : null;
 
@@ -487,7 +511,7 @@ function AnchorSection({
                     : "Online, saving replicas for the whole group"}
             </p>
           </div>
-          {statusText !== "removing" ? (
+          {statusText !== "removing" && mine ? (
             <Button
               variant="tertiary"
               size="sm"
@@ -496,6 +520,11 @@ function AnchorSection({
             >
               Remove
             </Button>
+          ) : null}
+          {!mine ? (
+            <span className="shrink-0 text-xs text-muted">
+              paid for by another admin
+            </span>
           ) : null}
         </div>
       ) : (

@@ -66,12 +66,20 @@ export class FlyMachinesProvider implements AnchorProvider {
   }
 
   async create(spec: CreateAnchorSpec): Promise<AnchorMachine> {
-    const vol = await this.call<FlyVolume>("POST", "/volumes", {
-      // Volume names share the 30-char alnum+underscore rule.
-      name: `vol_${spec.name}`.slice(0, 30),
-      size_gb: spec.volumeGb,
-      region: spec.region,
-    });
+    // Volume names share the 30-char alnum+underscore rule. Teardown keeps
+    // the volume for the recovery grace, so re-attach/resubscribe reuses
+    // it by name — chunks survive — and the lookup also avoids the
+    // name-collision error on a kept volume.
+    const volName = `vol_${spec.name}`.slice(0, 30);
+    const volumes = await this.call<FlyVolume[]>("GET", "/volumes");
+    let vol = volumes.find((v) => v.name === volName);
+    if (!vol) {
+      vol = await this.call<FlyVolume>("POST", "/volumes", {
+        name: volName,
+        size_gb: spec.volumeGb,
+        region: spec.region,
+      });
+    }
     try {
       const m = await this.call<FlyMachine>("POST", "/machines", {
         name: spec.name,
