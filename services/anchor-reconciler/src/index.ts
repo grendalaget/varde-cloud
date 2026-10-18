@@ -250,10 +250,15 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   const ids = new Set<string>();
   if (r.fly_machine_id) ids.add(r.fly_machine_id);
   const m = await provider.find(rowMachineName(r));
+  let deferSettle = false;
   if (m && m.rowId === r.id) {
     ids.add(m.id);
-  } else if (m && !isRecent(m) && !(await db.machineClaimed(r.group_id, r.id, m.id))) {
-    ids.add(m.id);
+  } else if (m && !(await db.machineClaimed(r.group_id, r.id, m.id))) {
+    // Unclaimed: destroy once past the adoption window; younger than
+    // that it may be mid-adoption, so hold the deprovisioning write —
+    // settling now would stop teardown passes and leak it forever.
+    if (isRecent(m)) deferSettle = true;
+    else ids.add(m.id);
   }
   for (const id of ids) await provider.destroy(id);
   if (r.node_id) {
@@ -266,6 +271,7 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   }
   // Volume deletion waits for the recovery grace window — handled by a
   // scheduled sweep, not this hot loop (kept as a status for now).
+  if (deferSettle) return; // revisit the recent machine next pass
   await db.setStatus(r.id, "deprovisioning", { error: null });
   // TODO: volume retention grace (~14d read-only) then provider.deleteVolume
   // and status 'gone'. MVP: mark deprovisioning; manual volume cleanup.
