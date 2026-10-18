@@ -124,7 +124,10 @@ async function AccountContent({
 
         </Item>
         <Item className="md:col-span-2">
-          <HostingDashboard />
+          <HostingDashboard
+            plan={user.plan as string}
+            billingEnabled={BILLING_ENABLED}
+          />
         </Item>
       </Stagger>
     </main>

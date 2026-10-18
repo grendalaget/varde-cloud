@@ -62,6 +62,15 @@ interface GroupDetail {
   servers: CpServer[] | null;
 }
 
+// Row from /api/anchors — desired vs actual; the reconciler converges them.
+interface CloudAnchorRow {
+  id: string;
+  groupId: string;
+  desired: string;
+  status: string;
+  error?: string | null;
+}
+
 // Accepts a bare code ("x7k2m9") or a pasted invite link
 // ("cp.varde.games/invite/x7k2m9", "...?code=x7k2m9").
 function parseInviteCode(raw: string): string {
@@ -87,9 +96,16 @@ const STATE_COLORS: Record<string, "success" | "warning" | "danger" | "default">
   failed: "danger",
 };
 
-export function HostingDashboard() {
+export function HostingDashboard({
+  plan,
+  billingEnabled,
+}: {
+  plan: string;
+  billingEnabled: boolean;
+}) {
   const [groups, setGroups] = useState<CpGroup[] | null>(null);
   const [details, setDetails] = useState<Record<string, GroupDetail>>({});
+  const [anchors, setAnchors] = useState<Record<string, CloudAnchorRow>>({});
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   // A transient refresh failure must not unmount loaded content (it would
@@ -122,6 +138,19 @@ export function HostingDashboard() {
       setGroups(data.groups);
       hasData.current = true;
       setStale(false);
+      // Anchor rows ride the same refresh: failures just leave stale data.
+      try {
+        const aRes = await fetch("/api/anchors", { cache: "no-store" });
+        const aData = (await aRes.json()) as { anchors?: CloudAnchorRow[] };
+        if (isCurrent() && aRes.ok && aData.anchors) {
+          // Prefer a live row per group; only a detached row means the
+          // group currently has nothing running.
+          const live = aData.anchors.filter((a) => a.status !== "gone");
+          setAnchors(Object.fromEntries(live.map((a) => [a.groupId, a])));
+        }
+      } catch {
+        // keep prior anchor map
+      }
       const entries = await Promise.all(
         data.groups.map(async (g) => {
           const gid = encodeURIComponent(g.id);
@@ -206,7 +235,15 @@ export function HostingDashboard() {
   return (
     <div className="flex flex-col gap-5">
       {groups.map((g) => (
-        <GroupCard key={g.id} group={g} detail={details[g.id]} />
+        <GroupCard
+          key={g.id}
+          group={g}
+          detail={details[g.id]}
+          anchor={anchors[g.id]}
+          plan={plan}
+          billingEnabled={billingEnabled}
+          onAnchorChanged={() => void load()}
+        />
       ))}
       {stale ? (
         <p className="text-xs text-muted">
@@ -218,7 +255,21 @@ export function HostingDashboard() {
   );
 }
 
-function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) {
+function GroupCard({
+  group,
+  detail,
+  anchor,
+  plan,
+  billingEnabled,
+  onAnchorChanged,
+}: {
+  group: CpGroup;
+  detail?: GroupDetail;
+  anchor?: CloudAnchorRow;
+  plan: string;
+  billingEnabled: boolean;
+  onAnchorChanged: () => void;
+}) {
   return (
     <Card className="rounded-2xl border border-separator bg-surface p-6">
       <div className="flex items-center justify-between gap-3">
@@ -346,7 +397,138 @@ function GroupCard({ group, detail }: { group: CpGroup; detail?: GroupDetail }) 
           </ul>
         )}
       </div>
+
+      {billingEnabled && (group.role === "owner" || group.role === "admin") ? (
+        <AnchorSection
+          group={group}
+          anchor={anchor}
+          plan={plan}
+          onChanged={onAnchorChanged}
+        />
+      ) : null}
     </Card>
+  );
+}
+
+function AnchorSection({
+  group,
+  anchor,
+  plan,
+  onChanged,
+}: {
+  group: CpGroup;
+  anchor?: CloudAnchorRow;
+  plan: string;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const paid = plan === "anchor" || plan === "anchor+";
+  const live = anchor && anchor.status !== "gone";
+
+  const call = async (method: "POST" | "DELETE") => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/anchors", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ group_id: group.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      if (!res.ok) {
+        setErr(data.message ?? "Could not update the cloud anchor");
+        return;
+      }
+      onChanged();
+    } catch {
+      setErr("Could not update the cloud anchor");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const statusText = live
+    ? anchor!.desired === "detached" || anchor!.status === "deprovisioning"
+      ? "removing"
+      : anchor!.status === "online"
+        ? "online"
+        : anchor!.status === "error"
+          ? "error"
+          : "provisioning"
+    : null;
+
+  return (
+    <div className="mt-5">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+        Cloud anchor
+      </h3>
+      {live ? (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            {statusText === "online" ? (
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-full bg-success"
+              />
+            ) : null}
+            {statusText === "provisioning" || statusText === "removing" ? (
+              <Spinner size="sm" />
+            ) : null}
+            <p className="truncate text-foreground">
+              {statusText === "error"
+                ? (anchor!.error ?? "Something went wrong")
+                : statusText === "provisioning"
+                  ? "Provisioning, usually under a minute"
+                  : statusText === "removing"
+                    ? "Removing"
+                    : "Online, saving replicas for the whole group"}
+            </p>
+          </div>
+          {statusText !== "removing" ? (
+            <Button
+              variant="tertiary"
+              size="sm"
+              isDisabled={busy}
+              onPress={() => void call("DELETE")}
+            >
+              Remove
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mt-3">
+          {paid ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted">
+                An always-on machine that keeps a copy of every save in this
+                group.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                isPending={busy}
+                onPress={() => void call("POST")}
+              >
+                Add
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              An always-on machine that keeps a copy of every save in this
+              group. Part of the{" "}
+              <a href="/pricing" className="text-glod">
+                Anchor plan
+              </a>
+              .
+            </p>
+          )}
+        </div>
+      )}
+      {err ? <p className="mt-2 text-xs text-danger">{err}</p> : null}
+    </div>
   );
 }
 
