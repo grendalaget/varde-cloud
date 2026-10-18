@@ -475,7 +475,7 @@ function AnchorSection({
   // Error first: a failed teardown leaves desired='detached', which must
   // not mask the recorded error behind a perpetual "removing".
   const statusText = live
-    ? anchor!.status === "error"
+    ? anchor!.status === "error" || anchor!.status === "conflict"
       ? "error"
       : anchor!.desired === "detached"
         ? "removing"

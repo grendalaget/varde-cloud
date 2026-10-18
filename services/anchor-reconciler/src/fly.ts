@@ -72,14 +72,14 @@ export class FlyMachinesProvider implements AnchorProvider {
     // name-collision error on a kept volume.
     const volName = `vol_${spec.name}`.slice(0, 30);
     const volumes = await this.call<FlyVolume[]>("GET", "/volumes");
-    let vol = volumes.find((v) => v.name === volName);
-    if (!vol) {
-      vol = await this.call<FlyVolume>("POST", "/volumes", {
+    const existing = volumes.find((v) => v.name === volName);
+    const vol =
+      existing ??
+      (await this.call<FlyVolume>("POST", "/volumes", {
         name: volName,
         size_gb: spec.volumeGb,
         region: spec.region,
-      });
-    }
+      }));
     try {
       const m = await this.call<FlyMachine>("POST", "/machines", {
         name: spec.name,
@@ -95,10 +95,14 @@ export class FlyMachinesProvider implements AnchorProvider {
       });
       return { id: m.id, volumeId: vol.id, status: m.state };
     } catch (e) {
-      // Don't leak the volume on a failed machine create.
-      try {
-        await this.deleteVolume(vol.id);
-      } catch {}
+      // Don't leak the volume on a failed machine create — but only one
+      // this call made: a retained grace-period volume holds chunks that
+      // must survive a failed re-attach.
+      if (!existing) {
+        try {
+          await this.deleteVolume(vol.id);
+        } catch {}
+      }
       throw e;
     }
   }

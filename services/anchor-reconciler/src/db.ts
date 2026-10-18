@@ -7,7 +7,7 @@ export interface AnchorRow {
   user_id: string;
   group_id: string;
   desired: string; // provisioned | detached
-  status: string; // pending | provisioning | online | deprovisioning | gone | error
+  status: string; // pending | provisioning | online | deprovisioning | gone | error | conflict
   fly_machine_id: string | null;
   fly_volume_id: string | null;
   node_id: string | null;
@@ -54,9 +54,30 @@ export class AnchorDb {
       sql: `SELECT a.*, u.plan AS plan, u.email AS email FROM cloud_anchor a
             JOIN user u ON u.id = a.user_id
             WHERE a.group_id = ? AND a.desired = 'provisioned'
-              AND a.status NOT IN ('gone','deprovisioning')
+              AND a.status NOT IN ('gone','deprovisioning','conflict')
             ORDER BY a.updated_at DESC LIMIT 1`,
       args: [groupId],
+    });
+    return (res.rows[0] as unknown as AnchorRow) ?? null;
+  }
+
+  // Another subscriber's converging anchor on the same group. Provision
+  // and teardown check this before touching machines: machine names are
+  // group-derived, so two live rows would fight over (and destroy) the
+  // same machine. 'conflict' rows are deliberately excluded — a parked
+  // row must not block the surviving row, and two simultaneous conflicts
+  // resolve themselves on the next pass.
+  async liveSiblingAnchor(
+    groupId: string,
+    excludeId: string,
+  ): Promise<AnchorRow | null> {
+    const res = await this.client.execute({
+      sql: `SELECT a.*, u.plan AS plan, u.email AS email FROM cloud_anchor a
+            JOIN user u ON u.id = a.user_id
+            WHERE a.group_id = ? AND a.id != ? AND a.desired = 'provisioned'
+              AND a.status NOT IN ('gone','deprovisioning','conflict')
+            LIMIT 1`,
+      args: [groupId, excludeId],
     });
     return (res.rows[0] as unknown as AnchorRow) ?? null;
   }

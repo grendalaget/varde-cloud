@@ -90,6 +90,23 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 }
 
 async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
+  // Two paid rows on one group would fight over the group-derived machine
+  // name (adopt-or-create keys on it): adoption would claim the sibling's
+  // machine, and a later detach would then destroy a machine another
+  // subscriber still pays for. Park as 'conflict' until the other row is
+  // fully torn down — due() keeps the row in the loop, so it resumes
+  // automatically. 'conflict' itself is not a live sibling, so two rows
+  // parked against each other resolve on the next pass rather than
+  // deadlocking.
+  const sibling = await db.liveSiblingAnchor(r.group_id, r.id);
+  if (sibling) {
+    if (r.status !== "conflict") {
+      await db.setStatus(r.id, "conflict", {
+        error: `another anchor is already attached to this group (row ${sibling.id})`,
+      });
+    }
+    return;
+  }
   switch (r.status) {
     case "gone": // re-attach after full teardown
       await db.setStatus(r.id, "pending");
@@ -183,11 +200,17 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   if (r.status === "gone") return;
   // Destroy every machine this row may own: a stale same-named machine
-  // can linger next to the row's recorded id during a replacement.
+  // can linger next to the row's recorded id during a replacement. The
+  // name-derived candidate is only safe while no sibling subscriber's row
+  // is live on the group — names are group-derived, so it could be
+  // theirs, and a row that never owned a machine would destroy the
+  // running anchor somebody else pays for.
   const ids = new Set<string>();
   if (r.fly_machine_id) ids.add(r.fly_machine_id);
-  const m = await provider.find(rowMachineName(r));
-  if (m) ids.add(m.id);
+  if (!(await db.liveSiblingAnchor(r.group_id, r.id))) {
+    const m = await provider.find(rowMachineName(r));
+    if (m) ids.add(m.id);
+  }
   for (const id of ids) await provider.destroy(id);
   if (r.node_id) {
     try {

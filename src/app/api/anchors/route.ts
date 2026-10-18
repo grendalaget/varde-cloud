@@ -118,7 +118,14 @@ export async function POST(req: Request) {
   if (mine[0]) {
     const [anchor] = await db
       .update(schema.cloudAnchor)
-      .set({ desired: "provisioned", status: "pending", error: null })
+      // Fresh retry budget too: a parked row (attempts >= cap) would
+      // otherwise be re-parked on its very first failure after reattach.
+      .set({
+        desired: "provisioned",
+        status: "pending",
+        error: null,
+        attempts: 0,
+      })
       .where(eq(schema.cloudAnchor.id, mine[0].id))
       .returning();
     return Response.json({ anchor });
