@@ -438,9 +438,12 @@ function JoinInline({ onJoined }: { onJoined: () => void }) {
         { method: "POST" },
       );
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as {
-          message?: string;
-        };
+        let data: { message?: string };
+        try {
+          data = (await res.json()) as { message?: string };
+        } catch {
+          data = {};
+        }
         setErr(data.message ?? "That invite code did not work");
         return;
       }
