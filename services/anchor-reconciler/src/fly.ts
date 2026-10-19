@@ -9,6 +9,7 @@ interface FlyMachine {
   name: string;
   state: string;
   private_ip?: string;
+  created_at?: string;
   config?: { env?: Record<string, string>; mounts?: { volume: string; path: string }[] };
 }
 
@@ -49,6 +50,8 @@ export class FlyMachinesProvider implements AnchorProvider {
       volumeId: m.config?.mounts?.[0]?.volume,
       privateIp: m.private_ip,
       status: m.state,
+      rowId: m.config?.env?.VARDE_ANCHOR_ROW,
+      createdAt: m.created_at ? Date.parse(m.created_at) : undefined,
     };
   }
 
@@ -66,12 +69,20 @@ export class FlyMachinesProvider implements AnchorProvider {
   }
 
   async create(spec: CreateAnchorSpec): Promise<AnchorMachine> {
-    const vol = await this.call<FlyVolume>("POST", "/volumes", {
-      // Volume names share the 30-char alnum+underscore rule.
-      name: `vol_${spec.name}`.slice(0, 30),
-      size_gb: spec.volumeGb,
-      region: spec.region,
-    });
+    // Volume names share the 30-char alnum+underscore rule. Teardown keeps
+    // the volume for the recovery grace, so re-attach/resubscribe reuses
+    // it by name — chunks survive — and the lookup also avoids the
+    // name-collision error on a kept volume.
+    const volName = `vol_${spec.name}`.slice(0, 30);
+    const volumes = await this.call<FlyVolume[]>("GET", "/volumes");
+    const existing = volumes.find((v) => v.name === volName);
+    const vol =
+      existing ??
+      (await this.call<FlyVolume>("POST", "/volumes", {
+        name: volName,
+        size_gb: spec.volumeGb,
+        region: spec.region,
+      }));
     try {
       const m = await this.call<FlyMachine>("POST", "/machines", {
         name: spec.name,
@@ -87,10 +98,14 @@ export class FlyMachinesProvider implements AnchorProvider {
       });
       return { id: m.id, volumeId: vol.id, status: m.state };
     } catch (e) {
-      // Don't leak the volume on a failed machine create.
-      try {
-        await this.deleteVolume(vol.id);
-      } catch {}
+      // Don't leak the volume on a failed machine create — but only one
+      // this call made: a retained grace-period volume holds chunks that
+      // must survive a failed re-attach.
+      if (!existing) {
+        try {
+          await this.deleteVolume(vol.id);
+        } catch {}
+      }
       throw e;
     }
   }

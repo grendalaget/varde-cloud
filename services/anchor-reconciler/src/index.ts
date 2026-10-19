@@ -47,6 +47,14 @@ const STUCK_PROVISION_MS = 30 * 60_000;
 // stable, and makes find() the idempotency key for re-provision.
 const rowMachineName = (r: AnchorRow) => machineName(r.group_id);
 
+// A machine this young may have just been created by a row whose
+// status write hasn't landed yet — an unclaimed destroy inside the
+// window would kill an anchor mid-adoption. Past the window, unclaimed
+// means genuinely orphaned.
+const RECENT_MACHINE_MS = 120_000;
+const isRecent = (m: { createdAt?: number }) =>
+  m.createdAt !== undefined && Date.now() - m.createdAt < RECENT_MACHINE_MS;
+
 // Consecutive members-check failures per row. A transient CP error must
 // not burn the error/retry budget, but a permanent failure (e.g. the
 // service token lost its members scope) has to become visible instead of
@@ -84,12 +92,35 @@ async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
   memberCheckFails.delete(r.id);
   if (want && admin) {
     await provision(r, db, cp, provider);
-  } else {
+  } else if (r.status !== "deprovisioning" && r.status !== "gone") {
+    // A torn-down row is settled: a former admin's paid row still looks
+    // due (desired=provisioned + paid plan), and without this guard it
+    // would re-run teardown — and re-label the replacement's machine an
+    // orphan — every poll forever.
     await teardown(r, db, cp, provider);
   }
 }
 
 async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
+  // Two paid rows on one group would fight over the group-derived machine
+  // name (adopt-or-create keys on it). Only a row still trying to acquire
+  // infra yields: once a row owns a machine it is the anchor of record —
+  // an online/provisioning row must never park itself for a mere pending
+  // sibling, or the sibling would adopt the still-running machine and the
+  // parked row's later teardown would destroy a machine another
+  // subscriber pays for. 'conflict' is not a live sibling, so two rows
+  // parked against each other resolve on the next pass.
+  if (r.status !== "online" && r.status !== "provisioning") {
+    const sibling = await db.liveSiblingAnchor(r.group_id, r.id);
+    if (sibling) {
+      if (r.status !== "conflict") {
+        await db.setStatus(r.id, "conflict", {
+          error: `another anchor is already attached to this group (row ${sibling.id})`,
+        });
+      }
+      return;
+    }
+  }
   switch (r.status) {
     case "gone": // re-attach after full teardown
       await db.setStatus(r.id, "pending");
@@ -99,6 +130,18 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       // the status write failed) instead of leaking a second volume.
       const existing = await provider.find(rowMachineName(r));
       if (existing) {
+        // Only adopt a machine provably created for this row: the
+        // VARDE_ANCHOR_ROW tag is the ownership proof — the group-derived
+        // name alone can't distinguish a sibling subscriber's machine,
+        // and an untagged machine must never be claimed on name alone.
+        if (existing.rowId !== r.id) {
+          await db.setStatus(r.id, "conflict", {
+            error: existing.rowId
+              ? `machine ${existing.id} belongs to anchor row ${existing.rowId}`
+              : `machine ${existing.id} has no row ownership tag`,
+          });
+          return;
+        }
         await db.setStatus(r.id, "provisioning", {
           fly_machine_id: existing.id,
           fly_volume_id: existing.volumeId,
@@ -111,6 +154,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
         volumeGb: VOLUME_GB,
         env: {
           VARDE_CP_URL: CP_URL,
+          VARDE_ANCHOR_ROW: r.id,
           VARDE_BOOTSTRAP_URL: `http://${BOOTSTRAP_HOST}:${BOOTSTRAP_PORT}/bootstrap/${r.group_id}`,
         },
       });
@@ -168,6 +212,22 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       }
       return;
     }
+    case "conflict": {
+      // Resume only when the obstruction is gone: the sibling row has
+      // left (checked above) AND no foreign machine still holds the
+      // group-derived name. An unclaimed machine holding the name is an
+      // orphan — destroy it and the row resumes itself; a machine a live
+      // row claims is the anchor someone else pays for, so keep parked.
+      const blocking = await provider.find(rowMachineName(r));
+      if (blocking && blocking.rowId !== r.id) {
+        if (!isRecent(blocking) && !(await db.machineClaimed(r.group_id, r.id, blocking.id))) {
+          await provider.destroy(blocking.id);
+        }
+        return;
+      }
+      await db.setStatus(r.id, "pending");
+      return;
+    }
     case "online":
       return; // TODO(v1.5): suspend-on-idle once wake semantics are proven
     case "error":
@@ -182,12 +242,24 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
 
 async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   if (r.status === "gone") return;
-  // Destroy every machine this row may own: a stale same-named machine
-  // can linger next to the row's recorded id during a replacement.
+  // Destroy every machine this row may own: the recorded id plus a
+  // same-named machine — but a same-named machine only when no live row
+  // claims its id. A claimed machine is the running anchor another
+  // subscriber pays for; an unclaimed one (untagged, or tagged for a
+  // torn-down row) is an orphan that would otherwise leak forever.
   const ids = new Set<string>();
   if (r.fly_machine_id) ids.add(r.fly_machine_id);
   const m = await provider.find(rowMachineName(r));
-  if (m) ids.add(m.id);
+  let deferSettle = false;
+  if (m && m.rowId === r.id) {
+    ids.add(m.id);
+  } else if (m && !(await db.machineClaimed(r.group_id, r.id, m.id))) {
+    // Unclaimed: destroy once past the adoption window; younger than
+    // that it may be mid-adoption, so hold the deprovisioning write —
+    // settling now would stop teardown passes and leak it forever.
+    if (isRecent(m)) deferSettle = true;
+    else ids.add(m.id);
+  }
   for (const id of ids) await provider.destroy(id);
   if (r.node_id) {
     try {
@@ -199,6 +271,7 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   }
   // Volume deletion waits for the recovery grace window — handled by a
   // scheduled sweep, not this hot loop (kept as a status for now).
+  if (deferSettle) return; // revisit the recent machine next pass
   await db.setStatus(r.id, "deprovisioning", { error: null });
   // TODO: volume retention grace (~14d read-only) then provider.deleteVolume
   // and status 'gone'. MVP: mark deprovisioning; manual volume cleanup.

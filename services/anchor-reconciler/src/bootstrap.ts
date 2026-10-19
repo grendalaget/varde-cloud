@@ -37,10 +37,15 @@ export function startBootstrap(
         const machine = await provider.find(machineName(groupId));
         // Match the row's machine id, not just the name: a stale same-named
         // machine lingering during a replacement must not fetch a fresh
-        // enroll token for its already-dead node.
+        // enroll token for its already-dead node. The row id tag is the
+        // second half of the proof: fly_machine_id is only ever recorded
+        // from a tag-verified adopt or this row's own create, and the tag
+        // must still match — the token can only reach the machine the row
+        // provably owns.
         if (
           !machine ||
           machine.id !== row.fly_machine_id ||
+          machine.rowId !== row.id ||
           !machine.privateIp ||
           req.socket.remoteAddress !== machine.privateIp
         ) {
