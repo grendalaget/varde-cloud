@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { DocTitle, P } from "@/components/docs-primitives";
 import { GlossaryIndex } from "@/components/docs/glossary-index";
+import { BILLING_ENABLED } from "@/lib/polar";
 
 export const metadata: Metadata = {
   title: "Glossary",
@@ -17,7 +18,7 @@ export default function Glossary() {
         intro="Every Varde word in one plain sentence. Filter the list or jump to a letter."
       />
 
-      <GlossaryIndex />
+      <GlossaryIndex billingEnabled={BILLING_ENABLED} />
 
       <P>
         See the terms in action in{" "}

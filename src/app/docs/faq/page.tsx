@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { DocTitle, P } from "@/components/docs-primitives";
 import { FaqAccordion } from "@/components/docs/faq-accordion";
+import { BILLING_ENABLED } from "@/lib/polar";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -17,7 +18,7 @@ export default function Faq() {
         intro="The short answers, in plain words. Expand a question for the details."
       />
 
-      <FaqAccordion />
+      <FaqAccordion billingEnabled={BILLING_ENABLED} />
 
       <P>
         Something broken? Check{" "}

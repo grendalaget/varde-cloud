@@ -14,7 +14,7 @@ type Term = {
   keywords?: string;
 };
 
-const TERMS: Term[] = [
+const terms = (billingEnabled: boolean): Term[] => [
   {
     term: "Agent",
     def: (
@@ -53,7 +53,10 @@ const TERMS: Term[] = [
     def: (
       <>
         An anchor run by Varde for you, so you do not need an always-on
-        machine of your own. An optional paid extra, still coming soon; see{" "}
+        machine of your own.{" "}
+        {billingEnabled
+          ? "An optional paid extra; see "
+          : "An optional paid extra, still coming soon; see "}
         <Link href="/pricing">pricing</Link>.
       </>
     ),
@@ -227,10 +230,16 @@ function firstLetter(term: string) {
   return term[0]!.toUpperCase();
 }
 
-const ALL_LETTERS = [...new Set(TERMS.map((t) => firstLetter(t.term)))];
+// Term names are flag-independent, so the letter rail can use either variant.
+const ALL_LETTERS = [...new Set(terms(false).map((t) => firstLetter(t.term)))];
 
-export function GlossaryIndex() {
+export function GlossaryIndex({
+  billingEnabled = false,
+}: {
+  billingEnabled?: boolean;
+}) {
   const [query, setQuery] = useState("");
+  const TERMS = terms(billingEnabled);
 
   const q = query.trim().toLowerCase();
   const matches = TERMS.filter(

@@ -5,6 +5,7 @@ import { AsciiClouds } from "@/components/ascii-clouds";
 import { HostingScene } from "@/components/hosting-scene";
 import { Mark } from "@/components/brand";
 import { Item, Reveal, Stagger } from "@/components/reveal";
+import { BILLING_ENABLED } from "@/lib/polar";
 
 const HOW_IT_WORKS = [
   {
@@ -226,7 +227,9 @@ export default function Home() {
       <section className="border-t border-separator bg-skifer-900/40">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
           <Reveal>
-            <p className="text-sm font-medium text-glod">Coming soon</p>
+            {!BILLING_ENABLED ? (
+              <p className="text-sm font-medium text-glod">Coming soon</p>
+            ) : null}
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
               Cloud anchors
             </h2>
