@@ -247,7 +247,7 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <p className="font-display text-lg font-semibold">Anchor</p>
                 <p className="font-display text-2xl font-bold">
-                  $3<span className="text-sm font-normal text-muted">/mo</span>
+                  €3.99<span className="text-sm font-normal text-muted">/mo</span>
                 </p>
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted">

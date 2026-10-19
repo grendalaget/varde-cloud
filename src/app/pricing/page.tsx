@@ -9,7 +9,7 @@ import { BILLING_ENABLED } from "@/lib/polar";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Varde is open source and self-hostable for free. Managed cloud anchors are coming soon.",
+    "Varde is open source and self-hostable for free. Managed cloud anchors keep saves replicated when everyone is offline.",
 };
 
 const PLANS = [
@@ -29,10 +29,10 @@ const PLANS = [
   },
   {
     name: "Anchor",
-    price: "$3",
+    price: "€3.99",
     cadence: "per group / month",
-    altPrice: "$30 per year",
-    tag: "Coming soon",
+    altPrice: "€39.90 per year",
+    tag: BILLING_ENABLED ? null : "Coming soon",
     highlight: true,
     slug: "anchor-monthly",
     yearlySlug: "anchor-yearly",
@@ -46,9 +46,9 @@ const PLANS = [
   },
   {
     name: "Anchor+",
-    price: "$6",
+    price: "€6",
     cadence: "per group / month",
-    tag: "Coming soon",
+    tag: BILLING_ENABLED ? null : "Coming soon",
     highlight: false,
     slug: "anchor-plus",
     features: [
@@ -72,12 +72,14 @@ export default function PricingPage() {
           optional convenience for groups that want always-on save replication
           without running their own always-on machine.
         </p>
-        <div className="mt-3">
-          <Chip variant="secondary" size="sm">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
-            <Chip.Label>Indicative plans, checkout soon</Chip.Label>
-          </Chip>
-        </div>
+        {!BILLING_ENABLED ? (
+          <div className="mt-3">
+            <Chip variant="secondary" size="sm">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
+              <Chip.Label>Indicative plans, checkout soon</Chip.Label>
+            </Chip>
+          </div>
+        ) : null}
       </Reveal>
 
       <Stagger inView stagger={0.09} className="mt-12 grid gap-5 md:grid-cols-3">
@@ -94,13 +96,15 @@ export default function PricingPage() {
                 <h2 className="font-display text-xl font-semibold">
                   {plan.name}
                 </h2>
-                <Chip
-                  variant="secondary"
-                  size="sm"
-                  color={plan.tag === "Coming soon" ? "warning" : "default"}
-                >
-                  {plan.tag}
-                </Chip>
+                {plan.tag ? (
+                  <Chip
+                    variant="secondary"
+                    size="sm"
+                    color={plan.tag === "Coming soon" ? "warning" : "default"}
+                  >
+                    {plan.tag}
+                  </Chip>
+                ) : null}
               </div>
               <div className="mt-5">
                 <span className="font-display text-4xl font-bold">
@@ -154,7 +158,7 @@ export default function PricingPage() {
                           <CheckoutButton
                             slug={plan.yearlySlug}
                             billingEnabled={BILLING_ENABLED}
-                            label="or $30/year"
+                            label="or €39.90/year"
                             variant="link"
                           />
                         </div>
