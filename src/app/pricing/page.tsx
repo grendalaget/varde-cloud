@@ -184,8 +184,8 @@ export default function PricingPage() {
       <Reveal delay={0.1} className="mt-10 max-w-2xl">
         <p className="text-sm text-muted">
           Deduplicated, compressed save chunks keep storage cheap. Most groups
-          will never notice the cap. Prices are per group, not per player, and
-          may change before launch.
+          will never notice the cap. Prices are per group, not per player
+          {BILLING_ENABLED ? "." : ", and may change before launch."}
         </p>
       </Reveal>
     </main>

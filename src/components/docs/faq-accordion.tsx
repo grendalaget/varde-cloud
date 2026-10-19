@@ -10,17 +10,27 @@ import { Accordion } from "@heroui/react";
 
 type QA = { id: string; q: string; a: ReactNode };
 
-const QAS: QA[] = [
+const qas = (billingEnabled: boolean): QA[] => [
   {
     id: "free",
     q: "Is Varde free?",
     a: (
       <>
         Yes. The software is open source under the AGPL-3.0 license and free
-        forever, including the hosted control plane at varde.games. The only
-        paid extra will be an optional cloud anchor, a managed always-on
-        backup for your saves, and it is still marked coming soon on the{" "}
-        <Link href="/pricing">pricing page</Link>.
+        forever, including the hosted control plane at varde.games.{" "}
+        {billingEnabled ? (
+          <>
+            The only paid extra is an optional cloud anchor, a managed
+            always-on backup for your saves. See the{" "}
+            <Link href="/pricing">pricing page</Link>.
+          </>
+        ) : (
+          <>
+            The only paid extra will be an optional cloud anchor, a managed
+            always-on backup for your saves, and it is still marked coming
+            soon on the <Link href="/pricing">pricing page</Link>.
+          </>
+        )}
       </>
     ),
   },
@@ -78,8 +88,10 @@ const QAS: QA[] = [
         An anchor is a machine that always keeps a copy of every save, so the
         newest one survives even when every PC is off. You can flag your own
         always-on machine (a NAS, home server or small VPS) for free, or use a
-        cloud anchor run by Varde for you. Paid anchors are still coming soon,
-        and most groups never need one.
+        cloud anchor run by Varde for you.{" "}
+        {billingEnabled
+          ? "Paid anchors start at €3.99 per month, and most groups never need one."
+          : "Paid anchors are still coming soon, and most groups never need one."}
       </>
     ),
   },
@@ -133,10 +145,14 @@ const QAS: QA[] = [
   },
 ];
 
-export function FaqAccordion() {
+export function FaqAccordion({
+  billingEnabled = false,
+}: {
+  billingEnabled?: boolean;
+}) {
   return (
     <Accordion variant="surface" className="my-8">
-      {QAS.map((qa) => (
+      {qas(billingEnabled).map((qa) => (
         <Accordion.Item key={qa.id} id={qa.id}>
           <Accordion.Heading>
             <Accordion.Trigger>
