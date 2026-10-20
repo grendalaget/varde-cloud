@@ -5,7 +5,7 @@ import { AsciiClouds } from "@/components/ascii-clouds";
 import { HostingScene } from "@/components/hosting-scene";
 import { Mark } from "@/components/brand";
 import { Item, Reveal, Stagger } from "@/components/reveal";
-import { BILLING_ENABLED } from "@/lib/polar";
+import { BILLING_ENABLED, DONATION_URL } from "@/lib/polar";
 
 const HOW_IT_WORKS = [
   {
@@ -300,6 +300,28 @@ export default function Home() {
                   size="lg"
                 >
                   Read the docs
+                </LinkButton>
+                <LinkButton
+                  href={DONATION_URL}
+                  target="_blank"
+                  variant="secondary"
+                  size="lg"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 text-glod"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    aria-hidden
+                  >
+                    <path
+                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Donate
                 </LinkButton>
               </div>
             </Card>

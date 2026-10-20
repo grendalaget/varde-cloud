@@ -24,6 +24,12 @@ export const polar = BILLING_ENABLED
     })
   : null;
 
+// Persistent checkout link for one-time donations ("Support Varde"
+// product, pay what you want). Created in the Polar dashboard org;
+// safe to hardcode — checkout links are public and long-lived.
+export const DONATION_URL =
+  "https://buy.polar.sh/polar_cl_uPvyLvsdlhW8U5pOEYl8CXaYZpvGtzyvnZJZn044EMI";
+
 // Product IDs come from the Polar dashboard, different per environment.
 export const POLAR_PRODUCTS = [
   { productId: process.env.POLAR_ANCHOR_MONTHLY_PRODUCT_ID ?? "", slug: "anchor-monthly" },
