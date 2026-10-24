@@ -83,16 +83,20 @@ export class AnchorDb {
     return (res.rows[0] as unknown as AnchorRow) ?? null;
   }
 
-  // The subscriber's older live anchor on another group, if any. The
+  // The subscriber's other anchor that outranks this row, if any. The
   // `anchor` plan covers one anchor and /api/anchors checks that, but two
   // concurrent attaches can both pass; this loop is sequential, so it is
-  // the authoritative check — the oldest row keeps the entitlement.
-  async olderAnchorOfUser(r: AnchorRow): Promise<string | null> {
+  // the authoritative check. A row that already holds a machine always
+  // wins; otherwise the oldest non-torn-down row does, whatever its state —
+  // skipping parked rows would let a newer row provision, then the older
+  // one once its obstruction clears.
+  async blockingAnchorOfUser(r: AnchorRow): Promise<string | null> {
     const res = await this.client.execute({
       sql: `SELECT id FROM cloud_anchor
             WHERE user_id = ? AND group_id != ? AND desired = 'provisioned'
-              AND status NOT IN ('gone','deprovisioning','conflict')
-              AND (created_at < ? OR (created_at = ? AND id < ?))
+              AND status NOT IN ('gone','deprovisioning')
+              AND (status IN ('online','provisioning')
+                   OR created_at < ? OR (created_at = ? AND id < ?))
             LIMIT 1`,
       args: [r.user_id, r.group_id, r.created_at, r.created_at, r.id],
     });
