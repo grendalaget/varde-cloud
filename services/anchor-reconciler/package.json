@@ -6,7 +6,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0"

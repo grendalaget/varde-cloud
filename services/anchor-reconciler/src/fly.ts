@@ -110,14 +110,6 @@ export class FlyMachinesProvider implements AnchorProvider {
     }
   }
 
-  async start(id: string): Promise<void> {
-    await this.call("POST", `/machines/${id}/start`);
-  }
-
-  async stop(id: string): Promise<void> {
-    await this.call("POST", `/machines/${id}/stop`);
-  }
-
   // Destroy/delete are idempotent: a 404 means the thing is already
   // gone, which is the desired end state.
   async destroy(id: string): Promise<void> {

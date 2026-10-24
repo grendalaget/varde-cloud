@@ -7,8 +7,8 @@ export const BILLING_ENABLED = Boolean(process.env.POLAR_ACCESS_TOKEN);
 const environment =
   process.env.POLAR_SERVER === "production" ? ("production" as const) : ("sandbox" as const);
 
-// PolarCore is what the better-auth plugin consumes;
-// the service client (customers, products, ...) is for our own calls.
+// PolarCore is what the better-auth plugin consumes; the service client
+// reads customer state for plan sync (syncPlan in ./auth).
 export const polarCore = BILLING_ENABLED
   ? createPolarCore({
       accessToken: process.env.POLAR_ACCESS_TOKEN!,

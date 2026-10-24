@@ -13,6 +13,7 @@ export interface AnchorRow {
   node_id: string | null;
   error: string | null;
   attempts: number;
+  created_at: number;
   updated_at: number;
   plan: string; // joined from user.plan
   email: string; // joined from user.email — CP members are matched by email
@@ -82,6 +83,22 @@ export class AnchorDb {
     return (res.rows[0] as unknown as AnchorRow) ?? null;
   }
 
+  // The subscriber's older live anchor on another group, if any. The
+  // `anchor` plan covers one anchor and /api/anchors checks that, but two
+  // concurrent attaches can both pass; this loop is sequential, so it is
+  // the authoritative check — the oldest row keeps the entitlement.
+  async olderAnchorOfUser(r: AnchorRow): Promise<string | null> {
+    const res = await this.client.execute({
+      sql: `SELECT id FROM cloud_anchor
+            WHERE user_id = ? AND group_id != ? AND desired = 'provisioned'
+              AND status NOT IN ('gone','deprovisioning','conflict')
+              AND (created_at < ? OR (created_at = ? AND id < ?))
+            LIMIT 1`,
+      args: [r.user_id, r.group_id, r.created_at, r.created_at, r.id],
+    });
+    return (res.rows[0]?.id as string | undefined) ?? null;
+  }
+
   // Does any live row claim this machine id? The strongest ownership
   // proof available: a row only records fly_machine_id after a
   // tag-verified adopt or its own create. Torn-down rows (gone /
@@ -111,7 +128,14 @@ export class AnchorDb {
   ): Promise<void> {
     // Absent keys keep their column value; explicit null clears it —
     // COALESCE-style updates can't express that distinction.
-    const sets = ["status = ?", "error = ?", "attempts = attempts + 1", "updated_at = ?"];
+    // attempts counts writes since the row was last online, so a long-lived
+    // anchor's history of transient errors never parks it.
+    const sets = [
+      "status = ?",
+      "error = ?",
+      status === "online" ? "attempts = 0" : "attempts = attempts + 1",
+      "updated_at = ?",
+    ];
     const args: (string | number | null)[] = [
       status,
       patch.error ?? null,

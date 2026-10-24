@@ -114,8 +114,8 @@ the three products in the Polar dashboard (Anchor monthly ~3, Anchor yearly
 
 The site is dark-only: Natt `#10161A` canvas, Tåke `#DCE2E6` text, Skifer
 surfaces. Glød `#FF5B1F` is reserved for the host/ember accent (lit stone,
-primary CTA); warnings use `#E3C04B`. Headings are self-hosted Schibsted
-Grotesk. Logo files in `public/brand/` are copied unmodified from
+primary CTA); warnings use `#E3C04B`. Text is set in Inter (`next/font`,
+see `src/app/layout.tsx`). Logo files in `public/brand/` are copied unmodified from
 `grendalaget/varde` (`brand/`, MIT-licensed) — geometry is never altered.
 
 ## License

@@ -8,14 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test 'src/**/*.test.ts'",
     "postinstall": "node node_modules/@heroui-pro/react/dist/postinstall/index.js || true",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "auth:schema": "better-auth generate --config src/lib/auth.ts --output src/db/schema.ts"
   },
   "dependencies": {
-    "@fontsource-variable/schibsted-grotesk": "^5.3.0",
-    "@fontsource/schibsted-grotesk": "^5.3.0",
     "@heroui-pro/react": "1.0.0-beta.10",
     "@heroui/react": "^3.2.6",
     "@heroui/styles": "^3.2.6",
