@@ -494,7 +494,7 @@ function AnchorSection({
             <p className="truncate text-foreground">
               {statusText === "error"
                 ? anchor!.status === "conflict"
-                  ? "Another cloud anchor is already attached to this group"
+                  ? "Blocked by another cloud anchor"
                   : "Something went wrong with this cloud anchor"
                 : statusText === "provisioning"
                   ? "Provisioning, usually under a minute"

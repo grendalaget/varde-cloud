@@ -119,6 +119,17 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       }
       return;
     }
+    // One anchor per `anchor` subscription, enforced before any machine
+    // exists (rows already online predate the limit and are left alone).
+    const older = r.plan === "anchor" ? await db.olderAnchorOfUser(r) : null;
+    if (older) {
+      if (r.status !== "conflict") {
+        await db.setStatus(r.id, "conflict", {
+          error: `plan covers one anchor; row ${older} already holds it`,
+        });
+      }
+      return;
+    }
   }
   switch (r.status) {
     case "gone": // re-attach after full teardown

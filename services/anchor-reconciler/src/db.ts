@@ -13,6 +13,7 @@ export interface AnchorRow {
   node_id: string | null;
   error: string | null;
   attempts: number;
+  created_at: number;
   updated_at: number;
   plan: string; // joined from user.plan
   email: string; // joined from user.email — CP members are matched by email
@@ -80,6 +81,22 @@ export class AnchorDb {
       args: [groupId, excludeId],
     });
     return (res.rows[0] as unknown as AnchorRow) ?? null;
+  }
+
+  // The subscriber's older live anchor on another group, if any. The
+  // `anchor` plan covers one anchor and /api/anchors checks that, but two
+  // concurrent attaches can both pass; this loop is sequential, so it is
+  // the authoritative check — the oldest row keeps the entitlement.
+  async olderAnchorOfUser(r: AnchorRow): Promise<string | null> {
+    const res = await this.client.execute({
+      sql: `SELECT id FROM cloud_anchor
+            WHERE user_id = ? AND group_id != ? AND desired = 'provisioned'
+              AND status NOT IN ('gone','deprovisioning','conflict')
+              AND (created_at < ? OR (created_at = ? AND id < ?))
+            LIMIT 1`,
+      args: [r.user_id, r.group_id, r.created_at, r.created_at, r.id],
+    });
+    return (res.rows[0]?.id as string | undefined) ?? null;
   }
 
   // Does any live row claim this machine id? The strongest ownership
