@@ -113,6 +113,23 @@ async function call<T>(
   return (await res.json()) as T;
 }
 
+// Reuse one CP session per user instead of exchanging per request: every
+// exchange mints a 30-day CP session row, and the dashboard polls every 30s.
+// shortcut: per-instance cache, so each warm instance still exchanges once
+// per user per hour; move to a shared store if CP session rows pile up.
+const TOKEN_TTL_MS = 60 * 60 * 1000;
+const tokens = new Map<string, { token: string; until: number }>();
+
+async function sessionToken(user: SessionUser): Promise<string> {
+  const now = Date.now();
+  const hit = tokens.get(user.id);
+  if (hit && hit.until > now) return hit.token;
+  for (const [id, t] of tokens) if (t.until <= now) tokens.delete(id);
+  const token = await exchange(user);
+  tokens.set(user.id, { token, until: now + TOKEN_TTL_MS });
+  return token;
+}
+
 // withCp runs fn against the hosted CP as the signed-in site user. The
 // federation exchange doubles as user provisioning: first call creates the
 // CP account if none exists.
@@ -123,11 +140,17 @@ export async function withCp<T>(
     post: <R>(path: string, body?: unknown) => Promise<R>;
   }) => Promise<T>,
 ): Promise<T> {
-  const token = await exchange(user);
+  const token = await sessionToken(user);
+  // A revoked CP session must not stick: drop it so the next request
+  // exchanges afresh.
+  const run = <R>(method: string, path: string, body?: unknown) =>
+    call<R>(token, method, path, body).catch((e: unknown) => {
+      if (e instanceof CpError && e.status === 401) tokens.delete(user.id);
+      throw e;
+    });
   const cp = {
-    get: <R>(path: string) => call<R>(token, "GET", path),
-    post: <R>(path: string, body?: unknown) =>
-      call<R>(token, "POST", path, body),
+    get: <R>(path: string) => run<R>("GET", path),
+    post: <R>(path: string, body?: unknown) => run<R>("POST", path, body),
   };
   return fn(cp);
 }

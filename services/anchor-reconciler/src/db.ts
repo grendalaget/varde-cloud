@@ -111,7 +111,14 @@ export class AnchorDb {
   ): Promise<void> {
     // Absent keys keep their column value; explicit null clears it —
     // COALESCE-style updates can't express that distinction.
-    const sets = ["status = ?", "error = ?", "attempts = attempts + 1", "updated_at = ?"];
+    // attempts counts writes since the row was last online, so a long-lived
+    // anchor's history of transient errors never parks it.
+    const sets = [
+      "status = ?",
+      "error = ?",
+      status === "online" ? "attempts = 0" : "attempts = attempts + 1",
+      "updated_at = ?",
+    ];
     const args: (string | number | null)[] = [
       status,
       patch.error ?? null,

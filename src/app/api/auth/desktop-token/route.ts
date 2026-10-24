@@ -25,11 +25,12 @@ async function desktopToken(
 // The "Open Varde" click navigates here synchronously — keeping its user
 // activation so the browser's app-launch prompt can't be lost to a slow
 // token request — and the 302 hands off to the OS protocol handler.
-export async function GET() {
+export async function GET(req: Request) {
   // A signed-out/expired click lands back on sign-in (which returns here),
-  // not on a JSON error page with no path forward.
+  // not on a JSON error page with no path forward. Response.redirect needs
+  // an absolute URL.
   const r = await desktopToken(() =>
-    Response.redirect("/auth/sign-in?next=/auth/desktop"),
+    Response.redirect(new URL("/auth/sign-in?next=/auth/desktop", req.url)),
   );
   return typeof r === "string"
     ? Response.redirect(`varde://auth/callback?token=${r}`)

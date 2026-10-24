@@ -30,8 +30,6 @@ export interface AnchorProvider {
   // called every reconcile pass.
   find(name: string): Promise<AnchorMachine | null>;
   create(spec: CreateAnchorSpec): Promise<AnchorMachine>;
-  start(id: string): Promise<void>;
-  stop(id: string): Promise<void>;
   destroy(id: string): Promise<void>;
   deleteVolume(volumeId: string): Promise<void>;
 }

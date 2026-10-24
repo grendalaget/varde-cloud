@@ -12,17 +12,23 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import * as schema from "../db/schema";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
-import { polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
+import { polar, polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
 
-// Sync a Polar subscription's product/status onto our user's `plan` field.
-// Polar customers carry external_id = user.id (set by createCustomerOnSignUp),
-// and the webhook payload already embeds the customer object.
-async function syncPlan(userId: string | null | undefined, active: boolean, productId?: string) {
-  if (!userId) return;
-  await db
-    .update(schema.user)
-    .set({ plan: active && productId ? planForProduct(productId) : "free" })
-    .where(eq(schema.user.id, userId));
+// Recompute the user's `plan` from Polar's live customer state. Webhook
+// payloads are snapshots that can arrive out of order (Polar retries failed
+// deliveries), and a customer may hold several subscriptions, so the event
+// is only a trigger. Polar customers carry external_id = user.id; a throw
+// here fails the webhook and Polar retries it.
+async function syncPlan(userId: string | null | undefined) {
+  if (!userId || !polar) return;
+  const state = await polar.customers.getStateExternal(userId);
+  const plans = state.active_subscriptions.map((s) => planForProduct(s.product_id));
+  const plan = plans.includes("anchor+")
+    ? "anchor+"
+    : plans.includes("anchor")
+      ? "anchor"
+      : "free";
+  await db.update(schema.user).set({ plan }).where(eq(schema.user.id, userId));
 }
 
 // Per-account mail guard: unauthenticated callers can mint mail tokens at
@@ -72,24 +78,11 @@ const polarPlugins = polarCore
           portal(),
           webhooks({
             secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
-            onSubscriptionCreated: (payload) =>
-              syncPlan(payload.data.customer.external_id, true, payload.data.product_id),
-            onSubscriptionActive: (payload) =>
-              syncPlan(payload.data.customer.external_id, true, payload.data.product_id),
-            onSubscriptionUpdated: (payload) =>
-              syncPlan(
-                payload.data.customer.external_id,
-                payload.data.status === "active" || payload.data.status === "trialing",
-                payload.data.product_id,
-              ),
-            onSubscriptionCanceled: (payload) =>
-              syncPlan(
-                payload.data.customer.external_id,
-                payload.data.status === "active" || payload.data.status === "trialing",
-                payload.data.product_id,
-              ),
-            onSubscriptionRevoked: (payload) =>
-              syncPlan(payload.data.customer.external_id, false),
+            onSubscriptionCreated: (payload) => syncPlan(payload.data.customer.external_id),
+            onSubscriptionActive: (payload) => syncPlan(payload.data.customer.external_id),
+            onSubscriptionUpdated: (payload) => syncPlan(payload.data.customer.external_id),
+            onSubscriptionCanceled: (payload) => syncPlan(payload.data.customer.external_id),
+            onSubscriptionRevoked: (payload) => syncPlan(payload.data.customer.external_id),
           }),
         ],
       }),
@@ -134,15 +127,19 @@ export const auth = betterAuth({
   appName: "Varde",
   baseURL,
   secret: process.env.BETTER_AUTH_SECRET,
-  // Origins allowed to POST to the auth endpoints. The baseURL origin is
-  // implied; cover the custom domain, its www variant, local dev, and
-  // Vercel preview deployments (where BETTER_AUTH_URL may point at prod).
+  // Origins allowed to POST to the auth endpoints and to receive auth
+  // redirects. The baseURL origin is implied; cover the custom domain, its
+  // www variant, local dev, and this preview deployment's own URLs (where
+  // BETTER_AUTH_URL may point at prod). Never a *.vercel.app wildcard:
+  // anyone can host there, and a reset link redirects to its callbackURL
+  // with the reset token attached.
   trustedOrigins: [
     "https://varde.games",
     "https://www.varde.games",
     "http://localhost:3000",
-    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-    "https://*.vercel.app",
+    ...[process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+      .filter(Boolean)
+      .map((host) => `https://${host}`),
   ],
   database: drizzleAdapter(db, {
     provider: "sqlite",

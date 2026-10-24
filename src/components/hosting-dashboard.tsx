@@ -64,12 +64,10 @@ interface GroupDetail {
 
 // Row from /api/anchors — desired vs actual; the reconciler converges them.
 interface CloudAnchorRow {
-  id: string;
-  userId: string;
   groupId: string;
   desired: string;
   status: string;
-  error?: string | null;
+  mine: boolean; // the viewer is the subscriber
 }
 
 // Accepts a bare code ("x7k2m9") or a pasted invite link
@@ -100,11 +98,9 @@ const STATE_COLORS: Record<string, "success" | "warning" | "danger" | "default">
 export function HostingDashboard({
   plan,
   billingEnabled,
-  userId,
 }: {
   plan: string;
   billingEnabled: boolean;
-  userId: string;
 }) {
   const [groups, setGroups] = useState<CpGroup[] | null>(null);
   const [details, setDetails] = useState<Record<string, GroupDetail>>({});
@@ -250,7 +246,6 @@ export function HostingDashboard({
           anchor={anchors[g.id]}
           plan={plan}
           billingEnabled={billingEnabled}
-          userId={userId}
           onAnchorChanged={() => void load()}
         />
       ))}
@@ -270,7 +265,6 @@ function GroupCard({
   anchor,
   plan,
   billingEnabled,
-  userId,
   onAnchorChanged,
 }: {
   group: CpGroup;
@@ -278,7 +272,6 @@ function GroupCard({
   anchor?: CloudAnchorRow;
   plan: string;
   billingEnabled: boolean;
-  userId: string;
   onAnchorChanged: () => void;
 }) {
   return (
@@ -414,7 +407,6 @@ function GroupCard({
           group={group}
           anchor={anchor}
           plan={plan}
-          userId={userId}
           onChanged={onAnchorChanged}
         />
       ) : null}
@@ -426,13 +418,11 @@ function AnchorSection({
   group,
   anchor,
   plan,
-  userId,
   onChanged,
 }: {
   group: CpGroup;
   anchor?: CloudAnchorRow;
   plan: string;
-  userId: string;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -446,7 +436,7 @@ function AnchorSection({
     anchor && anchor.status !== "gone" && anchor.status !== "deprovisioning";
   // Only the subscriber may detach; other group admins get read-only
   // status for an anchor someone else is paying for.
-  const mine = anchor?.userId === userId;
+  const mine = anchor?.mine === true;
 
   const call = async (method: "POST" | "DELETE") => {
     setBusy(true);
@@ -503,7 +493,9 @@ function AnchorSection({
             ) : null}
             <p className="truncate text-foreground">
               {statusText === "error"
-                ? (anchor!.error ?? "Something went wrong")
+                ? anchor!.status === "conflict"
+                  ? "Another cloud anchor is already attached to this group"
+                  : "Something went wrong with this cloud anchor"
                 : statusText === "provisioning"
                   ? "Provisioning, usually under a minute"
                   : statusText === "removing"
