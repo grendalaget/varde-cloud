@@ -26,7 +26,7 @@ const row = (p: Partial<AnchorRow> = {}): AnchorRow => ({
 
 // In-memory fakes: record what reconcile asked the outside world to do.
 function fakes(
-  opts: { nodes?: CpNode[]; machine?: AnchorMachine | null; olderAnchor?: string } = {},
+  opts: { nodes?: CpNode[]; machine?: AnchorMachine | null; blocker?: string } = {},
 ) {
   const statuses: string[] = [];
   const destroyed: string[] = [];
@@ -35,7 +35,7 @@ function fakes(
     setStatus: async (_id: string, status: string) => void statuses.push(status),
     liveSiblingAnchor: async () => null,
     machineClaimed: async () => false,
-    olderAnchorOfUser: async () => opts.olderAnchor ?? null,
+    blockingAnchorOfUser: async () => opts.blocker ?? null,
   } as unknown as AnchorDb;
   const cp = {
     isGroupAdmin: async () => true,
@@ -91,7 +91,7 @@ test("an online anchor with a live node is not rewritten", async () => {
 });
 
 test("a second anchor on the anchor plan is parked before any machine exists", async () => {
-  const f = fakes({ olderAnchor: "ca_0" });
+  const f = fakes({ blocker: "ca_0" });
   await reconcile(row({ status: "pending", fly_machine_id: null, node_id: null }), f.db, f.cp, f.provider);
   assert.deepEqual(f.created, []);
   assert.deepEqual(f.statuses, ["conflict"]);
@@ -120,15 +120,21 @@ test("setStatus resets attempts when the row comes online", async () => {
   assert.equal(await attempts(), 0);
 });
 
-test("olderAnchorOfUser: the oldest live row keeps the entitlement", async () => {
+test("blockingAnchorOfUser: a machine holder or the oldest live row wins", async () => {
   const db = new AnchorDb(":memory:");
   const sql = (db as unknown as { client: { execute: (s: string) => Promise<unknown> } }).client;
   await sql.execute(
     "CREATE TABLE cloud_anchor (id TEXT, user_id TEXT, group_id TEXT, desired TEXT, status TEXT, created_at INTEGER)",
   );
   await sql.execute(
-    "INSERT INTO cloud_anchor VALUES ('ca_a', 'u1', 'grp_a', 'provisioned', 'pending', 1), ('ca_b', 'u1', 'grp_b', 'provisioned', 'pending', 2), ('ca_c', 'u1', 'grp_c', 'provisioned', 'gone', 0)",
+    "INSERT INTO cloud_anchor VALUES ('ca_a', 'u1', 'grp_a', 'provisioned', 'conflict', 1), ('ca_b', 'u1', 'grp_b', 'provisioned', 'pending', 2), ('ca_c', 'u1', 'grp_c', 'provisioned', 'gone', 0)",
   );
-  assert.equal(await db.olderAnchorOfUser(row({ id: "ca_a", group_id: "grp_a", created_at: 1 })), null);
-  assert.equal(await db.olderAnchorOfUser(row({ id: "ca_b", group_id: "grp_b", created_at: 2 })), "ca_a");
+  const blocking = (id: string, group: string, created: number) =>
+    db.blockingAnchorOfUser(row({ id, group_id: group, created_at: created }));
+  // An older row parked for another reason still holds the entitlement.
+  assert.equal(await blocking("ca_a", "grp_a", 1), null);
+  assert.equal(await blocking("ca_b", "grp_b", 2), "ca_a");
+  // Once the newer row holds a machine, the older row yields instead.
+  await sql.execute("UPDATE cloud_anchor SET status = 'provisioning' WHERE id = 'ca_b'");
+  assert.equal(await blocking("ca_a", "grp_a", 1), "ca_b");
 });
