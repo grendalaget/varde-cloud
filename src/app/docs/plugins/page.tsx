@@ -115,10 +115,12 @@ export default function Plugins() {
         <Code>enroll</Code>, <Code>members</Code>, <Code>nodes</Code>,{" "}
         <Code>servers</Code>, <Code>server_addons</Code>, <Code>events</Code>,{" "}
         <Code>steam_ids</Code>, and <Code>*</Code>.
+        Grant only the scopes the plugin&rsquo;s own docs list, and never grant{" "}
+        <Code>*</Code> to a plugin.
       </P>
       <CodeBlock
         language="shell"
-        code="varde-control-plane service-token create --name <manifest service_token> --scopes members,servers --groups <group-id>"
+        code="varde-control-plane service-token create --name server-notes --scopes members --groups <group-id>"
       />
 
       <H2>Install the control plane on Linux</H2>

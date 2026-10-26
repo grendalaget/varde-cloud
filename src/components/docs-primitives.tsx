@@ -105,7 +105,7 @@ export function P({ children }: { children: ReactNode }) {
 
 export function Code({ children }: { children: ReactNode }) {
   return (
-    <code className="rounded bg-surface-secondary px-1 py-0.5 font-mono text-sm text-foreground">
+    <code className="rounded bg-surface-secondary px-1 py-0.5 font-mono text-sm text-foreground [overflow-wrap:anywhere]">
       {children}
     </code>
   );
