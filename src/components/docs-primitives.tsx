@@ -102,3 +102,30 @@ export function P({ children }: { children: ReactNode }) {
     </p>
   );
 }
+
+export function Code({ children }: { children: ReactNode }) {
+  return (
+    <code className="rounded bg-surface-secondary px-1 py-0.5 font-mono text-sm text-foreground">
+      {children}
+    </code>
+  );
+}
+
+export function CodeBlock({
+  code,
+  language,
+}: {
+  code: string;
+  language?: string;
+}) {
+  return (
+    <div className="my-4 min-w-0 max-w-full overflow-x-auto rounded-lg border border-separator bg-surface-secondary p-4">
+      {language ? (
+        <p className="mb-2 text-xs font-medium text-muted">{language}</p>
+      ) : null}
+      <pre className="min-w-max text-sm leading-relaxed">
+        <code className="font-mono text-foreground">{code}</code>
+      </pre>
+    </div>
+  );
+}

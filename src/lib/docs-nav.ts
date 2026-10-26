@@ -1,5 +1,5 @@
 // Single source of truth for docs structure. The sidebar, index page, and
-// sitemap all read this — add a page by appending one entry here.
+// sitemap all read this. Append one entry here to add a page.
 
 export type DocsPage = {
   slug: string;
@@ -42,6 +42,40 @@ export const DOCS_SECTIONS: DocsSection[] = [
         slug: "how-varde-works",
         title: "How Varde works",
         description: "Peers, relays, and the control plane, visualized.",
+      },
+    ],
+  },
+  {
+    title: "Counter-Strike 2",
+    pages: [
+      {
+        slug: "cs2-server",
+        title: "Host a CS2 server",
+        description:
+          "Set up a free CS2 server on a PC you already own and invite friends.",
+      },
+      {
+        slug: "cs2-server-settings",
+        title: "CS2 server settings",
+        description:
+          "Configure CS2 modes, maps, bots, passwords, and GSLT.",
+      },
+    ],
+  },
+  {
+    title: "Plugins",
+    pages: [
+      {
+        slug: "plugins",
+        title: "Plugins",
+        description:
+          "Add group integrations with Varde plugins and configure them safely.",
+      },
+      {
+        slug: "build-a-plugin",
+        title: "Build a plugin",
+        description:
+          "Create a Varde plugin with a manifest, signed requests, and pages.",
       },
     ],
   },

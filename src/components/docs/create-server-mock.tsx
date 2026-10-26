@@ -24,10 +24,11 @@ import {
   type CpGroup,
 } from "./live-primitives";
 
-// The dashboard "New server" form. Signed-in readers get the real thing —
-// it creates an actual server in their group on the hosted control plane.
-// Everyone else sees a static illustration plus a quiet sign-in hint. The
-// stage area resizes to its content with an animated height transition.
+// The dashboard "New server" form.
+// Signed-in readers get the real thing. It creates an actual server in their
+// group on the hosted control plane. Everyone else sees a static illustration
+// plus a quiet sign-in hint. The stage area resizes to its content with an
+// animated height transition.
 
 interface CatalogGame {
   id: string;
@@ -53,6 +54,7 @@ interface CreatedServer {
 const FALLBACK_GAMES: CatalogGame[] = [
   { id: "minecraft", name: "Minecraft (Java)", min_memory_mb: 2048 },
   { id: "valheim", name: "Valheim Dedicated", min_memory_mb: 2048 },
+  { id: "cs2", name: "Counter-Strike 2 Dedicated", min_memory_mb: 4096 },
 ];
 
 type Stage = "form" | "created";
