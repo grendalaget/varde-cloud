@@ -2,7 +2,8 @@
 // the `varde-anchors` app, a dedicated volume for the chunk store, no public
 // services (outbound-only; the mesh is reached via outbound QUIC + relay,
 // CP traffic over 6PN .internal).
-import type { AnchorMachine, AnchorProvider, CreateAnchorSpec } from "./provider";
+import type { AnchorMachine, AnchorProvider, AnchorVolume, CreateAnchorSpec } from "./provider";
+import { volumeName } from "./names";
 
 interface FlyMachine {
   id: string;
@@ -16,6 +17,8 @@ interface FlyMachine {
 interface FlyVolume {
   id: string;
   name: string;
+  state: string;
+  attached_machine_id?: string | null;
 }
 
 export class FlyMachinesProvider implements AnchorProvider {
@@ -68,14 +71,33 @@ export class FlyMachinesProvider implements AnchorProvider {
     }
   }
 
+  async findVolumes(name: string): Promise<AnchorVolume[]> {
+    return (await this.listVolumes())
+      .filter((volume) => volume.name === name)
+      .map(({ id, attachedMachineId }) => ({ id, attachedMachineId }));
+  }
+
+  async listVolumes(): Promise<(AnchorVolume & { name: string })[]> {
+    const volumes = await this.call<FlyVolume[]>("GET", "/volumes");
+    return volumes
+      .filter(
+        (volume) => !["destroyed", "pending_destroy", "destroying"].includes(volume.state),
+      )
+      .map((volume) => ({
+        id: volume.id,
+        name: volume.name,
+        attachedMachineId: volume.attached_machine_id ?? undefined,
+      }));
+  }
+
   async create(spec: CreateAnchorSpec): Promise<AnchorMachine> {
     // Volume names share the 30-char alnum+underscore rule. Teardown keeps
     // the volume for the recovery grace, so re-attach/resubscribe reuses
     // it by name — chunks survive — and the lookup also avoids the
     // name-collision error on a kept volume.
-    const volName = `vol_${spec.name}`.slice(0, 30);
-    const volumes = await this.call<FlyVolume[]>("GET", "/volumes");
-    const existing = volumes.find((v) => v.name === volName);
+    const volName = volumeName(spec.groupId);
+    const volumes = await this.findVolumes(volName);
+    const existing = volumes[0];
     const vol =
       existing ??
       (await this.call<FlyVolume>("POST", "/volumes", {

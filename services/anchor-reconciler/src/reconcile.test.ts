@@ -3,8 +3,9 @@ import { test } from "node:test";
 
 import { AnchorDb, type AnchorRow } from "./db";
 import type { CpClient, CpNode } from "./cp";
-import type { AnchorMachine, AnchorProvider } from "./provider";
-import { reconcile } from "./reconcile";
+import type { AnchorMachine, AnchorProvider, AnchorVolume } from "./provider";
+import { reconcile, sweepVolumes } from "./reconcile";
+import { volumeName } from "./names";
 
 const row = (p: Partial<AnchorRow> = {}): AnchorRow => ({
   id: "ca_1",
@@ -26,38 +27,138 @@ const row = (p: Partial<AnchorRow> = {}): AnchorRow => ({
 
 // In-memory fakes: record what reconcile asked the outside world to do.
 function fakes(
-  opts: { nodes?: CpNode[]; machine?: AnchorMachine | null; blocker?: string } = {},
+  opts: {
+    nodes?: CpNode[];
+    nodeResponses?: CpNode[][];
+    machine?: AnchorMachine | null;
+    blocker?: string;
+    groupAdmin?: boolean;
+    destroyError?: Error;
+    expiredRows?: AnchorRow[];
+    volumeInUse?: boolean;
+    volumes?: AnchorVolume[];
+    activeGroupIds?: string[];
+    allVolumes?: (AnchorVolume & { name: string })[];
+    listVolumesError?: Error;
+    findVolumesError?: Error;
+    claimSwept?: boolean;
+    deleteVolumeError?: Error;
+  } = {},
 ) {
   const statuses: string[] = [];
+  const statusWrites: { id: string; status: string; patch: Record<string, unknown> }[] = [];
+  const claimSweptCalls: { id: string; observedUpdatedAt: number }[] = [];
+  const unclaimSweptCalls: { id: string; originalUpdatedAt: number }[] = [];
   const destroyed: string[] = [];
   const volumesDeleted: string[] = [];
+  const volumeDeleteAttempts: string[] = [];
+  let findVolumesCalls = 0;
+  const calls = { db: 0, cp: 0, provider: 0 };
+  let nodePass = 0;
   const db = {
-    setStatus: async (_id: string, status: string) => void statuses.push(status),
-    liveSiblingAnchor: async () => null,
-    machineClaimed: async () => false,
-    blockingAnchorOfUser: async () => opts.blocker ?? null,
+    setStatus: async (id: string, status: string, patch: Record<string, unknown> = {}) => {
+      calls.db++;
+      statuses.push(status);
+      statusWrites.push({ id, status, patch });
+    },
+    expiredTeardowns: async () => opts.expiredRows ?? [],
+    activeGroupIds: async () => opts.activeGroupIds ?? [],
+    volumeInUse: async () => opts.volumeInUse ?? false,
+    claimSwept: async (id: string, observedUpdatedAt: number) => {
+      calls.db++;
+      claimSweptCalls.push({ id, observedUpdatedAt });
+      return opts.claimSwept ?? true;
+    },
+    unclaimSwept: async (id: string, originalUpdatedAt: number) => {
+      calls.db++;
+      unclaimSweptCalls.push({ id, originalUpdatedAt });
+    },
+    liveSiblingAnchor: async () => {
+      calls.db++;
+      return null;
+    },
+    machineClaimed: async () => {
+      calls.db++;
+      return false;
+    },
+    blockingAnchorOfUser: async () => {
+      calls.db++;
+      return opts.blocker ?? null;
+    },
   } as unknown as AnchorDb;
   const cp = {
-    isGroupAdmin: async () => true,
-    listNodes: async () => ({ nodes: opts.nodes ?? [] }),
+    isGroupAdmin: async () => {
+      calls.cp++;
+      return opts.groupAdmin ?? true;
+    },
+    listNodes: async () => {
+      calls.cp++;
+      const nodes = opts.nodeResponses?.[nodePass] ?? opts.nodes ?? [];
+      nodePass++;
+      return { nodes };
+    },
     deleteNode: async () => {},
   } as unknown as CpClient;
   const created: string[] = [];
   const provider = {
-    find: async () => opts.machine ?? null,
+    find: async () => {
+      calls.provider++;
+      return opts.machine ?? null;
+    },
+    findVolumes: async () => {
+      calls.provider++;
+      findVolumesCalls++;
+      if (opts.findVolumesError) throw opts.findVolumesError;
+      return opts.volumes ?? [];
+    },
+    listVolumes: async () => {
+      calls.provider++;
+      if (opts.listVolumesError) throw opts.listVolumesError;
+      return opts.allVolumes ?? [];
+    },
     create: async (spec: { name: string }) => {
+      calls.provider++;
       created.push(spec.name);
       return { id: "m2", volumeId: "v1", status: "created" };
     },
-    destroy: async (id: string) => void destroyed.push(id),
-    deleteVolume: async (id: string) => void volumesDeleted.push(id),
+    destroy: async (id: string) => {
+      calls.provider++;
+      destroyed.push(id);
+      if (opts.destroyError) throw opts.destroyError;
+    },
+    deleteVolume: async (id: string) => {
+      calls.provider++;
+      volumeDeleteAttempts.push(id);
+      if (opts.deleteVolumeError) throw opts.deleteVolumeError;
+      volumesDeleted.push(id);
+    },
   } satisfies AnchorProvider;
-  return { db, cp, provider, statuses, destroyed, volumesDeleted, created };
+  return {
+    db,
+    cp,
+    provider,
+    statuses,
+    statusWrites,
+    claimSweptCalls,
+    unclaimSweptCalls,
+    destroyed,
+    volumesDeleted,
+    volumeDeleteAttempts,
+    findVolumesCalls,
+    created,
+    calls,
+  };
 }
 
 test("a parked row whose plan lapsed is still torn down", async () => {
   const f = fakes({ machine: { id: "m1", rowId: "ca_1", status: "started" } });
-  const r = row({ status: "error", error: "boom", attempts: 50, plan: "free" });
+  const r = row({
+    status: "error",
+    error: "boom",
+    attempts: 50,
+    plan: "free",
+    updated_at: Date.now() - 60 * 60_000,
+  });
   await reconcile(r, f.db, f.cp, f.provider);
   assert.deepEqual(f.destroyed, ["m1"]);
   assert.deepEqual(f.statuses, ["deprovisioning"]);
@@ -78,10 +179,240 @@ test("a stuck provision rebuilds the machine but keeps the volume", async () => 
   assert.deepEqual(f.statuses, ["error"]);
 });
 
-test("an online anchor whose node went offline drops back to provisioning", async () => {
+test("an online anchor waits for four consecutive offline observations", async () => {
   const f = fakes({ nodes: [{ id: "n1", name: "m1", anchor: true, online: false }] });
-  await reconcile(row(), f.db, f.cp, f.provider);
+  const r = row({ id: "ca_offline_streak" });
+  for (let i = 0; i < 3; i++) await reconcile(r, f.db, f.cp, f.provider);
+  assert.deepEqual(f.statuses, []);
+  await reconcile(r, f.db, f.cp, f.provider);
   assert.deepEqual(f.statuses, ["provisioning"]);
+});
+
+test("an online observation resets the offline streak", async () => {
+  const offline = [{ id: "n1", name: "m1", anchor: true, online: false }];
+  const online = [{ id: "n1", name: "m1", anchor: true, online: true }];
+  const f = fakes({ nodeResponses: [offline, offline, online, offline, offline, offline, offline] });
+  const r = row({ id: "ca_offline_reset" });
+  for (let i = 0; i < 6; i++) await reconcile(r, f.db, f.cp, f.provider);
+  assert.deepEqual(f.statuses, []);
+  await reconcile(r, f.db, f.cp, f.provider);
+  assert.deepEqual(f.statuses, ["provisioning"]);
+});
+
+test("an error row with unknown billing intent is backed off", async () => {
+  const f = fakes();
+  await reconcile(
+    row({ id: "ca_error_unknown", status: "error", attempts: 10, updated_at: Date.now() }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.calls, { db: 0, cp: 0, provider: 0 });
+});
+
+test("a plan lapse tears down despite a fresh provision error backoff", async () => {
+  const id = "ca_error_plan_lapse";
+  const primer = fakes();
+  await reconcile(
+    row({ id, status: "pending", fly_machine_id: null, node_id: null }),
+    primer.db,
+    primer.cp,
+    primer.provider,
+  );
+  assert.equal(primer.created.length, 1);
+
+  const f = fakes({
+    machine: { id: "m1", rowId: id, status: "started" },
+  });
+  await reconcile(
+    row({ id, status: "error", plan: "free", attempts: 1, updated_at: Date.now() }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.destroyed, ["m1"]);
+  assert.deepEqual(f.statuses, ["deprovisioning"]);
+});
+
+test("a paid subscriber losing admin backs off a teardown error", async () => {
+  const id = "ca_error_admin_lost";
+  const first = fakes({
+    groupAdmin: false,
+    destroyError: new Error("destroy failed"),
+  });
+  await assert.rejects(
+    reconcile(row({ id, status: "online" }), first.db, first.cp, first.provider),
+    /destroy failed/,
+  );
+
+  const next = fakes();
+  await reconcile(
+    row({ id, status: "error", attempts: 10, updated_at: Date.now() }),
+    next.db,
+    next.cp,
+    next.provider,
+  );
+  assert.deepEqual(next.calls, { db: 0, cp: 0, provider: 0 });
+});
+
+test("a recent error row is backed off after the same direction was attempted", async () => {
+  const id = "ca_error_recent";
+  const primer = fakes();
+  await reconcile(
+    row({ id, status: "pending", fly_machine_id: null, node_id: null }),
+    primer.db,
+    primer.cp,
+    primer.provider,
+  );
+
+  const f = fakes();
+  await reconcile(
+    row({ id, status: "error", attempts: 10, updated_at: Date.now() }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.calls, { db: 0, cp: 0, provider: 0 });
+});
+
+test("an old error row proceeds after the backoff window", async () => {
+  const f = fakes();
+  await reconcile(
+    row({ id: "ca_error_old", status: "error", attempts: 10, updated_at: Date.now() - 60 * 60_000 }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.statuses, ["pending"]);
+  assert.ok(f.calls.cp > 0);
+});
+
+test("volume sweep claims before deleting every unattached same-name volume", async () => {
+  const r = row({
+    id: "ca_sweep_delete",
+    status: "deprovisioning",
+    updated_at: Date.now() - 15 * 24 * 60 * 60_000,
+  });
+  const f = fakes({
+    expiredRows: [r],
+    volumes: [{ id: "vol_a" }, { id: "vol_b" }],
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumesDeleted, ["vol_a", "vol_b"]);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
+  assert.deepEqual(f.statusWrites, []);
+  assert.deepEqual(f.unclaimSweptCalls, []);
+});
+
+test("volume sweep claims without deleting when a sibling is still using the volume", async () => {
+  const r = row({ id: "ca_sweep_sibling", status: "deprovisioning" });
+  const f = fakes({ expiredRows: [r], volumeInUse: true });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
+  assert.deepEqual(f.volumesDeleted, []);
+  assert.equal(f.findVolumesCalls, 0);
+  assert.deepEqual(f.statusWrites, []);
+});
+
+test("volume sweep leaves an attached volume and row untouched", async () => {
+  const r = row({ id: "ca_sweep_attached", status: "deprovisioning" });
+  const f = fakes({ expiredRows: [r], volumes: [{ id: "vol_attached", attachedMachineId: "m1" }] });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumesDeleted, []);
+  assert.deepEqual(f.claimSweptCalls, []);
+  assert.deepEqual(f.statusWrites, []);
+});
+
+test("volume sweep leaves the row untouched when volume lookup fails", async () => {
+  const r = row({ id: "ca_sweep_lookup_error", status: "deprovisioning" });
+  const f = fakes({ expiredRows: [r], findVolumesError: new Error("provider unavailable") });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, []);
+  assert.deepEqual(f.statusWrites, []);
+});
+
+test("volume sweep skips deletion when the compare-and-set claim fails", async () => {
+  const r = row({
+    id: "ca_sweep_claim_lost",
+    status: "deprovisioning",
+    updated_at: Date.now() - 15 * 24 * 60 * 60_000,
+  });
+  const f = fakes({
+    expiredRows: [r],
+    volumes: [{ id: "vol_revived" }],
+    claimSwept: false,
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
+  assert.deepEqual(f.volumesDeleted, []);
+  assert.deepEqual(f.unclaimSweptCalls, []);
+});
+
+test("volume sweep restores the original retention timestamp when deletion fails", async () => {
+  const r = row({
+    id: "ca_sweep_delete_error",
+    status: "deprovisioning",
+    updated_at: Date.now() - 15 * 24 * 60 * 60_000,
+  });
+  const f = fakes({
+    expiredRows: [r],
+    volumes: [{ id: "vol_delete_error" }],
+    deleteVolumeError: new Error("delete failed"),
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
+  assert.deepEqual(f.volumeDeleteAttempts, ["vol_delete_error"]);
+  assert.deepEqual(f.volumesDeleted, []);
+  assert.deepEqual(f.unclaimSweptCalls, [{ id: r.id, originalUpdatedAt: r.updated_at }]);
+});
+
+test("orphan volume sweep deletes unattached volumes without active rows", async () => {
+  const f = fakes({
+    allVolumes: [
+      { id: "vol_orphan", name: "vol_anchor_orphan" },
+      { id: "vol_other", name: "other_volume" },
+    ],
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, ["vol_orphan"]);
+  assert.deepEqual(f.volumesDeleted, ["vol_orphan"]);
+});
+
+test("orphan volume sweep keeps volumes for groups with a non-gone row", async () => {
+  const active = row({ group_id: "grp_active", status: "provisioning" });
+  const f = fakes({
+    activeGroupIds: [active.group_id],
+    allVolumes: [{ id: "vol_active", name: volumeName(active.group_id) }],
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, []);
+});
+
+test("orphan volume sweep keeps attached orphan volumes", async () => {
+  const f = fakes({
+    allVolumes: [
+      {
+        id: "vol_attached_orphan",
+        name: "vol_anchor_orphan",
+        attachedMachineId: "m1",
+      },
+    ],
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, []);
+});
+
+test("orphan volume sweep continues after a delete failure", async () => {
+  const f = fakes({
+    allVolumes: [
+      { id: "vol_failed", name: "vol_anchor_failed" },
+      { id: "vol_next", name: "vol_anchor_next" },
+    ],
+    deleteVolumeError: new Error("delete failed"),
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, ["vol_failed", "vol_next"]);
+  assert.deepEqual(f.volumesDeleted, []);
 });
 
 test("an online anchor with a live node is not rewritten", async () => {

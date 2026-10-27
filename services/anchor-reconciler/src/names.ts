@@ -4,3 +4,6 @@
 // server (which looks them up by group id) — they must never drift.
 export const machineName = (groupId: string) =>
   `anchor_${groupId.replace(/^grp_/, "")}`.slice(0, 30);
+
+export const volumeName = (groupId: string) =>
+  `vol_${machineName(groupId)}`.slice(0, 30);

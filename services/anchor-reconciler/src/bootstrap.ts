@@ -9,6 +9,7 @@ import { wantsAnchor, type AnchorDb } from "./db";
 import type { CpClient } from "./cp";
 import type { AnchorProvider } from "./provider";
 import { machineName } from "./names";
+import { sameIp } from "./ip";
 
 export function startBootstrap(
   db: AnchorDb,
@@ -47,7 +48,7 @@ export function startBootstrap(
           machine.id !== row.fly_machine_id ||
           machine.rowId !== row.id ||
           !machine.privateIp ||
-          req.socket.remoteAddress !== machine.privateIp
+          !sameIp(req.socket.remoteAddress, machine.privateIp)
         ) {
           res.writeHead(403).end();
           return;
