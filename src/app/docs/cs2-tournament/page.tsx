@@ -41,9 +41,9 @@ export default function Cs2Tournament() {
       <P>
         Auto Tournament is a self-hosted platform for signups, brackets, and map
         veto. Ready Up is its CS2 plugin for ready-ups, knife rounds, and
-        pauses. In fleet mode, Ready Up sends match state and results back to
-        Auto Tournament. The Varde Auto Tournament plugin connects them: it
-        creates the fleet key and installs Ready Up on your CS2 servers.
+        pauses. Ready Up sends match state and results back to Auto Tournament.
+        The Varde Auto Tournament plugin connects them: it creates the fleet
+        key and installs Ready Up on your CS2 servers.
       </P>
 
       <Callout title="What free means">
@@ -66,8 +66,8 @@ export default function Cs2Tournament() {
 
       <Callout title="Availability">
         This guide uses CS2 addons and plugins in Varde&rsquo;s main branch,
-        which are not yet in a release. The Auto Tournament integration is a
-        separate service.
+        which are not yet in a release. Ready Up is in beta. The Auto
+        Tournament integration is a separate service.
       </Callout>
 
       <DocChecklist
@@ -105,11 +105,12 @@ docker compose up -d
 docker logs auto-tournament`}
           />
           Enter the one-time setup code from the logs at <Code>/setup</Code>,
-          create the admin, and finish sign-in setup. Then install the
-          Counter-Strike 2 module and create an admin API token under Settings
-          → API tokens. Save the token when it is shown because you cannot see
-          it again. In our E2E, local username and password sign-in worked
-          without a Steam API key. Fresh installs had only Manual reporting.
+          create the admin, and finish sign-in setup. Local username and
+          password sign-in works without a Steam API key. A fresh install
+          includes only the Manual reporting module, so install the
+          Counter-Strike 2 module, then create an admin API token under
+          Settings → API tokens. Save the token when it is shown because you
+          cannot see it again.
         </Step>
         <Step n={2} title="Run Varde and link the Linux PC">
           Run your own Varde control plane and link the Linux PC that will host
@@ -126,7 +127,8 @@ docker logs auto-tournament`}
             Varde Auto Tournament plugin
           </Link>{" "}
           with Go 1.26 or newer. Give it a stable plugin secret of at least 32
-          bytes, the control plane URL, and a group-bound service token named{" "}
+          bytes, the control plane URL, and a service token tied to the group,
+          named{" "}
           <Code>plugin-autotournament</Code> with scopes <Code>members</Code>,{" "}
           <Code>steam_ids</Code>, <Code>servers</Code>,{" "}
           <Code>server_addons</Code>, and <Code>events</Code>. Keep{" "}
@@ -153,13 +155,15 @@ export READYUP_LICENSE="noncommercial"`}
           <Code>VARDE_PLUGINS</Code>. See the{" "}
           <Link href="/docs/auto-tournament">plugin operator reference</Link>.
           Set <Code>AT_ALLOW_PRIVATE=true</Code> only when Auto Tournament
-          uses a private HTTP URL.
+          uses a private HTTP URL. Ready Up is native code that runs inside the
+          CS2 server, so only enable plugins you trust. Addons can add files to
+          the server folder, but cannot replace its configs.
         </Step>
         <Step n={4} title="Enable the plugin for your group">
           In the group&rsquo;s plugin settings, enter the Auto Tournament URL
           and admin API token, then enable the plugin. Its settings are{" "}
           <Code>at_url</Code> and <Code>at_token</Code>. The plugin validates
-          the token and creates a fleet key named{" "}
+          the token and creates a Ready Up fleet key named{" "}
           <Code>varde-&lt;group-id&gt;</Code> automatically.
         </Step>
         <Step n={5} title="Create and start a CS2 server">
@@ -198,21 +202,23 @@ export READYUP_LICENSE="noncommercial"`}
           <Code>insecure = 1</Code>, so the enrollment key travels unencrypted.
           Use HTTPS outside a trusted LAN.
         </Step>
-        <Step n={2} title="The Linux addon error appears on Windows">
-          CS2 game addons are supported only on Linux hosts. Windows hosts
-          return{" "}
-          <Code>cs2: server addons are only supported on Linux hosts</Code>.
+        <Step n={2} title="The server won&rsquo;t start on a Windows PC">
+          Varde places CS2 servers with Ready Up only on Linux PCs. If no Linux
+          PC in the group can take the server, it stays unscheduled. The
+          scheduler reason ends with <Code>unsupported os windows</Code> and
+          has the format <Code>{"<node id>: unsupported os windows"}</Code>.
+          Servers without addons can still run on Windows.
         </Step>
         <Step n={3} title="The map or players are rejected">
           The plugin accepts only its three listed maps. Link a verified Steam
           account in Varde for each player, then include at least two full
           teams for the selected team size.
         </Step>
-        <Step n={4} title="Host edits disappear after a restart">
-          Varde rebuilds the per-server CS2 addon folder at each start. Files
-          Ready Up writes there do not survive that rebuild. Change the
-          plugin-managed settings through Varde instead of editing the folder
-          on the host.
+        <Step n={4} title="Change Ready Up settings through Varde">
+          Varde rebuilds the server&rsquo;s CS2 folder each time it starts the
+          server. Files in the folder survive automatic restarts after a crash,
+          so Ready Up can recover a match. Change plugin-managed settings
+          through Varde instead of editing the folder on the host.
         </Step>
       </Steps>
 

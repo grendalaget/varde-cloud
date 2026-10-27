@@ -43,8 +43,9 @@ export default function AutoTournamentPlugin() {
       <P>
         Open the group&rsquo;s plugin settings, enter <Code>at_url</Code> and
         the Auto Tournament admin API token in <Code>at_token</Code>, then
-        enable the plugin. The plugin checks the token and creates a fleet key
-        named <Code>varde-&lt;group-id&gt;</Code>. The generated{" "}
+        enable the plugin. The plugin checks the token and creates a Ready Up
+        fleet key named{" "}
+        <Code>varde-&lt;group-id&gt;</Code>. The generated{" "}
         <Code>fleet_key</Code> and <Code>fleet_key_url</Code> settings are
         hidden. Changing <Code>at_url</Code> creates a new fleet key on the new
         Auto Tournament installation.
@@ -109,8 +110,9 @@ export default function AutoTournamentPlugin() {
                 <Code>VARDE_SERVICE_TOKEN</Code>
               </td>
               <td className="p-3">
-                A group-bound token named <Code>plugin-autotournament</Code>{" "}
-                with <Code>members</Code>, <Code>steam_ids</Code>,{" "}
+                A service token tied to the group, named{" "}
+                <Code>plugin-autotournament</Code>, with <Code>members</Code>,{" "}
+                <Code>steam_ids</Code>,{" "}
                 <Code>servers</Code>, <Code>server_addons</Code>, and{" "}
                 <Code>events</Code> scopes.
               </td>
@@ -176,25 +178,30 @@ export default function AutoTournamentPlugin() {
         configured <Code>base_url</Code>.
       </P>
 
-      <H2>Reconciliation and CS2 addons</H2>
+      <H2>How the plugin applies CS2 addons</H2>
       <P>
-        The plugin reconciles on startup, after settings are saved, every five
-        minutes, and when it receives the group&rsquo;s{" "}
-        <Code>server.created</Code> event. It installs the Ready Up addon for
-        CS2 servers. Varde applies addon changes at the next server start, not
-        immediately.
+        The plugin checks and updates its settings when it starts, after group
+        settings change, every five minutes, and when a server is created. It
+        installs the Ready Up addon on CS2 servers. Varde applies addon
+        changes at the next server start, not immediately.
       </P>
       <P>
-        The CS2 <Code>game</Code> addon target is Linux-only. Varde rebuilds a
-        per-server game root for each start, copies the CS2 executable there,
-        and symlinks the remaining install files. Addon content is placed in
-        that per-server root, not in the shared install. In the E2E, CS2 still
-        wrote <Code>steam_appid.txt</Code> and Varde left a small{" "}
-        <Code>.cfg.lock</Code> file in the shared install. Files Ready Up
-        writes under the per-server root do not survive the next rebuild, so
-        manage them through the addon rather than editing that folder on the
-        host.
+        CS2 servers with Ready Up are placed only on Linux PCs. Varde rebuilds
+        a separate game folder each time it starts the server, copies the CS2
+        executable there, and links the remaining install files. Addon files
+        go into that folder, not the shared CS2 install. CS2 itself still
+        writes <Code>steam_appid.txt</Code> in the shared install. Files in
+        the folder survive automatic restarts after a crash, so Ready Up can
+        recover a match. Change Ready Up settings through Varde by updating
+        the addon instead of editing the folder on the host.
       </P>
+      <Callout title="Addon safety">
+        Ready Up is native code that runs inside the CS2 server, so only enable
+        plugins you trust. Addons can add files to the separate folder for
+        that server but cannot replace existing files or configs. If an addon
+        tries to replace a file, server start fails with{" "}
+        <Code>{"cs2: addon <plugin>/<addon> would replace <path>"}</Code>.
+      </Callout>
 
       <Callout title="Licensing">
         Auto Tournament and Ready Up use the PolyForm Noncommercial License
