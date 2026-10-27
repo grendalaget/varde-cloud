@@ -22,6 +22,10 @@ the feature needs from them.
   (merchant of record, VAT handled).
 - `anchor+` is reserved in the plan model (multi-group, larger storage,
   region choice) but is not part of the launch.
+- The `anchor+` cap is `ANCHOR_PLUS_MAX` (3 by default); if changed, set the
+  same value on Vercel and the reconciler.
+  Invalid, zero or infinite values fall back to 3; fractions round down to at
+  least 1.
 - Launch price: 3.99 (see the cost model for why 2.99 does not work yet).
 - Group admins see the anchor as a normal node in the dashboard and can
   remove it; they cannot edit it (it is owned by the service).

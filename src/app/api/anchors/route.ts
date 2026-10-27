@@ -12,6 +12,11 @@ import * as schema from "@/db/schema";
 // Torn-down rows: 'deprovisioning' keeps the volume for the recovery grace,
 // 'gone' is final. Neither runs a machine.
 const TORN_DOWN = ["gone", "deprovisioning"];
+const anchorPlusMax = Number(process.env.ANCHOR_PLUS_MAX || "3");
+const ANCHOR_PLUS_MAX =
+  Number.isFinite(anchorPlusMax) && anchorPlusMax > 0
+    ? Math.max(1, Math.floor(anchorPlusMax))
+    : 3;
 
 // Only what the dashboard needs: other group admins see these rows too, and
 // the raw error column carries CP/Fly API responses.
@@ -147,6 +152,25 @@ export async function POST(req: Request) {
       .update(schema.cloudAnchor)
       .set({ desired: "detached" })
       .where(and(elsewhere, inArray(schema.cloudAnchor.status, TORN_DOWN)));
+  } else if (user.plan === "anchor+") {
+    const elsewhere = and(
+      eq(schema.cloudAnchor.userId, user.id),
+      ne(schema.cloudAnchor.groupId, groupId),
+      eq(schema.cloudAnchor.desired, "provisioned"),
+    );
+    const running = await db
+      .select({ id: schema.cloudAnchor.id })
+      .from(schema.cloudAnchor)
+      .where(and(elsewhere, notInArray(schema.cloudAnchor.status, TORN_DOWN)));
+    if (running.length >= ANCHOR_PLUS_MAX) {
+      return Response.json(
+        {
+          error: "plan_limit",
+          message: `Your plan covers ${ANCHOR_PLUS_MAX} cloud anchors. Remove one from another group first.`,
+        },
+        { status: 409 },
+      );
+    }
   }
 
   // Re-attach on the caller's own row rather than inserting a second one:

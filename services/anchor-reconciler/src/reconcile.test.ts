@@ -31,7 +31,7 @@ function fakes(
     nodes?: CpNode[];
     nodeResponses?: CpNode[][];
     machine?: AnchorMachine | null;
-    blocker?: string;
+    blockers?: string[];
     groupAdmin?: boolean;
     destroyError?: Error;
     expiredRows?: AnchorRow[];
@@ -81,9 +81,9 @@ function fakes(
       calls.db++;
       return false;
     },
-    blockingAnchorOfUser: async () => {
+    outrankingAnchorsOfUser: async () => {
       calls.db++;
-      return opts.blocker ?? null;
+      return opts.blockers ?? [];
     },
   } as unknown as AnchorDb;
   const cp = {
@@ -422,10 +422,37 @@ test("an online anchor with a live node is not rewritten", async () => {
 });
 
 test("a second anchor on the anchor plan is parked before any machine exists", async () => {
-  const f = fakes({ blocker: "ca_0" });
+  const f = fakes({ blockers: ["ca_0"] });
   await reconcile(row({ status: "pending", fly_machine_id: null, node_id: null }), f.db, f.cp, f.provider);
   assert.deepEqual(f.created, []);
   assert.deepEqual(f.statuses, ["conflict"]);
+});
+
+test("a fourth anchor+ row conflicts when three other rows hold machines", async () => {
+  const f = fakes({ blockers: ["ca_a", "ca_b", "ca_c"] });
+  await reconcile(
+    row({ id: "ca_fourth", status: "pending", plan: "anchor+" }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.statuses, ["conflict"]);
+  assert.deepEqual(f.statusWrites[0]?.patch, {
+    error: "plan covers 3 anchors; rows ca_a, ca_b, ca_c already hold them",
+  });
+  assert.deepEqual(f.created, []);
+});
+
+test("a third anchor+ row provisions when two other rows hold machines", async () => {
+  const f = fakes({ blockers: ["ca_a", "ca_b"] });
+  await reconcile(
+    row({ id: "ca_third", status: "pending", plan: "anchor+" }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.statuses, ["provisioning"]);
+  assert.equal(f.created.length, 1);
 });
 
 test("the only anchor on the anchor plan provisions", async () => {
@@ -451,21 +478,22 @@ test("setStatus resets attempts when the row comes online", async () => {
   assert.equal(await attempts(), 0);
 });
 
-test("blockingAnchorOfUser: a machine holder or the oldest live row wins", async () => {
+test("outrankingAnchorsOfUser returns machine holders and the oldest live rows", async () => {
   const db = new AnchorDb(":memory:");
   const sql = (db as unknown as { client: { execute: (s: string) => Promise<unknown> } }).client;
   await sql.execute(
     "CREATE TABLE cloud_anchor (id TEXT, user_id TEXT, group_id TEXT, desired TEXT, status TEXT, created_at INTEGER)",
   );
   await sql.execute(
-    "INSERT INTO cloud_anchor VALUES ('ca_a', 'u1', 'grp_a', 'provisioned', 'conflict', 1), ('ca_b', 'u1', 'grp_b', 'provisioned', 'pending', 2), ('ca_c', 'u1', 'grp_c', 'provisioned', 'gone', 0)",
+    "INSERT INTO cloud_anchor VALUES ('ca_a', 'u1', 'grp_a', 'provisioned', 'conflict', 1), ('ca_b', 'u1', 'grp_b', 'provisioned', 'pending', 2), ('ca_c', 'u1', 'grp_c', 'provisioned', 'gone', 0), ('ca_d', 'u1', 'grp_d', 'provisioned', 'online', 3)",
   );
-  const blocking = (id: string, group: string, created: number) =>
-    db.blockingAnchorOfUser(row({ id, group_id: group, created_at: created }));
-  // An older row parked for another reason still holds the entitlement.
-  assert.equal(await blocking("ca_a", "grp_a", 1), null);
-  assert.equal(await blocking("ca_b", "grp_b", 2), "ca_a");
+  const outranking = (id: string, group: string, created: number, limit: number) =>
+    db.outrankingAnchorsOfUser(row({ id, group_id: group, created_at: created }), limit);
+  // Machine holders and the oldest non-torn-down rows outrank this row.
+  assert.deepEqual((await outranking("ca_a", "grp_a", 1, 3)).sort(), ["ca_d"]);
+  assert.deepEqual((await outranking("ca_b", "grp_b", 2, 3)).sort(), ["ca_a", "ca_d"]);
+  assert.equal((await outranking("ca_b", "grp_b", 2, 1)).length, 1);
   // Once the newer row holds a machine, the older row yields instead.
   await sql.execute("UPDATE cloud_anchor SET status = 'provisioning' WHERE id = 'ca_b'");
-  assert.equal(await blocking("ca_a", "grp_a", 1), "ca_b");
+  assert.deepEqual((await outranking("ca_a", "grp_a", 1, 3)).sort(), ["ca_b", "ca_d"]);
 });
