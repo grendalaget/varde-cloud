@@ -58,6 +58,25 @@ export class AnchorDb {
     return res.rows as unknown as AnchorRow[];
   }
 
+  async claimSwept(id: string, observedUpdatedAt: number): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE cloud_anchor
+            SET status = 'gone', fly_volume_id = NULL, updated_at = ?
+            WHERE id = ? AND status = 'deprovisioning' AND updated_at = ?`,
+      args: [Date.now(), id, observedUpdatedAt],
+    });
+    return res.rowsAffected === 1;
+  }
+
+  async unclaimSwept(id: string, originalUpdatedAt: number): Promise<void> {
+    await this.client.execute({
+      sql: `UPDATE cloud_anchor
+            SET status = 'deprovisioning', updated_at = ?
+            WHERE id = ? AND status = 'gone'`,
+      args: [originalUpdatedAt, id],
+    });
+  }
+
   async volumeInUse(groupId: string, excludeId: string, cutoffMs: number): Promise<boolean> {
     const res = await this.client.execute({
       sql: `SELECT 1 FROM cloud_anchor

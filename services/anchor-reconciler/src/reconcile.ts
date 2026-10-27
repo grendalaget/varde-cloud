@@ -321,7 +321,7 @@ export async function sweepVolumes(
   for (const r of rows) {
     try {
       if (await db.volumeInUse(r.group_id, r.id, cutoffMs)) {
-        await db.setStatus(r.id, "gone", { fly_volume_id: null });
+        await db.claimSwept(r.id, r.updated_at);
         continue;
       }
       const volumes: AnchorVolume[] = await provider.findVolumes(volumeName(r.group_id));
@@ -331,8 +331,20 @@ export async function sweepVolumes(
         );
         continue;
       }
-      for (const volume of volumes) await provider.deleteVolume(volume.id);
-      await db.setStatus(r.id, "gone", { fly_volume_id: null });
+      if (!(await db.claimSwept(r.id, r.updated_at))) continue;
+      try {
+        for (const volume of volumes) await provider.deleteVolume(volume.id);
+      } catch (e) {
+        try {
+          await db.unclaimSwept(r.id, r.updated_at);
+        } catch (unclaimError) {
+          console.error(
+            `anchor ${r.id} group ${r.group_id}: failed to restore teardown after volume deletion error:`,
+            unclaimError,
+          );
+        }
+        throw e;
+      }
     } catch (e) {
       console.error(`anchor ${r.id} group ${r.group_id}: volume sweep failed:`, e);
     }

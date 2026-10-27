@@ -35,10 +35,14 @@ function fakes(
     volumeInUse?: boolean;
     volumes?: AnchorVolume[];
     findVolumesError?: Error;
+    claimSwept?: boolean;
+    deleteVolumeError?: Error;
   } = {},
 ) {
   const statuses: string[] = [];
   const statusWrites: { id: string; status: string; patch: Record<string, unknown> }[] = [];
+  const claimSweptCalls: { id: string; observedUpdatedAt: number }[] = [];
+  const unclaimSweptCalls: { id: string; originalUpdatedAt: number }[] = [];
   const destroyed: string[] = [];
   const volumesDeleted: string[] = [];
   const calls = { db: 0, cp: 0, provider: 0 };
@@ -51,6 +55,15 @@ function fakes(
     },
     expiredTeardowns: async () => opts.expiredRows ?? [],
     volumeInUse: async () => opts.volumeInUse ?? false,
+    claimSwept: async (id: string, observedUpdatedAt: number) => {
+      calls.db++;
+      claimSweptCalls.push({ id, observedUpdatedAt });
+      return opts.claimSwept ?? true;
+    },
+    unclaimSwept: async (id: string, originalUpdatedAt: number) => {
+      calls.db++;
+      unclaimSweptCalls.push({ id, originalUpdatedAt });
+    },
     liveSiblingAnchor: async () => {
       calls.db++;
       return null;
@@ -100,9 +113,22 @@ function fakes(
     deleteVolume: async (id: string) => {
       calls.provider++;
       volumesDeleted.push(id);
+      if (opts.deleteVolumeError) throw opts.deleteVolumeError;
     },
   } satisfies AnchorProvider;
-  return { db, cp, provider, statuses, statusWrites, destroyed, volumesDeleted, created, calls };
+  return {
+    db,
+    cp,
+    provider,
+    statuses,
+    statusWrites,
+    claimSweptCalls,
+    unclaimSweptCalls,
+    destroyed,
+    volumesDeleted,
+    created,
+    calls,
+  };
 }
 
 test("a parked row whose plan lapsed is still torn down", async () => {
@@ -177,7 +203,7 @@ test("an old error row proceeds after the backoff window", async () => {
   assert.ok(f.calls.cp > 0);
 });
 
-test("volume sweep deletes every unattached same-name volume and marks the row gone", async () => {
+test("volume sweep claims before deleting every unattached same-name volume", async () => {
   const r = row({
     id: "ca_sweep_delete",
     status: "deprovisioning",
@@ -189,19 +215,19 @@ test("volume sweep deletes every unattached same-name volume and marks the row g
   });
   await sweepVolumes(f.db, f.provider);
   assert.deepEqual(f.volumesDeleted, ["vol_a", "vol_b"]);
-  assert.deepEqual(f.statusWrites, [
-    { id: r.id, status: "gone", patch: { fly_volume_id: null } },
-  ]);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
+  assert.deepEqual(f.statusWrites, []);
+  assert.deepEqual(f.unclaimSweptCalls, []);
 });
 
-test("volume sweep marks a row gone without deleting when a sibling is still using the volume", async () => {
+test("volume sweep claims without deleting when a sibling is still using the volume", async () => {
   const r = row({ id: "ca_sweep_sibling", status: "deprovisioning" });
   const f = fakes({ expiredRows: [r], volumeInUse: true });
   await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
   assert.deepEqual(f.volumesDeleted, []);
-  assert.deepEqual(f.statusWrites, [
-    { id: r.id, status: "gone", patch: { fly_volume_id: null } },
-  ]);
+  assert.equal(f.calls.provider, 0);
+  assert.deepEqual(f.statusWrites, []);
 });
 
 test("volume sweep leaves an attached volume and row untouched", async () => {
@@ -209,6 +235,7 @@ test("volume sweep leaves an attached volume and row untouched", async () => {
   const f = fakes({ expiredRows: [r], volumes: [{ id: "vol_attached", attachedMachineId: "m1" }] });
   await sweepVolumes(f.db, f.provider);
   assert.deepEqual(f.volumesDeleted, []);
+  assert.deepEqual(f.claimSweptCalls, []);
   assert.deepEqual(f.statusWrites, []);
 });
 
@@ -216,7 +243,42 @@ test("volume sweep leaves the row untouched when volume lookup fails", async () 
   const r = row({ id: "ca_sweep_lookup_error", status: "deprovisioning" });
   const f = fakes({ expiredRows: [r], findVolumesError: new Error("provider unavailable") });
   await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, []);
   assert.deepEqual(f.statusWrites, []);
+});
+
+test("volume sweep skips deletion when the compare-and-set claim fails", async () => {
+  const r = row({
+    id: "ca_sweep_claim_lost",
+    status: "deprovisioning",
+    updated_at: Date.now() - 15 * 24 * 60 * 60_000,
+  });
+  const f = fakes({
+    expiredRows: [r],
+    volumes: [{ id: "vol_revived" }],
+    claimSwept: false,
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
+  assert.deepEqual(f.volumesDeleted, []);
+  assert.deepEqual(f.unclaimSweptCalls, []);
+});
+
+test("volume sweep restores the original retention timestamp when deletion fails", async () => {
+  const r = row({
+    id: "ca_sweep_delete_error",
+    status: "deprovisioning",
+    updated_at: Date.now() - 15 * 24 * 60 * 60_000,
+  });
+  const f = fakes({
+    expiredRows: [r],
+    volumes: [{ id: "vol_delete_error" }],
+    deleteVolumeError: new Error("delete failed"),
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
+  assert.deepEqual(f.volumesDeleted, ["vol_delete_error"]);
+  assert.deepEqual(f.unclaimSweptCalls, [{ id: r.id, originalUpdatedAt: r.updated_at }]);
 });
 
 test("an online anchor with a live node is not rewritten", async () => {
