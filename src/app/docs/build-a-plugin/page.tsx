@@ -41,6 +41,7 @@ const pluginId = "server-notes";
 const secret = new TextEncoder().encode(process.env.SERVER_NOTES_SECRET ?? "");
 const port = Number(process.env.PORT ?? "7300");
 const notesByGroup = new Map();
+const seenTokenIds = new Map();
 const maxRequestBytes = 1024 * 1024;
 
 if (secret.byteLength < 32) {
@@ -90,6 +91,13 @@ function isRequestEnvelope(value) {
 }
 
 async function verifyRequest(request, envelope) {
+  const now = Date.now();
+  for (const [tokenId, expiresAt] of seenTokenIds) {
+    if (expiresAt <= now) {
+      seenTokenIds.delete(tokenId);
+    }
+  }
+
   const authorization = request.headers.authorization ?? "";
   if (!authorization.startsWith("Bearer ")) {
     return false;
@@ -106,7 +114,7 @@ async function verifyRequest(request, envelope) {
       },
     );
 
-    return (
+    const validClaims =
       typeof payload.sub === "string" &&
       typeof payload.grp === "string" &&
       typeof payload.role === "string" &&
@@ -117,8 +125,14 @@ async function verifyRequest(request, envelope) {
       payload.exp - payload.iat <= 60 &&
       payload.sub === envelope.user.id &&
       payload.grp === envelope.group_id &&
-      payload.role === envelope.user.role
-    );
+      payload.role === envelope.user.role;
+
+    if (!validClaims || seenTokenIds.has(payload.jti)) {
+      return false;
+    }
+
+    seenTokenIds.set(payload.jti, payload.exp * 1000);
+    return true;
   } catch {
     return false;
   }
@@ -298,6 +312,8 @@ export default function BuildAPlugin() {
           seconds later, and a random <Code>jti</Code>. The example checks the signing
           algorithm, issuer, audience, expiry, and the identity, group, role,
           issue time, and token ID claims against the request.
+          The example rejects a reused <Code>jti</Code> until it expires; with
+          several plugin replicas, share that record, for example in Redis.
           <CodeBlock
             language="json"
             code={`{
