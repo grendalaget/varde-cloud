@@ -15,6 +15,11 @@ export const env = (k: string, dflt?: string): string => {
 
 export const CP_URL = env("VARDE_CP_URL", "https://cp.varde.games").replace(/\/$/, "");
 export const REGION = env("ANCHOR_REGION", "arn");
+const anchorPlusMax = Number(env("ANCHOR_PLUS_MAX", "3"));
+const ANCHOR_PLUS_MAX =
+  Number.isFinite(anchorPlusMax) && anchorPlusMax > 0
+    ? Math.max(1, Math.floor(anchorPlusMax))
+    : 3;
 const VOLUME_GB = Number(env("ANCHOR_VOLUME_GB", "10"));
 const VOLUME_RETENTION_MS = Number(env("VOLUME_RETENTION_DAYS", "14")) * 24 * 60 * 60_000;
 // Machines fetch their enroll token from this 6PN address at boot instead
@@ -138,13 +143,15 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       }
       return;
     }
-    // One anchor per `anchor` subscription, enforced before any machine
-    // exists (rows already online predate the limit and are left alone).
-    const blocker = r.plan === "anchor" ? await db.blockingAnchorOfUser(r) : null;
-    if (blocker) {
+    // Enforce each plan's anchor limit before creating a machine. Existing
+    // machine holders keep their place, and rows already holding machines
+    // are left alone.
+    const limit = r.plan === "anchor" ? 1 : r.plan === "anchor+" ? ANCHOR_PLUS_MAX : 0;
+    const blockers = limit > 0 ? await db.outrankingAnchorsOfUser(r, limit) : [];
+    if (limit > 0 && blockers.length >= limit) {
       if (r.status !== "conflict") {
         await db.setStatus(r.id, "conflict", {
-          error: `plan covers one anchor; row ${blocker} already holds it`,
+          error: `plan covers ${limit} anchor${limit === 1 ? "" : "s"}; rows ${blockers.join(", ")} already hold them`,
         });
       }
       return;

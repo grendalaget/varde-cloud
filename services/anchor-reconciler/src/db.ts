@@ -131,24 +131,21 @@ export class AnchorDb {
     return (res.rows[0] as unknown as AnchorRow) ?? null;
   }
 
-  // The subscriber's other anchor that outranks this row, if any. The
-  // `anchor` plan covers one anchor and /api/anchors checks that, but two
-  // concurrent attaches can both pass; this loop is sequential, so it is
-  // the authoritative check. A row that already holds a machine always
-  // wins; otherwise the oldest non-torn-down row does, whatever its state —
-  // skipping parked rows would let a newer row provision, then the older
-  // one once its obstruction clears.
-  async blockingAnchorOfUser(r: AnchorRow): Promise<string | null> {
+  // The subscriber's other anchors that outrank this row. /api/anchors
+  // checks the plan limit, but concurrent attaches can both pass; this
+  // sequential loop is authoritative. Machine holders win, then the oldest
+  // non-torn-down rows, including parked rows.
+  async outrankingAnchorsOfUser(r: AnchorRow, limit: number): Promise<string[]> {
     const res = await this.client.execute({
       sql: `SELECT id FROM cloud_anchor
             WHERE user_id = ? AND group_id != ? AND desired = 'provisioned'
               AND status NOT IN ('gone','deprovisioning')
               AND (status IN ('online','provisioning')
                    OR created_at < ? OR (created_at = ? AND id < ?))
-            LIMIT 1`,
-      args: [r.user_id, r.group_id, r.created_at, r.created_at, r.id],
+            LIMIT ?`,
+      args: [r.user_id, r.group_id, r.created_at, r.created_at, r.id, limit],
     });
-    return (res.rows[0]?.id as string | undefined) ?? null;
+    return res.rows.map((row) => row.id as string);
   }
 
   // Does any live row claim this machine id? The strongest ownership
