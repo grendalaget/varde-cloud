@@ -141,7 +141,11 @@ export default function Plugins() {
 
       <H2>What&rsquo;s next</H2>
       <P>
-        Build a service with the{" "}
+        Connect a CS2 group to Auto Tournament with the{" "}
+        <Link href="/docs/auto-tournament">Auto Tournament plugin guide</Link>,
+        or follow the{" "}
+        <Link href="/docs/cs2-tournament">CS2 tournament cookbook</Link>. Build
+        a service with the{" "}
         <Link href="/docs/build-a-plugin">Varde plugin tutorial</Link>. For
         request details and server addons, see the{" "}
         <Link href="https://github.com/grendalaget/varde/blob/main/docs/plugins.md">

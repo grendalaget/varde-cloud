@@ -139,8 +139,11 @@ export default function Cs2Server() {
       <P>
         Adjust modes, maps, bots, and passwords in{" "}
         <Link href="/docs/cs2-server-settings">CS2 server settings</Link>. For
-        general setup, see the <Link href="/docs/host-a-server">host guide</Link>{" "}
-        and <Link href="/docs/join-a-server">join guide</Link>.
+        tournaments, see{" "}
+        <Link href="/docs/cs2-tournament">How to host a CS2 tournament</Link>.
+        For general setup, see the{" "}
+        <Link href="/docs/host-a-server">host guide</Link> and{" "}
+        <Link href="/docs/join-a-server">join guide</Link>.
       </P>
     </>
   );
