@@ -62,7 +62,7 @@ const memberCheckFails = new Map<string, number>();
 const MEMBER_CHECK_STREAK = 10;
 const ONLINE_GRACE_PASSES = 4;
 const offlineStreak = new Map<string, number>();
-const lastAction = new Map<string, "provision" | "teardown">();
+const lastWant = new Map<string, boolean>();
 
 export const errorBackoffMs = (attempts: number) =>
   Math.min(1000 * 2 ** attempts, 15 * 60_000);
@@ -74,10 +74,12 @@ export async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provid
   if (want && r.error && r.attempts >= MAX_BACKOFF_ATTEMPTS && r.status === "error") {
     return; // parked until a human flips desired or raises the cap
   }
-  // Only retrying the same direction should inherit that action's failure delay.
+  // Backoff follows billing intent: cancellation flips want, but losing
+  // admin does not. An empty map after restart also keeps the delay.
+  const last = lastWant.get(r.id);
   if (
     r.status === "error" &&
-    lastAction.get(r.id) === (want ? "provision" : "teardown") &&
+    (last === undefined || last === want) &&
     Date.now() - r.updated_at < errorBackoffMs(r.attempts)
   ) {
     return;
@@ -105,14 +107,14 @@ export async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provid
   if (admin === null) return;
   memberCheckFails.delete(r.id);
   if (want && admin) {
-    lastAction.set(r.id, "provision");
+    lastWant.set(r.id, want);
     await provision(r, db, cp, provider);
   } else if (r.status !== "deprovisioning" && r.status !== "gone") {
     // A torn-down row is settled: a former admin's paid row still looks
     // due (desired=provisioned + paid plan), and without this guard it
     // would re-run teardown — and re-label the replacement's machine an
     // orphan — every poll forever.
-    lastAction.set(r.id, "teardown");
+    lastWant.set(r.id, want);
     await teardown(r, db, cp, provider);
   }
 }

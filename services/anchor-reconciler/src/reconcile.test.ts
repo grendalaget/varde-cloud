@@ -32,6 +32,8 @@ function fakes(
     nodeResponses?: CpNode[][];
     machine?: AnchorMachine | null;
     blocker?: string;
+    groupAdmin?: boolean;
+    destroyError?: Error;
     expiredRows?: AnchorRow[];
     volumeInUse?: boolean;
     volumes?: AnchorVolume[];
@@ -87,7 +89,7 @@ function fakes(
   const cp = {
     isGroupAdmin: async () => {
       calls.cp++;
-      return true;
+      return opts.groupAdmin ?? true;
     },
     listNodes: async () => {
       calls.cp++;
@@ -122,6 +124,7 @@ function fakes(
     destroy: async (id: string) => {
       calls.provider++;
       destroyed.push(id);
+      if (opts.destroyError) throw opts.destroyError;
     },
     deleteVolume: async (id: string) => {
       calls.provider++;
@@ -196,7 +199,7 @@ test("an online observation resets the offline streak", async () => {
   assert.deepEqual(f.statuses, ["provisioning"]);
 });
 
-test("an error row retries immediately when its last action is unknown", async () => {
+test("an error row with unknown billing intent is backed off", async () => {
   const f = fakes();
   await reconcile(
     row({ id: "ca_error_unknown", status: "error", attempts: 10, updated_at: Date.now() }),
@@ -204,8 +207,7 @@ test("an error row retries immediately when its last action is unknown", async (
     f.cp,
     f.provider,
   );
-  assert.deepEqual(f.statuses, ["pending"]);
-  assert.ok(f.calls.cp > 0);
+  assert.deepEqual(f.calls, { db: 0, cp: 0, provider: 0 });
 });
 
 test("a plan lapse tears down despite a fresh provision error backoff", async () => {
@@ -230,6 +232,27 @@ test("a plan lapse tears down despite a fresh provision error backoff", async ()
   );
   assert.deepEqual(f.destroyed, ["m1"]);
   assert.deepEqual(f.statuses, ["deprovisioning"]);
+});
+
+test("a paid subscriber losing admin backs off a teardown error", async () => {
+  const id = "ca_error_admin_lost";
+  const first = fakes({
+    groupAdmin: false,
+    destroyError: new Error("destroy failed"),
+  });
+  await assert.rejects(
+    reconcile(row({ id, status: "online" }), first.db, first.cp, first.provider),
+    /destroy failed/,
+  );
+
+  const next = fakes();
+  await reconcile(
+    row({ id, status: "error", attempts: 10, updated_at: Date.now() }),
+    next.db,
+    next.cp,
+    next.provider,
+  );
+  assert.deepEqual(next.calls, { db: 0, cp: 0, provider: 0 });
 });
 
 test("a recent error row is backed off after the same direction was attempted", async () => {
