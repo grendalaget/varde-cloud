@@ -47,6 +47,28 @@ export class AnchorDb {
     return res.rows as unknown as AnchorRow[];
   }
 
+  async expiredTeardowns(cutoffMs: number): Promise<AnchorRow[]> {
+    const res = await this.client.execute({
+      sql: `SELECT a.*, u.plan AS plan, u.email AS email
+            FROM cloud_anchor a
+            JOIN user u ON u.id = a.user_id
+            WHERE a.status = 'deprovisioning' AND a.updated_at < ?`,
+      args: [cutoffMs],
+    });
+    return res.rows as unknown as AnchorRow[];
+  }
+
+  async volumeInUse(groupId: string, excludeId: string, cutoffMs: number): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `SELECT 1 FROM cloud_anchor
+            WHERE group_id = ? AND id != ? AND status != 'gone'
+              AND (status != 'deprovisioning' OR updated_at >= ?)
+            LIMIT 1`,
+      args: [groupId, excludeId, cutoffMs],
+    });
+    return res.rows.length > 0;
+  }
+
   // The row a bootstrap request acts on: the live provisioned anchor for
   // a group. Detached/deprovisioning rows from an earlier anchor must not
   // shadow a replacement, so filter to the active one explicitly.

@@ -16,10 +16,16 @@ export interface AnchorMachine {
   createdAt?: number;
 }
 
+export interface AnchorVolume {
+  id: string;
+  attachedMachineId?: string;
+}
+
 export interface CreateAnchorSpec {
   // Stable, provider-safe name for the machine — the group id is the natural
   // key so re-provision after destroy is idempotent by lookup.
   name: string;
+  groupId: string;
   region: string;
   volumeGb: number;
   env: Record<string, string>; // e.g. VARDE_CP_URL, VARDE_ENROLL_TOKEN
@@ -29,6 +35,7 @@ export interface AnchorProvider {
   // Find the machine for this anchor, or null. Must be idempotent-safe:
   // called every reconcile pass.
   find(name: string): Promise<AnchorMachine | null>;
+  findVolumes(name: string): Promise<AnchorVolume[]>;
   create(spec: CreateAnchorSpec): Promise<AnchorMachine>;
   destroy(id: string): Promise<void>;
   deleteVolume(volumeId: string): Promise<void>;

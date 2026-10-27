@@ -31,14 +31,16 @@ the feature needs from them.
 | Piece | Repo | Notes |
 | --- | --- | --- |
 | Service tokens + anchor enrollment | `grendalaget/varde` (OSS) | Generic capability: `vst_` bearer tokens scoped to enrollment/node operations. Any self-hoster can automate anchors with it. No billing concepts in the OSS repo. |
-| Entitlement + UI | `grendalaget/varde-cloud` | Polar webhook -> plan -> desired anchor state in Turso. Group page "cloud anchor" card. |
+| Entitlement + UI | `grendalaget/varde-cloud` | Polar webhook syncs the plan. Group page "cloud anchor" card attaches the anchor. |
 | Reconciler | `grendalaget/varde-cloud` `services/anchor-reconciler` | Desired-state loop: Turso -> Fly Machines API + CP service token -> status back to Turso. |
 | Anchor machines | Fly.io | One Machine per subscribed group in a `varde-anchors` app, volume per machine, no public services. |
 
 ### Purchase to provisioned
 
-1. Polar webhook (`subscription.active`) -> `user.plan = "anchor"` and a row
-   in `cloud_anchors` with `desired = 'provisioning'` for the chosen group.
+1. The Polar webhook syncs `user.plan` from the Polar customer state. A group
+   admin uses the attach action (`POST /api/anchors`) to write a `cloud_anchor`
+   row with `desired = 'provisioned'`. `desired` records user intent
+   (`provisioned` or `detached`); `status` is reconciler-owned.
 2. Reconciler picks up the row: creates a Fly Machine + volume in
    `varde-anchors`, boots the agent with `VARDE_CP_URL` +
    `VARDE_BOOTSTRAP_URL` in its env. The agent's first act is a GET on the
@@ -46,15 +48,16 @@ the feature needs from them.
    against the machine record and returns a one-use enroll token — no CP
    credential ever sits in readable machine config.
 3. Agent enrolls, heartbeats show it online on the group, reconciler marks
-   `actual = 'online'`. Site reads the same row for status.
+   `status = 'online'`. The site reads the same row for status.
 
 ### Cancellation
 
-- `subscription.canceled` / revoked -> `desired = 'deprovision'` at period
-  end. `require_anchor_for_commit` is unset on the group immediately so a
-  lapsed subscription never blocks saves.
-- Volume retained ~14 days (read-only recovery window), then deleted.
-  Player machines still hold copies; the anchor is a replica, not primary.
+- A plan change makes `wantsAnchor()` false, so the reconciler tears down the
+  machine without changing `desired`.
+- The volume is kept for `VOLUME_RETENTION_DAYS` (14 days by default) after
+  teardown. The hourly sweep then deletes it and marks the row `gone`.
+  Re-attaching within the retention window reuses the volume by name.
+- Player machines still hold copies; the anchor is a replica, not primary.
 
 ## Suspend on idle
 
