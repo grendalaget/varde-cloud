@@ -174,13 +174,16 @@ const terms = (billingEnabled: boolean): Term[] => [
     term: "Server",
     def: (
       <>
-        The thing your friends connect to: Minecraft, Valheim or another game
-        running as a service. In Varde a server is not tied to one machine; it
-        keeps its name, address and saves while hosting moves around. The save
-        is its data; the server is the save plus everything needed to run it.
+        The thing your friends connect to: Minecraft, Valheim, Counter-Strike
+        2, or another game running as a service. In Varde a server is not tied
+        to one machine; it keeps its name and address while hosting moves
+        around. Game data, such as a save or ban list, follows when that game
+        supports it. The server is everything needed to run the game plus its
+        data.
       </>
     ),
-    keywords: "game world service minecraft valheim",
+    keywords:
+      "game service minecraft valheim counter strike counter-strike 2 cs2 dedicated",
   },
   {
     term: "Session",
