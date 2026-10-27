@@ -202,71 +202,54 @@ export async function DELETE(req: Request) {
       { status: 400 },
     );
   }
-  // The subscriber can detach their own row. Group admins can also remove
-  // every provisioned row, including dormant rows that could be revived.
-  const own = await db
-    .update(schema.cloudAnchor)
-    .set({ desired: "detached" })
-    .where(
-      and(
-        eq(schema.cloudAnchor.groupId, groupId),
-        eq(schema.cloudAnchor.userId, user.id),
-        eq(schema.cloudAnchor.desired, "provisioned"),
-      ),
-    )
-    .returning();
-  const others = await db
+  // Subscribers can detach their own rows. Group admins can detach every
+  // provisioned row after their role has been checked.
+  const provisioned = await db
     .select()
     .from(schema.cloudAnchor)
     .where(
       and(
         eq(schema.cloudAnchor.groupId, groupId),
         eq(schema.cloudAnchor.desired, "provisioned"),
-        ne(schema.cloudAnchor.userId, user.id),
       ),
     );
-  if (others.length === 0) {
-    const anchor = pick(own);
-    return anchor
-      ? Response.json({ anchor: view(anchor, user.id) })
-      : Response.json(
-          { error: "not_found", message: "No cloud anchor on this group." },
-          { status: 404 },
-        );
-  }
+  const own = provisioned.filter((anchor) => anchor.userId === user.id);
+  const others = provisioned.filter((anchor) => anchor.userId !== user.id);
 
   let isAdmin = false;
-  try {
-    const groups = await listGroups(user);
-    const group = groups.find((g) => g.id === groupId);
-    isAdmin = group?.role === "owner" || group?.role === "admin";
-  } catch (e) {
-    return cpErrorResponse(e);
-  }
-  if (!isAdmin) {
-    const anchor = pick(own);
-    return anchor
-      ? Response.json({ anchor: view(anchor, user.id) })
-      : Response.json(
-          { error: "not_found", message: "No cloud anchor on this group." },
-          { status: 404 },
-        );
+  if (others.length > 0) {
+    try {
+      const groups = await listGroups(user);
+      const group = groups.find((g) => g.id === groupId);
+      isAdmin = group?.role === "owner" || group?.role === "admin";
+    } catch (e) {
+      return cpErrorResponse(e);
+    }
   }
 
-  const otherRows = await db
+  const allowedRows = isAdmin ? [...own, ...others] : own;
+  if (allowedRows.length === 0) {
+    return Response.json(
+      { error: "not_found", message: "No cloud anchor on this group." },
+      { status: 404 },
+    );
+  }
+
+  const detached = await db
     .update(schema.cloudAnchor)
     .set({ desired: "detached" })
     .where(
       and(
+        eq(schema.cloudAnchor.groupId, groupId),
+        eq(schema.cloudAnchor.desired, "provisioned"),
         inArray(
           schema.cloudAnchor.id,
-          others.map((anchor) => anchor.id),
+          allowedRows.map((anchor) => anchor.id),
         ),
-        eq(schema.cloudAnchor.desired, "provisioned"),
       ),
     )
     .returning();
-  const anchor = pick([...own, ...otherRows]);
+  const anchor = pick(detached);
   return anchor
     ? Response.json({ anchor: view(anchor, user.id) })
     : Response.json(
