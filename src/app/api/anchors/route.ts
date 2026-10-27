@@ -223,7 +223,8 @@ export async function DELETE(req: Request) {
       const group = groups.find((g) => g.id === groupId);
       isAdmin = group?.role === "owner" || group?.role === "admin";
     } catch (e) {
-      return cpErrorResponse(e);
+      if (own.length === 0) return cpErrorResponse(e);
+      // CP outage: own rows still detach, others need the role check.
     }
   }
 
