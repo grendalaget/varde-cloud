@@ -62,6 +62,7 @@ const memberCheckFails = new Map<string, number>();
 const MEMBER_CHECK_STREAK = 10;
 const ONLINE_GRACE_PASSES = 4;
 const offlineStreak = new Map<string, number>();
+const lastAction = new Map<string, "provision" | "teardown">();
 
 export const errorBackoffMs = (attempts: number) =>
   Math.min(1000 * 2 ** attempts, 15 * 60_000);
@@ -73,7 +74,12 @@ export async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provid
   if (want && r.error && r.attempts >= MAX_BACKOFF_ATTEMPTS && r.status === "error") {
     return; // parked until a human flips desired or raises the cap
   }
-  if (r.status === "error" && Date.now() - r.updated_at < errorBackoffMs(r.attempts)) {
+  // Only retrying the same direction should inherit that action's failure delay.
+  if (
+    r.status === "error" &&
+    lastAction.get(r.id) === (want ? "provision" : "teardown") &&
+    Date.now() - r.updated_at < errorBackoffMs(r.attempts)
+  ) {
     return;
   }
   // The anchor serves the group but is billed to the subscriber: if they
@@ -99,12 +105,14 @@ export async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provid
   if (admin === null) return;
   memberCheckFails.delete(r.id);
   if (want && admin) {
+    lastAction.set(r.id, "provision");
     await provision(r, db, cp, provider);
   } else if (r.status !== "deprovisioning" && r.status !== "gone") {
     // A torn-down row is settled: a former admin's paid row still looks
     // due (desired=provisioned + paid plan), and without this guard it
     // would re-run teardown — and re-label the replacement's machine an
     // orphan — every poll forever.
+    lastAction.set(r.id, "teardown");
     await teardown(r, db, cp, provider);
   }
 }

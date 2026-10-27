@@ -180,10 +180,55 @@ test("an online observation resets the offline streak", async () => {
   assert.deepEqual(f.statuses, ["provisioning"]);
 });
 
-test("a recent error row is backed off before any external calls", async () => {
+test("an error row retries immediately when its last action is unknown", async () => {
   const f = fakes();
   await reconcile(
-    row({ id: "ca_error_recent", status: "error", attempts: 10, updated_at: Date.now() }),
+    row({ id: "ca_error_unknown", status: "error", attempts: 10, updated_at: Date.now() }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.statuses, ["pending"]);
+  assert.ok(f.calls.cp > 0);
+});
+
+test("a plan lapse tears down despite a fresh provision error backoff", async () => {
+  const id = "ca_error_plan_lapse";
+  const primer = fakes();
+  await reconcile(
+    row({ id, status: "pending", fly_machine_id: null, node_id: null }),
+    primer.db,
+    primer.cp,
+    primer.provider,
+  );
+  assert.equal(primer.created.length, 1);
+
+  const f = fakes({
+    machine: { id: "m1", rowId: id, status: "started" },
+  });
+  await reconcile(
+    row({ id, status: "error", plan: "free", attempts: 1, updated_at: Date.now() }),
+    f.db,
+    f.cp,
+    f.provider,
+  );
+  assert.deepEqual(f.destroyed, ["m1"]);
+  assert.deepEqual(f.statuses, ["deprovisioning"]);
+});
+
+test("a recent error row is backed off after the same direction was attempted", async () => {
+  const id = "ca_error_recent";
+  const primer = fakes();
+  await reconcile(
+    row({ id, status: "pending", fly_machine_id: null, node_id: null }),
+    primer.db,
+    primer.cp,
+    primer.provider,
+  );
+
+  const f = fakes();
+  await reconcile(
+    row({ id, status: "error", attempts: 10, updated_at: Date.now() }),
     f.db,
     f.cp,
     f.provider,
