@@ -72,15 +72,20 @@ export class FlyMachinesProvider implements AnchorProvider {
   }
 
   async findVolumes(name: string): Promise<AnchorVolume[]> {
+    return (await this.listVolumes())
+      .filter((volume) => volume.name === name)
+      .map(({ id, attachedMachineId }) => ({ id, attachedMachineId }));
+  }
+
+  async listVolumes(): Promise<(AnchorVolume & { name: string })[]> {
     const volumes = await this.call<FlyVolume[]>("GET", "/volumes");
     return volumes
       .filter(
-        (volume) =>
-          volume.name === name &&
-          !["destroyed", "pending_destroy", "destroying"].includes(volume.state),
+        (volume) => !["destroyed", "pending_destroy", "destroying"].includes(volume.state),
       )
       .map((volume) => ({
         id: volume.id,
+        name: volume.name,
         attachedMachineId: volume.attached_machine_id ?? undefined,
       }));
   }

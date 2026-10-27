@@ -58,6 +58,13 @@ export class AnchorDb {
     return res.rows as unknown as AnchorRow[];
   }
 
+  async activeGroupIds(): Promise<string[]> {
+    const res = await this.client.execute(
+      "SELECT DISTINCT group_id FROM cloud_anchor WHERE status != 'gone'",
+    );
+    return res.rows.map((row) => row.group_id as string);
+  }
+
   async claimSwept(id: string, observedUpdatedAt: number): Promise<boolean> {
     const res = await this.client.execute({
       sql: `UPDATE cloud_anchor

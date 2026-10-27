@@ -357,4 +357,24 @@ export async function sweepVolumes(
       console.error(`anchor ${r.id} group ${r.group_id}: volume sweep failed:`, e);
     }
   }
+  try {
+    const keep = new Set((await db.activeGroupIds()).map(volumeName));
+    for (const volume of await provider.listVolumes()) {
+      if (
+        !volume.name.startsWith("vol_anchor_") ||
+        keep.has(volume.name) ||
+        volume.attachedMachineId
+      ) {
+        continue;
+      }
+      try {
+        await provider.deleteVolume(volume.id);
+        console.info(`deleted orphan anchor volume ${volume.name} (${volume.id})`);
+      } catch (e) {
+        console.error(`failed to delete orphan anchor volume ${volume.name} (${volume.id}):`, e);
+      }
+    }
+  } catch (e) {
+    console.error("orphan volume sweep failed:", e);
+  }
 }

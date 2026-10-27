@@ -5,6 +5,7 @@ import { AnchorDb, type AnchorRow } from "./db";
 import type { CpClient, CpNode } from "./cp";
 import type { AnchorMachine, AnchorProvider, AnchorVolume } from "./provider";
 import { reconcile, sweepVolumes } from "./reconcile";
+import { volumeName } from "./names";
 
 const row = (p: Partial<AnchorRow> = {}): AnchorRow => ({
   id: "ca_1",
@@ -34,6 +35,9 @@ function fakes(
     expiredRows?: AnchorRow[];
     volumeInUse?: boolean;
     volumes?: AnchorVolume[];
+    activeGroupIds?: string[];
+    allVolumes?: (AnchorVolume & { name: string })[];
+    listVolumesError?: Error;
     findVolumesError?: Error;
     claimSwept?: boolean;
     deleteVolumeError?: Error;
@@ -45,6 +49,8 @@ function fakes(
   const unclaimSweptCalls: { id: string; originalUpdatedAt: number }[] = [];
   const destroyed: string[] = [];
   const volumesDeleted: string[] = [];
+  const volumeDeleteAttempts: string[] = [];
+  let findVolumesCalls = 0;
   const calls = { db: 0, cp: 0, provider: 0 };
   let nodePass = 0;
   const db = {
@@ -54,6 +60,7 @@ function fakes(
       statusWrites.push({ id, status, patch });
     },
     expiredTeardowns: async () => opts.expiredRows ?? [],
+    activeGroupIds: async () => opts.activeGroupIds ?? [],
     volumeInUse: async () => opts.volumeInUse ?? false,
     claimSwept: async (id: string, observedUpdatedAt: number) => {
       calls.db++;
@@ -98,8 +105,14 @@ function fakes(
     },
     findVolumes: async () => {
       calls.provider++;
+      findVolumesCalls++;
       if (opts.findVolumesError) throw opts.findVolumesError;
       return opts.volumes ?? [];
+    },
+    listVolumes: async () => {
+      calls.provider++;
+      if (opts.listVolumesError) throw opts.listVolumesError;
+      return opts.allVolumes ?? [];
     },
     create: async (spec: { name: string }) => {
       calls.provider++;
@@ -112,8 +125,9 @@ function fakes(
     },
     deleteVolume: async (id: string) => {
       calls.provider++;
-      volumesDeleted.push(id);
+      volumeDeleteAttempts.push(id);
       if (opts.deleteVolumeError) throw opts.deleteVolumeError;
+      volumesDeleted.push(id);
     },
   } satisfies AnchorProvider;
   return {
@@ -126,6 +140,8 @@ function fakes(
     unclaimSweptCalls,
     destroyed,
     volumesDeleted,
+    volumeDeleteAttempts,
+    findVolumesCalls,
     created,
     calls,
   };
@@ -271,7 +287,7 @@ test("volume sweep claims without deleting when a sibling is still using the vol
   await sweepVolumes(f.db, f.provider);
   assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
   assert.deepEqual(f.volumesDeleted, []);
-  assert.equal(f.calls.provider, 0);
+  assert.equal(f.findVolumesCalls, 0);
   assert.deepEqual(f.statusWrites, []);
 });
 
@@ -322,8 +338,58 @@ test("volume sweep restores the original retention timestamp when deletion fails
   });
   await sweepVolumes(f.db, f.provider);
   assert.deepEqual(f.claimSweptCalls, [{ id: r.id, observedUpdatedAt: r.updated_at }]);
-  assert.deepEqual(f.volumesDeleted, ["vol_delete_error"]);
+  assert.deepEqual(f.volumeDeleteAttempts, ["vol_delete_error"]);
+  assert.deepEqual(f.volumesDeleted, []);
   assert.deepEqual(f.unclaimSweptCalls, [{ id: r.id, originalUpdatedAt: r.updated_at }]);
+});
+
+test("orphan volume sweep deletes unattached volumes without active rows", async () => {
+  const f = fakes({
+    allVolumes: [
+      { id: "vol_orphan", name: "vol_anchor_orphan" },
+      { id: "vol_other", name: "other_volume" },
+    ],
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, ["vol_orphan"]);
+  assert.deepEqual(f.volumesDeleted, ["vol_orphan"]);
+});
+
+test("orphan volume sweep keeps volumes for groups with a non-gone row", async () => {
+  const active = row({ group_id: "grp_active", status: "provisioning" });
+  const f = fakes({
+    activeGroupIds: [active.group_id],
+    allVolumes: [{ id: "vol_active", name: volumeName(active.group_id) }],
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, []);
+});
+
+test("orphan volume sweep keeps attached orphan volumes", async () => {
+  const f = fakes({
+    allVolumes: [
+      {
+        id: "vol_attached_orphan",
+        name: "vol_anchor_orphan",
+        attachedMachineId: "m1",
+      },
+    ],
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, []);
+});
+
+test("orphan volume sweep continues after a delete failure", async () => {
+  const f = fakes({
+    allVolumes: [
+      { id: "vol_failed", name: "vol_anchor_failed" },
+      { id: "vol_next", name: "vol_anchor_next" },
+    ],
+    deleteVolumeError: new Error("delete failed"),
+  });
+  await sweepVolumes(f.db, f.provider);
+  assert.deepEqual(f.volumeDeleteAttempts, ["vol_failed", "vol_next"]);
+  assert.deepEqual(f.volumesDeleted, []);
 });
 
 test("an online anchor with a live node is not rewritten", async () => {
