@@ -434,8 +434,7 @@ function AnchorSection({
   // POST revives this same row.
   const live =
     anchor && anchor.status !== "gone" && anchor.status !== "deprovisioning";
-  // Only the subscriber may detach; other group admins get read-only
-  // status for an anchor someone else is paying for.
+  // Any group admin can remove the anchor. The label shows who pays for it.
   const mine = anchor?.mine === true;
 
   const call = async (method: "POST" | "DELETE") => {
@@ -480,8 +479,8 @@ function AnchorSection({
         Cloud anchor
       </h3>
       {live ? (
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2 text-sm">
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
             {statusText === "online" ? (
               <span
                 aria-hidden
@@ -503,21 +502,24 @@ function AnchorSection({
                     : "Online, saving replicas for the whole group"}
             </p>
           </div>
-          {statusText !== "removing" && mine ? (
-            <Button
-              variant="tertiary"
-              size="sm"
-              isDisabled={busy}
-              onPress={() => void call("DELETE")}
-            >
-              Remove
-            </Button>
-          ) : null}
-          {!mine ? (
-            <span className="shrink-0 text-xs text-muted">
-              paid for by another admin
-            </span>
-          ) : null}
+          <div className="flex items-center justify-between gap-3 sm:shrink-0">
+            {statusText !== "removing" ? (
+              <Button
+                variant="tertiary"
+                size="sm"
+                className="shrink-0 whitespace-nowrap"
+                isDisabled={busy}
+                onPress={() => void call("DELETE")}
+              >
+                Remove
+              </Button>
+            ) : null}
+            {!mine ? (
+              <span className="shrink-0 whitespace-nowrap text-xs text-muted">
+                paid for by another admin
+              </span>
+            ) : null}
+          </div>
         </div>
       ) : (
         <div className="mt-3">

@@ -24,6 +24,10 @@ function view(a: typeof schema.cloudAnchor.$inferSelect, userId: string) {
   };
 }
 
+function pick<T extends { status: string }>(rows: T[]): T | undefined {
+  return rows.find((row) => !TORN_DOWN.includes(row.status)) ?? rows[0];
+}
+
 export async function GET() {
   const user = await cpUser();
   if (isResponse(user)) return user;
@@ -198,24 +202,59 @@ export async function DELETE(req: Request) {
       { status: 400 },
     );
   }
-  // Marks desired=detached; the reconciler drains and deletes the machine
-  // and volume. Only the subscriber (or future: group admin) can detach.
-  const res = await db
-    .update(schema.cloudAnchor)
-    .set({ desired: "detached" })
+  // Subscribers can detach their own rows. Group admins can detach every
+  // provisioned row after their role has been checked.
+  const provisioned = await db
+    .select()
+    .from(schema.cloudAnchor)
     .where(
       and(
         eq(schema.cloudAnchor.groupId, groupId),
-        eq(schema.cloudAnchor.userId, user.id),
         eq(schema.cloudAnchor.desired, "provisioned"),
       ),
-    )
-    .returning();
-  if (res.length === 0) {
+    );
+  const own = provisioned.filter((anchor) => anchor.userId === user.id);
+  const others = provisioned.filter((anchor) => anchor.userId !== user.id);
+
+  let isAdmin = false;
+  if (others.length > 0) {
+    try {
+      const groups = await listGroups(user);
+      const group = groups.find((g) => g.id === groupId);
+      isAdmin = group?.role === "owner" || group?.role === "admin";
+    } catch (e) {
+      if (own.length === 0) return cpErrorResponse(e);
+      // CP outage: own rows still detach, others need the role check.
+    }
+  }
+
+  const allowedRows = isAdmin ? [...own, ...others] : own;
+  if (allowedRows.length === 0) {
     return Response.json(
       { error: "not_found", message: "No cloud anchor on this group." },
       { status: 404 },
     );
   }
-  return Response.json({ anchor: view(res[0], user.id) });
+
+  const detached = await db
+    .update(schema.cloudAnchor)
+    .set({ desired: "detached" })
+    .where(
+      and(
+        eq(schema.cloudAnchor.groupId, groupId),
+        eq(schema.cloudAnchor.desired, "provisioned"),
+        inArray(
+          schema.cloudAnchor.id,
+          allowedRows.map((anchor) => anchor.id),
+        ),
+      ),
+    )
+    .returning();
+  const anchor = pick(detached);
+  return anchor
+    ? Response.json({ anchor: view(anchor, user.id) })
+    : Response.json(
+        { error: "not_found", message: "No cloud anchor on this group." },
+        { status: 404 },
+      );
 }
