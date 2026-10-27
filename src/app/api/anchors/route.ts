@@ -198,8 +198,9 @@ export async function DELETE(req: Request) {
       { status: 400 },
     );
   }
-  // Marks desired=detached; the reconciler drains and deletes the machine
-  // and volume. Only the subscriber (or future: group admin) can detach.
+  // Marks desired=detached; the reconciler drains the machine and retains
+  // its volume for the recovery window. The subscriber or a group admin
+  // can detach.
   const res = await db
     .update(schema.cloudAnchor)
     .set({ desired: "detached" })
@@ -212,10 +213,35 @@ export async function DELETE(req: Request) {
     )
     .returning();
   if (res.length === 0) {
-    return Response.json(
-      { error: "not_found", message: "No cloud anchor on this group." },
-      { status: 404 },
-    );
+    try {
+      const groups = await listGroups(user);
+      const group = groups.find((g) => g.id === groupId);
+      if (!group || (group.role !== "owner" && group.role !== "admin")) {
+        return Response.json(
+          { error: "not_found", message: "No cloud anchor on this group." },
+          { status: 404 },
+        );
+      }
+    } catch (e) {
+      return cpErrorResponse(e);
+    }
+    const adminRes = await db
+      .update(schema.cloudAnchor)
+      .set({ desired: "detached" })
+      .where(
+        and(
+          eq(schema.cloudAnchor.groupId, groupId),
+          eq(schema.cloudAnchor.desired, "provisioned"),
+        ),
+      )
+      .returning();
+    if (adminRes.length === 0) {
+      return Response.json(
+        { error: "not_found", message: "No cloud anchor on this group." },
+        { status: 404 },
+      );
+    }
+    return Response.json({ anchor: view(adminRes[0], user.id) });
   }
   return Response.json({ anchor: view(res[0], user.id) });
 }
