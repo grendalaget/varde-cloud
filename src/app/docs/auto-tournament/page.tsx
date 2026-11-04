@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   Callout,
   Code,
-  CodeBlock,
   DocTitle,
   H2,
   P,
@@ -12,7 +11,7 @@ import {
 
 const title = "Auto Tournament plugin";
 const description =
-  "Configure Auto Tournament and a Ready Up licence for a Varde group, then learn how the integration reconciles its CS2 servers.";
+  "Run Auto Tournament on a Linux PC in your Varde group, choose a Ready Up licence, and organise CS2 tournaments.";
 
 export const metadata: Metadata = {
   title,
@@ -31,7 +30,7 @@ export default function AutoTournamentPlugin() {
     <>
       <DocTitle
         title={title}
-        intro="Use the Varde desktop app to connect a group to a self-hosted Auto Tournament platform. The plugin creates a Ready Up fleet key and maintains Ready Up on supported CS2 servers."
+        intro="Use Varde to run Auto Tournament on one of your PCs. The plugin adds Ready Up to your CS2 servers so you can organise matches from the app."
       />
 
       <Callout tone="warn" title="Availability">
@@ -41,37 +40,61 @@ export default function AutoTournamentPlugin() {
 
       <H2>Set up Auto Tournament for a group</H2>
       <P>
+        You need a Linux PC in your group, just as you do for CS2 servers with
+        Ready Up. Auto Tournament and your CS2 servers can use the same PC if it
+        has enough resources. Link the PC to your group in Varde before starting.
+      </P>
+      <P>
         Open the Varde desktop app and select{" "}
         <strong className="text-foreground">Servers</strong>. In the{" "}
         <strong className="text-foreground">Set up plugins</strong> card,
         select <strong className="text-foreground">Set up</strong> for Auto
-        Tournament. Fill in these fields:
+        Tournament. Choose these settings:
       </P>
       <ul className="my-4 list-disc space-y-2 pl-6 text-sm leading-relaxed text-muted">
         <li>
-          <strong className="text-foreground">Auto Tournament address</strong>:
-          the address players use to open your Auto Tournament site.
-        </li>
-        <li>
-          <strong className="text-foreground">Auto Tournament API token</strong>:
-          create one in Auto Tournament under Settings, API tokens.
+          <strong className="text-foreground">Hosting</strong>: leave{" "}
+          <strong className="text-foreground">Run it on one of our PCs</strong>{" "}
+          selected.
         </li>
         <li>
           <strong className="text-foreground">Ready Up licence</strong>: choose
-          the licence for this group. Use noncommercial for free events. Paid
-          entry, prize money from sponsors or paid hosting needs a commercial
-          licence from Auto Tournament.
+          noncommercial or commercial. This choice applies to both Auto
+          Tournament and Ready Up. Check the licensing terms below for your event.
+        </li>
+        <li>
+          <strong className="text-foreground">Steam Web API key</strong>:
+          optional. It lets players sign in with Steam for map veto. Get one at{" "}
+          <Link className="text-glod underline" href="https://steamcommunity.com/dev/apikey">
+            Steam&rsquo;s API key page
+          </Link>.
         </li>
       </ul>
       <P>
-        Select <strong className="text-foreground">Enable plugin</strong>. To
-        change the values later, select{" "}
-        <strong className="text-foreground">Save plugin settings</strong>. The
-        plugin validates the API token and creates a Ready Up fleet key named{" "}
-        <Code>varde-&lt;group-id&gt;</Code>. The generated{" "}
-        <Code>fleet_key</Code> and <Code>fleet_key_url</Code> settings are
-        hidden. Changing the Auto Tournament address creates a new fleet key
-        for the new Auto Tournament installation.
+        Select <strong className="text-foreground">Enable and start</strong>.
+        Varde downloads and runs Auto Tournament on one of the group&rsquo;s Linux
+        PCs. When it is ready, the app shows a public HTTPS address and an admin
+        setup code. Open that address and use the code once to create your
+        administrator account. You do not need to enter an address or API token
+        when Varde runs it for you.
+      </P>
+      <P>
+        Varde backs up Auto Tournament state like game saves. If its PC goes
+        offline, the server and its saved state move to another available Linux
+        PC in the group. You do not need to set it up again.
+      </P>
+
+      <H2>Already have Auto Tournament?</H2>
+      <P>
+        Choose <strong className="text-foreground">I already have Auto Tournament</strong>{" "}
+        under <strong className="text-foreground">Hosting</strong>. The{" "}
+        <strong className="text-foreground">Auto Tournament address</strong> and{" "}
+        <strong className="text-foreground">Auto Tournament API token</strong>{" "}
+        fields appear. Enter the address players use and a token created in
+        Auto Tournament under Settings, API tokens. Pick your{" "}
+        <strong className="text-foreground">Ready Up licence</strong> and select{" "}
+        <strong className="text-foreground">Enable plugin</strong>. You remain
+        responsible for running and backing up that installation.
       </P>
 
       <H2>Use the Tournaments page</H2>
@@ -101,14 +124,12 @@ export default function AutoTournamentPlugin() {
         the platform.
       </P>
 
-      <H2>How reconciliation works</H2>
+      <H2>CS2 servers and Ready Up</H2>
       <P>
-        The plugin checks group settings when its service starts, after
-        settings change, every five minutes, and when a server is created. It
-        keeps the group&rsquo;s fleet key and Ready Up addon in sync with those
-        settings. Ready Up runs only on Linux, so Varde places tournament
-        servers only on Linux PCs. Addon changes take effect at the next
-        server start, not immediately.
+        The plugin adds Ready Up to your group&rsquo;s CS2 servers automatically.
+        Ready Up runs only on Linux, so tournament servers need a Linux PC in
+        the group. Addon changes take effect at the next server start. Restart
+        a server if it was already running when Ready Up was added.
       </P>
 
       <Callout title="Licensing">
@@ -120,138 +141,9 @@ export default function AutoTournamentPlugin() {
         before running an event.
       </Callout>
 
-      <H2>Advanced: run the plugin yourself</H2>
-      <P>
-        Operators can build the service from the{" "}
-        <Link href="https://github.com/grendalaget/varde-plugin-autotournament">
-          varde-plugin-autotournament repository
-        </Link>
-        , configure its manifest, and load it with{" "}
-        <Code>--plugin /path/manifest.json</Code> or{" "}
-        <Code>VARDE_PLUGINS</Code>. The service uses a group-bound token named{" "}
-        <Code>plugin-autotournament</Code>. For more about manifest fields and
-        signed requests, see the{" "}
-        <Link href="/docs/build-a-plugin">plugin tutorial</Link>.
-      </P>
-      <CodeBlock
-        language="shell"
-        code="go build -o varde-plugin-autotournament ./cmd/varde-plugin-autotournament"
-      />
-
-      <div className="my-5 overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-separator text-foreground">
-              <th className="p-3">Variable</th>
-              <th className="p-3">Purpose</th>
-            </tr>
-          </thead>
-          <tbody className="text-muted">
-            <tr className="border-b border-separator">
-              <td className="p-3 align-top">
-                <Code>VARDE_PLUGIN_SECRET</Code>
-              </td>
-              <td className="p-3">
-                At least 32 bytes and stable. The plugin derives its encryption
-                key from it.
-              </td>
-            </tr>
-            <tr className="border-b border-separator">
-              <td className="p-3 align-top">
-                <Code>VARDE_URL</Code>
-              </td>
-              <td className="p-3">The Varde control plane URL.</td>
-            </tr>
-            <tr className="border-b border-separator">
-              <td className="p-3 align-top">
-                <Code>VARDE_SERVICE_TOKEN</Code>
-              </td>
-              <td className="p-3">
-                A service token tied to the group, named{" "}
-                <Code>plugin-autotournament</Code>, with <Code>members</Code>,{" "}
-                <Code>steam_ids</Code>, <Code>servers</Code>,{" "}
-                <Code>server_addons</Code>, and <Code>events</Code> scopes.
-              </td>
-            </tr>
-            <tr className="border-b border-separator">
-              <td className="p-3 align-top">
-                <Code>STATE_DIR</Code>
-              </td>
-              <td className="p-3">
-                Persistent and private. It stores encrypted group state. Back
-                it up with <Code>VARDE_PLUGIN_SECRET</Code>.
-              </td>
-            </tr>
-            <tr className="border-b border-separator">
-              <td className="p-3 align-top">
-                <Code>LISTEN</Code>
-              </td>
-              <td className="p-3">
-                Defaults to <Code>127.0.0.1:7310</Code>. Use loopback or a
-                trusted network.
-              </td>
-            </tr>
-            <tr className="border-b border-separator">
-              <td className="p-3 align-top">
-                <Code>READYUP_URL</Code>, <Code>READYUP_SHA256</Code>
-              </td>
-              <td className="p-3">
-                Pin the Ready Up archive and its lowercase SHA-256 digest. The
-                cookbook includes a release example.
-              </td>
-            </tr>
-            <tr className="border-b border-separator">
-              <td className="p-3 align-top">
-                <Code>READYUP_LICENSE</Code>
-              </td>
-              <td className="p-3">
-                Ignored by the current service. Set{" "}
-                <strong className="text-foreground">Ready Up licence</strong>{" "}
-                separately for each group in the Varde app.
-              </td>
-            </tr>
-            <tr>
-              <td className="p-3 align-top">
-                <Code>AT_ALLOW_PRIVATE</Code>
-              </td>
-              <td className="p-3">
-                Defaults to false. Set it to true only for a private HTTP Auto
-                Tournament endpoint. The plugin then sets{" "}
-                <Code>insecure = 1</Code> in <Code>fleet.cfg</Code>, so the
-                enrollment key travels unencrypted. Use HTTPS outside a
-                trusted LAN.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <P>
-        The manifest uses <Code>secret_env</Code> for{" "}
-        <Code>VARDE_PLUGIN_SECRET</Code> and sets{" "}
-        <Code>service_token</Code> to <Code>plugin-autotournament</Code>. Bind
-        that service token to the group where the plugin is enabled. Keep the
-        plugin service on a trusted network because the control plane calls its
-        configured <Code>base_url</Code>.
-      </P>
-
-      <H2>Addon behavior and safety</H2>
-      <P>
-        Varde rebuilds a separate game folder each time it starts a server,
-        copies the CS2 executable there, and links the remaining install files.
-        Addon files go into that folder, not the shared CS2 install. CS2 itself
-        still writes <Code>steam_appid.txt</Code> in the shared install. Files
-        in the folder survive automatic restarts after a crash, so Ready Up can
-        recover a match. Choose the group&rsquo;s{" "}
-        <strong className="text-foreground">Ready Up licence</strong> in the
-        Varde app instead of editing the server folder on the host.
-      </P>
       <Callout title="Addon safety">
         Ready Up is native code that runs inside the CS2 server, so only enable
-        plugins you trust. Addons can add files to the separate folder for that
-        server but cannot replace existing files or configs. If an addon tries
-        to replace a file, server start fails with{" "}
-        <Code>{"cs2: addon <plugin>/<addon> would replace <path>"}</Code>.
+        plugins you trust.
       </Callout>
 
       <P>
