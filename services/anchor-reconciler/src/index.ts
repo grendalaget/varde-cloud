@@ -7,9 +7,10 @@ import { CpClient } from "./cp";
 import { FlyMachinesProvider } from "./fly";
 import { startBootstrap } from "./bootstrap";
 import type { AnchorProvider } from "./provider";
-import { BOOTSTRAP_PORT, CP_URL, env, reconcile, REGION } from "./reconcile";
+import { BOOTSTRAP_PORT, CP_URL, env, reconcile, REGION, sweepVolumes } from "./reconcile";
 
 const POLL_MS = Number(env("POLL_INTERVAL_MS", "15000"));
+const VOLUME_SWEEP_INTERVAL_MS = 60 * 60_000;
 
 async function main() {
   const db = new AnchorDb(env("TURSO_DATABASE_URL"), process.env.TURSO_AUTH_TOKEN);
@@ -22,6 +23,12 @@ async function main() {
   startBootstrap(db, cp, provider, CP_URL, BOOTSTRAP_PORT);
 
   console.log(`anchor-reconciler: app=${env("FLY_ANCHORS_APP", "varde-anchors")} region=${REGION} poll=${POLL_MS}ms`);
+  let lastVolumeSweep = Date.now();
+  try {
+    await sweepVolumes(db, provider);
+  } catch (e) {
+    console.error("volume sweep failed:", e);
+  }
   for (;;) {
     try {
       for (const row of await db.due()) {
@@ -36,6 +43,15 @@ async function main() {
       }
     } catch (e) {
       console.error("reconcile pass failed:", e);
+    }
+    const now = Date.now();
+    if (now - lastVolumeSweep >= VOLUME_SWEEP_INTERVAL_MS) {
+      lastVolumeSweep = now;
+      try {
+        await sweepVolumes(db, provider);
+      } catch (e) {
+        console.error("volume sweep failed:", e);
+      }
     }
     await new Promise((res) => setTimeout(res, POLL_MS));
   }

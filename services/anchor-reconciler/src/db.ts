@@ -47,6 +47,54 @@ export class AnchorDb {
     return res.rows as unknown as AnchorRow[];
   }
 
+  async expiredTeardowns(cutoffMs: number): Promise<AnchorRow[]> {
+    const res = await this.client.execute({
+      sql: `SELECT a.*, u.plan AS plan, u.email AS email
+            FROM cloud_anchor a
+            JOIN user u ON u.id = a.user_id
+            WHERE a.status = 'deprovisioning' AND a.updated_at < ?`,
+      args: [cutoffMs],
+    });
+    return res.rows as unknown as AnchorRow[];
+  }
+
+  async activeGroupIds(): Promise<string[]> {
+    const res = await this.client.execute(
+      "SELECT DISTINCT group_id FROM cloud_anchor WHERE status != 'gone'",
+    );
+    return res.rows.map((row) => row.group_id as string);
+  }
+
+  async claimSwept(id: string, observedUpdatedAt: number): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `UPDATE cloud_anchor
+            SET status = 'gone', fly_volume_id = NULL, updated_at = ?
+            WHERE id = ? AND status = 'deprovisioning' AND updated_at = ?`,
+      args: [Date.now(), id, observedUpdatedAt],
+    });
+    return res.rowsAffected === 1;
+  }
+
+  async unclaimSwept(id: string, originalUpdatedAt: number): Promise<void> {
+    await this.client.execute({
+      sql: `UPDATE cloud_anchor
+            SET status = 'deprovisioning', updated_at = ?
+            WHERE id = ? AND status = 'gone'`,
+      args: [originalUpdatedAt, id],
+    });
+  }
+
+  async volumeInUse(groupId: string, excludeId: string, cutoffMs: number): Promise<boolean> {
+    const res = await this.client.execute({
+      sql: `SELECT 1 FROM cloud_anchor
+            WHERE group_id = ? AND id != ? AND status != 'gone'
+              AND (status != 'deprovisioning' OR updated_at >= ?)
+            LIMIT 1`,
+      args: [groupId, excludeId, cutoffMs],
+    });
+    return res.rows.length > 0;
+  }
+
   // The row a bootstrap request acts on: the live provisioned anchor for
   // a group. Detached/deprovisioning rows from an earlier anchor must not
   // shadow a replacement, so filter to the active one explicitly.
@@ -83,24 +131,21 @@ export class AnchorDb {
     return (res.rows[0] as unknown as AnchorRow) ?? null;
   }
 
-  // The subscriber's other anchor that outranks this row, if any. The
-  // `anchor` plan covers one anchor and /api/anchors checks that, but two
-  // concurrent attaches can both pass; this loop is sequential, so it is
-  // the authoritative check. A row that already holds a machine always
-  // wins; otherwise the oldest non-torn-down row does, whatever its state —
-  // skipping parked rows would let a newer row provision, then the older
-  // one once its obstruction clears.
-  async blockingAnchorOfUser(r: AnchorRow): Promise<string | null> {
+  // The subscriber's other anchors that outrank this row. /api/anchors
+  // checks the plan limit, but concurrent attaches can both pass; this
+  // sequential loop is authoritative. Machine holders win, then the oldest
+  // non-torn-down rows, including parked rows.
+  async outrankingAnchorsOfUser(r: AnchorRow, limit: number): Promise<string[]> {
     const res = await this.client.execute({
       sql: `SELECT id FROM cloud_anchor
             WHERE user_id = ? AND group_id != ? AND desired = 'provisioned'
               AND status NOT IN ('gone','deprovisioning')
               AND (status IN ('online','provisioning')
                    OR created_at < ? OR (created_at = ? AND id < ?))
-            LIMIT 1`,
-      args: [r.user_id, r.group_id, r.created_at, r.created_at, r.id],
+            LIMIT ?`,
+      args: [r.user_id, r.group_id, r.created_at, r.created_at, r.id, limit],
     });
-    return (res.rows[0]?.id as string | undefined) ?? null;
+    return res.rows.map((row) => row.id as string);
   }
 
   // Does any live row claim this machine id? The strongest ownership
