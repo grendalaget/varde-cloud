@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   title: "Host a server",
   description:
     "Turn your machine into a server your friends can always reach.",
+  alternates: { canonical: "/docs/host-a-server" },
 };
 
 const NEED = [
@@ -32,7 +33,7 @@ export default function HostAServer() {
     <>
       <DocTitle
         title="Host a server"
-        intro="Hosting on Varde means your PC runs the world while you are around, and the group keeps it alive when you are not. This is the whole setup."
+        intro="Hosting on Varde means your PC runs the server while you are around, and the group keeps it alive when you are not. This is the whole setup."
       />
       <ul className="flex flex-wrap gap-2">
         {NEED.map((n) => (
@@ -84,12 +85,16 @@ export default function HostAServer() {
         </Step>
         <Step n={3} title="Create a server">
           Press <strong className="text-foreground">New server</strong> in the
-          dashboard. Pick the game (Minecraft or Valheim today; each card shows
-          the memory it needs), give the server a name, and leave{" "}
+          dashboard. Pick the game (Minecraft, Valheim, or Counter-Strike 2;
+          each card shows the memory it needs), give the server a name, and leave{" "}
           <strong className="text-foreground">Start now</strong> on. Press{" "}
           <strong className="text-foreground">Create server</strong> and Varde
           starts it on a machine in the group, yours by default.
           <CreateServerMock />
+          <P>
+            For CS2, follow the{" "}
+            <Link href="/docs/cs2-server">Counter-Strike 2 hosting guide</Link>.
+          </P>
         </Step>
         <Step n={4} title="Send friends the invite">
           On the dashboard&rsquo;s{" "}
@@ -106,9 +111,9 @@ export default function HostAServer() {
           changes, so nothing breaks when hosting moves.
           <TrayMenuMock hosting />
           <P>
-            Close your laptop mid-session and Varde moves the world to another
-            machine in the group, save and all. If no machine is free, the
-            server sleeps until one comes back.{" "}
+            Close your laptop mid-session and Varde moves the server to another
+            machine in the group with its game data, including any saves. If no
+            machine is free, the server sleeps until one comes back.{" "}
             <Link href="/docs/how-varde-works">How Varde works</Link> shows the
             mechanics.
           </P>
@@ -116,8 +121,8 @@ export default function HostAServer() {
       </Steps>
 
       <Callout tone="glod" title="The short version">
-        Create the server once, share the link once. Varde keeps the world
-        alive on whichever machine is around.
+        Create the server once, share the link once. Varde keeps the server
+        available on whichever machine is around.
       </Callout>
 
       <H2>What&rsquo;s next</H2>

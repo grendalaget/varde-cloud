@@ -63,15 +63,16 @@ const qas = (billingEnabled: boolean): QA[] => [
     q: "Which games are supported?",
     a: (
       <>
-        Minecraft Java Edition and Valheim today. Game support is built per
-        game but grouped by hosting style, so games whose servers work alike
-        can share a driver. More are planned.
+        Minecraft Java Edition, Valheim, and Counter-Strike 2. See the{" "}
+        <Link href="/docs/cs2-server">CS2 hosting guide</Link>. Game support is
+        built per game but grouped by hosting style, so games whose servers
+        work alike can share a driver. More are planned.
       </>
     ),
   },
   {
     id: "private",
-    q: "Is my world private?",
+    q: "Is my server private?",
     a: (
       <>
         Yes. Servers belong to your group only: joining takes an invite link

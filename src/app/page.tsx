@@ -63,6 +63,11 @@ const GAMES = [
     status: "Supported",
     body: "Dedicated-server hosting with stop-then-snapshot saves, straight from the group.",
   },
+  {
+    name: "Counter-Strike 2",
+    status: "Supported",
+    body: "Runs from the Steam install you already have, and ban lists follow the server.",
+  },
 ];
 
 export default function Home() {

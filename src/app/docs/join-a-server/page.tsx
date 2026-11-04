@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import {
   Callout,
+  Code,
   DocTitle,
   H2,
   P,
@@ -19,6 +20,7 @@ import { TrayMenuMock } from "@/components/docs/tray-menu-mock";
 export const metadata: Metadata = {
   title: "Join a friend's server",
   description: "Install Varde, link your machine, and start playing.",
+  alternates: { canonical: "/docs/join-a-server" },
 };
 
 const NEED = [
@@ -32,7 +34,7 @@ export default function JoinAServer() {
     <>
       <DocTitle
         title="Join a friend&rsquo;s server"
-        intro="Someone in your group runs the world. You install Varde, link your PC to the group, and the server shows up in your game like any other."
+        intro="Someone in your group runs the server. You install Varde, link your PC to the group, and the server shows up in your game like any other."
       />
       <ul className="flex flex-wrap gap-2">
         {NEED.map((n) => (
@@ -102,7 +104,10 @@ export default function JoinAServer() {
           127.77.4.20, a special address that only exists while Varde runs on
           your PC. In Minecraft, add it under Multiplayer. In Valheim, the
           dashboard shows either an address or a join code, depending on the
-          server.
+          server. In CS2, open the developer console and enter{" "}
+          <Code>connect &lt;address&gt;</Code>. For host setup and CS2
+          requirements, see the{" "}
+          <Link href="/docs/cs2-server">CS2 server guide</Link>.
         </Step>
       </Steps>
 
@@ -116,12 +121,12 @@ export default function JoinAServer() {
 
       <Callout tone="glod" title="The short version">
         Install, approve the code, paste the invite. About five minutes and you
-        are in the world.
+        are in the group.
       </Callout>
 
       <H2>What&rsquo;s next</H2>
       <P>
-        Want to run a world for the group instead? Follow the{" "}
+        Want to host a server for the group instead? Follow the{" "}
         <Link href="/docs/host-a-server">host guide</Link>. Something not
         working? Check{" "}
         <Link href="/docs/troubleshooting">troubleshooting</Link>.
