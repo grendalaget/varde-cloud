@@ -60,6 +60,12 @@ export const DOCS_SECTIONS: DocsSection[] = [
         description:
           "Configure CS2 modes, maps, bots, passwords, and GSLT.",
       },
+      {
+        slug: "cs2-tournament",
+        title: "Host a CS2 tournament",
+        description:
+          "Run a tournament with Varde, Auto Tournament, and Ready Up.",
+      },
     ],
   },
   {
@@ -70,6 +76,12 @@ export const DOCS_SECTIONS: DocsSection[] = [
         title: "Plugins",
         description:
           "Add group integrations with Varde plugins and configure them safely.",
+      },
+      {
+        slug: "auto-tournament",
+        title: "Auto Tournament plugin",
+        description:
+          "Connect Auto Tournament and Ready Up to a self-hosted Varde group.",
       },
       {
         slug: "build-a-plugin",

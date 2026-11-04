@@ -64,10 +64,10 @@ export default function Plugins() {
         For control plane operators
       </h2>
       <P>
-        The only web dashboard needed here is the one served by your own
-        control plane, and it is for operators. Group owners use the Varde
-        desktop app. Open that dashboard and go to{" "}
-        <strong className="text-foreground">Plugins</strong>. Select{" "}
+        The only web UI needed for plugin administration is the dashboard on
+        your own control plane, and it is for operators. Group owners use the
+        Varde desktop app. On that dashboard, open{" "}
+        <strong className="text-foreground">Plugins</strong> and select{" "}
         <strong className="text-foreground">Install</strong> for a catalog
         plugin. The same page has{" "}
         <strong className="text-foreground">Update</strong> and{" "}
@@ -86,8 +86,11 @@ export default function Plugins() {
         on a trusted network and load its manifest with{" "}
         <Code>--plugin /path/plugin.json</Code>, repeating the option as
         needed, or set <Code>VARDE_PLUGINS</Code> to a comma-separated list of
-        manifest paths. Follow the{" "}
-        <Link href="/docs/build-a-plugin">plugin tutorial</Link> for the
+        manifest paths. For examples, see the{" "}
+        <Link href="/docs/auto-tournament">Auto Tournament plugin guide</Link>{" "}
+        or the{" "}
+        <Link href="/docs/cs2-tournament">CS2 tournament cookbook</Link>. Follow
+        the <Link href="/docs/build-a-plugin">plugin tutorial</Link> for the
         manifest and service details. For the complete protocol, see the{" "}
         <Link href="https://github.com/grendalaget/varde/blob/main/docs/plugins.md">
           full plugin reference
