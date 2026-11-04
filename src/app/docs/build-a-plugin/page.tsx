@@ -264,6 +264,11 @@ export default function BuildAPlugin() {
         HS256, and draws the declared settings and pages using Varde&rsquo;s
         native interface. Your service handles the data and actions.
       </P>
+      <P>
+        Catalog plugins get one-click install in a Varde release that has not
+        shipped yet. In the manifest, <Code>label</Code>, <Code>help</Code>,
+        and <Code>placeholder</Code> set what the setup form shows.
+      </P>
       <DocChecklist
         title="Plugin build checklist"
         items={[
