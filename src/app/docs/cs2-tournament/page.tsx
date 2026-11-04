@@ -4,18 +4,16 @@ import Link from "next/link";
 import {
   Callout,
   Code,
-  CodeBlock,
   DocTitle,
   H2,
   P,
   Step,
   Steps,
 } from "@/components/docs-primitives";
-import { DocChecklist } from "@/components/docs/doc-checklist";
 
 const title = "How to host a CS2 tournament for free";
 const description =
-  "Host a Counter-Strike 2 tournament on PCs your group owns with Varde, Auto Tournament, and Ready Up. Run it yourself without renting game servers.";
+  "Set up a CS2 tournament through the Varde desktop app using Auto Tournament and Ready Up. Run the required services on PCs you own.";
 
 export const metadata: Metadata = {
   title,
@@ -34,17 +32,130 @@ export default function Cs2Tournament() {
     <>
       <DocTitle
         title={title}
-        intro="Run a Counter-Strike 2 tournament on PCs your group already owns. Varde hosts the game servers, Auto Tournament runs the event, and Ready Up manages each match."
+        intro="Use the Varde desktop app to configure your group, create a CS2 server, and run matches with Auto Tournament and Ready Up."
       />
 
-      <H2>How the pieces fit</H2>
-      <P>
-        Auto Tournament is a self-hosted platform for signups, brackets, and map
-        veto. Ready Up is its CS2 plugin for ready-ups, knife rounds, and
-        pauses. Ready Up sends match state and results back to Auto Tournament.
-        The Varde Auto Tournament plugin connects them: it creates the fleet
-        key and installs Ready Up on your CS2 servers.
-      </P>
+      <Callout title="Availability">
+        This desktop app flow needs a Varde release that has not shipped yet.
+        Ready Up is in beta. Auto Tournament is installed separately.
+      </Callout>
+
+      <H2>Set it up</H2>
+      <Steps>
+        <Step n={1} title="What you need">
+          <ul className="my-2 list-disc space-y-1 pl-5">
+            <li>
+              A Linux PC for the CS2 server. Ready Up runs only on Linux, and
+              Varde places tournament servers only on Linux PCs.
+            </li>
+            <li>
+              A PC or server for Auto Tournament. It can be the same machine.
+            </li>
+            <li>
+              CS2 installed through Steam, or about 69 GB to download with a
+              75 GB disk budget for SteamCMD. Allow at least 4 GB of free memory
+              per server.
+            </li>
+            <li>The Varde desktop app.</li>
+          </ul>
+        </Step>
+        <Step n={2} title="Install Auto Tournament">
+          Follow the{" "}
+          <Link href="https://docs.autotournament.gg/getting-started/install">
+            Auto Tournament install instructions
+          </Link>
+          , which use Docker Compose. This is the one setup step outside Varde.
+          After the service starts, use its one-time setup code at{" "}
+          <Code>/setup</Code> to create the administrator account.
+        </Step>
+        <Step n={3} title="Set up your Linux PC in Varde">
+          Install and open the Varde desktop app. Select{" "}
+          <strong className="text-foreground">Set up this PC</strong>, then
+          select <strong className="text-foreground">Log in with Varde</strong>.
+          Complete sign-in to link the Linux PC to your group.
+        </Step>
+        <Step n={4} title="Set up the Auto Tournament plugin">
+          In the app, open <strong className="text-foreground">Servers</strong>{" "}
+          and find the <strong className="text-foreground">Set up plugins</strong>{" "}
+          card. Select <strong className="text-foreground">Set up</strong> for
+          Auto Tournament, then fill in the three fields:
+          <ul className="my-2 list-disc space-y-1 pl-5">
+            <li>
+              <strong className="text-foreground">
+                Auto Tournament address
+              </strong>
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Auto Tournament API token
+              </strong>
+            </li>
+            <li>
+              <strong className="text-foreground">Ready Up licence</strong>
+            </li>
+          </ul>
+          The token field help explains where to create the token. Select{" "}
+          <strong className="text-foreground">Enable plugin</strong> to save
+          the settings. If Auto Tournament is not listed, the control plane
+          operator has not installed it yet. See the{" "}
+          <Link href="/docs/plugins#for-control-plane-operators">
+            operator instructions
+          </Link>
+          .
+        </Step>
+        <Step n={5} title="Create the CS2 server">
+          Open <strong className="text-foreground">Servers</strong> and select{" "}
+          <strong className="text-foreground">New server</strong>. Choose{" "}
+          <strong className="text-foreground">
+            Counter-Strike 2 Dedicated
+          </strong>
+          , then create the server. The Auto Tournament plugin adds Ready Up
+          automatically. Varde applies addon changes when the server starts,
+          so restart it if Ready Up was added after it was already running.
+        </Step>
+        <Step n={6} title="Link Steam and create the tournament">
+          Each player opens <strong className="text-foreground">Settings</strong>{" "}
+          in the Varde app and selects{" "}
+          <strong className="text-foreground">Sign in through Steam</strong>.
+          When the players are linked, open{" "}
+          <strong className="text-foreground">Tournaments</strong> and select{" "}
+          <strong className="text-foreground">Create tournament</strong>. Fill
+          in <strong className="text-foreground">Tournament name</strong>,{" "}
+          <strong className="text-foreground">Format</strong>,{" "}
+          <strong className="text-foreground">Players per team</strong>,{" "}
+          <strong className="text-foreground">Map pool</strong>, and{" "}
+          <strong className="text-foreground">Players</strong>. The Players
+          field is optional. If left empty, the plugin uses group members who
+          have linked Steam.
+        </Step>
+        <Step n={7} title="Connect and ready up">
+          Join the server using its address from the Varde app. When a match
+          starts, type <Code>.r</Code> in CS2 chat to ready up.
+        </Step>
+      </Steps>
+
+      <H2>Troubleshooting</H2>
+      <Steps>
+        <Step n={1} title="Ready Up is not in Auto Tournament">
+          Varde applies addon changes when a server starts. Restart the server
+          after Ready Up is added, then run <Code>ru selftest</Code> in the CS2
+          server console and look for <Code>PASS</Code>.
+        </Step>
+        <Step n={2} title="The server is on a Windows PC">
+          Ready Up runs only on Linux, and Varde places tournament servers
+          only on Linux PCs. A tournament server cannot run on a Windows PC.
+        </Step>
+        <Step n={3} title="There is no Linux PC available">
+          Varde cannot start the tournament server until a Linux PC is linked
+          to the group and available to host it.
+        </Step>
+        <Step n={4} title="A player cannot be selected">
+          Players need to link Steam in the Varde app. Open{" "}
+          <strong className="text-foreground">Settings</strong> and select{" "}
+          <strong className="text-foreground">Sign in through Steam</strong>,
+          then try again.
+        </Step>
+      </Steps>
 
       <Callout title="What free means">
         There is no server rental or subscription for qualifying noncommercial
@@ -64,170 +175,11 @@ export default function Cs2Tournament() {
         . Varde itself is open source under the AGPL.
       </Callout>
 
-      <Callout title="Availability">
-        This guide uses CS2 addons and plugins in Varde&rsquo;s main branch,
-        which are not yet in a release. Ready Up is in beta. The Auto
-        Tournament integration is a separate service.
-      </Callout>
-
-      <DocChecklist
-        title="What you need"
-        items={[
-          "A Linux x86_64 PC for each CS2 server, with at least 4 GB of free memory per server",
-          "CS2 installed through Steam, or about 69 GB for a SteamCMD download",
-          "A machine with Docker for Auto Tournament, which can be the same PC",
-          "Your own Varde control plane and a linked Linux PC",
-          "A Steam account linked in Varde for every tournament player",
-        ]}
-      />
-
-      <H2>Set it up</H2>
-      <Steps>
-        <Step n={1} title="Install Auto Tournament">
-          Follow the{" "}
-          <Link href="https://docs.autotournament.gg/getting-started/install">
-            Auto Tournament Docker install guide
-          </Link>
-          . Save its Compose file and a private <Code>.env</Code> with a
-          generated <Code>SESSION_SECRET</Code>, <Code>SERVER_TOKEN</Code>,{" "}
-          <Code>DB_PASSWORD</Code>, and a <Code>FRONTEND_BASE_URL</Code> that
-          players and servers can reach. Do not use <Code>localhost</Code>{" "}
-          unless every client and server is on that same machine.
-          <CodeBlock
-            language="text"
-            code={`# .env
-FRONTEND_BASE_URL=https://at.example.com
-SESSION_SECRET=<generated secret>
-SERVER_TOKEN=<generated token>
-DB_PASSWORD=<generated password>
-
-docker compose up -d
-docker logs auto-tournament`}
-          />
-          Enter the one-time setup code from the logs at <Code>/setup</Code>,
-          create the admin, and finish sign-in setup. Local username and
-          password sign-in works without a Steam API key. A fresh install
-          includes only the Manual reporting module, so install the
-          Counter-Strike 2 module, then create an admin API token under
-          Settings → API tokens. Save the token when it is shown because you
-          cannot see it again.
-        </Step>
-        <Step n={2} title="Run Varde and link the Linux PC">
-          Run your own Varde control plane and link the Linux PC that will host
-          CS2. The hosted control plane at varde.games does not load plugins.
-          See the{" "}
-          <Link href="/docs/plugins#for-control-plane-operators">
-            plugin operator guide
-          </Link>{" "}
-          and <Link href="/docs/host-a-server">host a server</Link>.
-        </Step>
-        <Step n={3} title="Build and run the plugin service">
-          Build the{" "}
-          <Link href="https://github.com/grendalaget/varde-plugin-autotournament">
-            Varde Auto Tournament plugin
-          </Link>{" "}
-          with Go 1.26 or newer. Give it a stable plugin secret of at least 32
-          bytes, the control plane URL, and a service token tied to the group,
-          named{" "}
-          <Code>plugin-autotournament</Code> with scopes <Code>members</Code>,{" "}
-          <Code>steam_ids</Code>, <Code>servers</Code>,{" "}
-          <Code>server_addons</Code>, and <Code>events</Code>. Keep{" "}
-          <Code>STATE_DIR</Code> persistent and private. Bind{" "}
-          <Code>LISTEN</Code> to loopback when services share a host, or to a
-          trusted network address.
-          <CodeBlock
-            language="shell"
-            code={`go build -o varde-plugin-autotournament ./cmd/varde-plugin-autotournament
-export VARDE_PLUGIN_SECRET="<at least 32 bytes, stable>"
-export VARDE_URL="https://varde.example.com"
-export VARDE_SERVICE_TOKEN="<group-bound token>"
-export STATE_DIR="/var/lib/varde-plugin-autotournament"
-export LISTEN="127.0.0.1:7310"
-export READYUP_URL="https://github.com/Auto-Tournament/ready-up/releases/download/v0.1.0-beta.77/ready-up-full-0.1.0-beta.77-linuxsteamrt64.zip"
-export READYUP_SHA256="b260c55eaff68cf90d09caa95b6311ad0cf1a8919be7c557064b01bdf1ce295e"
-export READYUP_LICENSE="noncommercial"`}
-          />
-          The license must be <Code>noncommercial</Code> or{" "}
-          <Code>commercial</Code>; there is no default. Configure the manifest
-          with the plugin address, <Code>secret_env</Code>, and{" "}
-          <Code>service_token</Code>, then load it with{" "}
-          <Code>--plugin /path/manifest.json</Code> or{" "}
-          <Code>VARDE_PLUGINS</Code>. See the{" "}
-          <Link href="/docs/auto-tournament">plugin operator reference</Link>.
-          Set <Code>AT_ALLOW_PRIVATE=true</Code> only when Auto Tournament
-          uses a private HTTP URL. Ready Up is native code that runs inside the
-          CS2 server, so only enable plugins you trust. Addons can add files to
-          the server folder, but cannot replace its configs.
-        </Step>
-        <Step n={4} title="Enable the plugin for your group">
-          In the group&rsquo;s plugin settings, enter the Auto Tournament URL
-          and admin API token, then enable the plugin. Its settings are{" "}
-          <Code>at_url</Code> and <Code>at_token</Code>. The plugin validates
-          the token and creates a Ready Up fleet key named{" "}
-          <Code>varde-&lt;group-id&gt;</Code> automatically.
-        </Step>
-        <Step n={5} title="Create and start a CS2 server">
-          <Link href="/docs/cs2-server">Create a CS2 server</Link>. The plugin
-          adds Ready Up after the server is created. Addon changes take effect
-          at the next start, so start or restart the server. It appears in
-          Auto Tournament&rsquo;s server list after Ready Up links. Run{" "}
-          <Code>ru selftest</Code> in the server console and look for{" "}
-          <Code>PASS</Code>.
-        </Step>
-        <Step n={6} title="Create the tournament">
-          Use the group&rsquo;s <Code>Tournaments</Code> page or create it
-          directly in Auto Tournament. The plugin supports shuffle,
-          single-elimination, and double-elimination formats. Team size defaults
-          to 5. Its map pool is <Code>de_mirage</Code>,{" "}
-          <Code>de_inferno</Code>, and <Code>de_nuke</Code>. Players are group
-          members with a verified Steam ID; members without one are skipped.
-          The plugin needs at least two teams&rsquo; worth of eligible players.
-          Auto Tournament assigns matches to linked servers, and Ready Up
-          starts each one in warmup.
-        </Step>
-        <Step n={7} title="Connect and ready up">
-          Players should{" "}
-          <Link href="/docs/join-a-server">link their PC to Varde</Link>, then
-          follow the <Link href="/docs/cs2-server">CS2 connect steps</Link>.
-          Type <Code>.r</Code> in chat to ready up.
-        </Step>
-      </Steps>
-
-      <H2>Troubleshooting</H2>
-      <Steps>
-        <Step n={1} title="The server is not in Auto Tournament">
-          Restart the server after addon changes and run{" "}
-          <Code>ru selftest</Code>. The plugin accepts plain HTTP only when{" "}
-          <Code>AT_ALLOW_PRIVATE=true</Code>. It then sets{" "}
-          <Code>insecure = 1</Code>, so the enrollment key travels unencrypted.
-          Use HTTPS outside a trusted LAN.
-        </Step>
-        <Step n={2} title="The server won&rsquo;t start on a Windows PC">
-          Varde places CS2 servers with Ready Up only on Linux PCs. If no Linux
-          PC in the group can take the server, it stays unscheduled. The
-          scheduler reason ends with <Code>unsupported os windows</Code> and
-          has the format <Code>{"<node id>: unsupported os windows"}</Code>.
-          Servers without addons can still run on Windows.
-        </Step>
-        <Step n={3} title="The map or players are rejected">
-          The plugin accepts only its three listed maps. Link a verified Steam
-          account in Varde for each player, then include at least two full
-          teams for the selected team size.
-        </Step>
-        <Step n={4} title="Change Ready Up settings through Varde">
-          Varde rebuilds the server&rsquo;s CS2 folder each time it starts the
-          server. Files in the folder survive automatic restarts after a crash,
-          so Ready Up can recover a match. Change plugin-managed settings
-          through Varde instead of editing the folder on the host.
-        </Step>
-      </Steps>
-
       <H2>What&rsquo;s next</H2>
       <P>
-        Read the <Link href="/docs/auto-tournament">Auto Tournament plugin
-        reference</Link>, configure your{" "}
-        <Link href="/docs/cs2-server-settings">CS2 server settings</Link>, or
-        learn more about <Link href="/docs/plugins">Varde plugins</Link>.
+        See the <Link href="/docs/auto-tournament">Auto Tournament plugin guide</Link>,{" "}
+        <Link href="/docs/cs2-server">CS2 server setup guide</Link>, and{" "}
+        <Link href="/docs/plugins">Varde plugins</Link>.
       </P>
     </>
   );
