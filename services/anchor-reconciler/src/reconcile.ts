@@ -4,8 +4,8 @@
 // See docs/cloud-anchor.md.
 import { wantsAnchor, type AnchorDb, type AnchorRow } from "./db";
 import type { CpClient } from "./cp";
-import { machineName } from "./names";
-import type { AnchorProvider } from "./provider";
+import { machineName, volumeName } from "./names";
+import type { AnchorProvider, AnchorVolume } from "./provider";
 
 export const env = (k: string, dflt?: string): string => {
   const v = process.env[k] ?? dflt;
@@ -15,7 +15,13 @@ export const env = (k: string, dflt?: string): string => {
 
 export const CP_URL = env("VARDE_CP_URL", "https://cp.varde.games").replace(/\/$/, "");
 export const REGION = env("ANCHOR_REGION", "arn");
+const anchorPlusMax = Number(env("ANCHOR_PLUS_MAX", "3"));
+const ANCHOR_PLUS_MAX =
+  Number.isFinite(anchorPlusMax) && anchorPlusMax > 0
+    ? Math.max(1, Math.floor(anchorPlusMax))
+    : 3;
 const VOLUME_GB = Number(env("ANCHOR_VOLUME_GB", "10"));
+const VOLUME_RETENTION_MS = Number(env("VOLUME_RETENTION_DAYS", "14")) * 24 * 60 * 60_000;
 // Machines fetch their enroll token from this 6PN address at boot instead
 // of carrying a CP credential in machine env (see src/bootstrap.ts).
 export const BOOTSTRAP_PORT = Number(env("BOOTSTRAP_PORT", "8080"));
@@ -59,6 +65,12 @@ const isRecent = (m: { createdAt?: number }) =>
 // recorded normally, which eventually parks the row for a human.
 const memberCheckFails = new Map<string, number>();
 const MEMBER_CHECK_STREAK = 10;
+const ONLINE_GRACE_PASSES = 4;
+const offlineStreak = new Map<string, number>();
+const lastWant = new Map<string, boolean>();
+
+export const errorBackoffMs = (attempts: number) =>
+  Math.min(1000 * 2 ** attempts, 15 * 60_000);
 
 export async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: AnchorProvider) {
   const want = wantsAnchor(r);
@@ -66,6 +78,16 @@ export async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provid
   // the machine down, or it runs unpaid forever.
   if (want && r.error && r.attempts >= MAX_BACKOFF_ATTEMPTS && r.status === "error") {
     return; // parked until a human flips desired or raises the cap
+  }
+  // Backoff follows billing intent: cancellation flips want, but losing
+  // admin does not. An empty map after restart also keeps the delay.
+  const last = lastWant.get(r.id);
+  if (
+    r.status === "error" &&
+    (last === undefined || last === want) &&
+    Date.now() - r.updated_at < errorBackoffMs(r.attempts)
+  ) {
+    return;
   }
   // The anchor serves the group but is billed to the subscriber: if they
   // are no longer a group admin, tear it down. A members-list failure
@@ -90,12 +112,14 @@ export async function reconcile(r: AnchorRow, db: AnchorDb, cp: CpClient, provid
   if (admin === null) return;
   memberCheckFails.delete(r.id);
   if (want && admin) {
+    lastWant.set(r.id, want);
     await provision(r, db, cp, provider);
   } else if (r.status !== "deprovisioning" && r.status !== "gone") {
     // A torn-down row is settled: a former admin's paid row still looks
     // due (desired=provisioned + paid plan), and without this guard it
     // would re-run teardown — and re-label the replacement's machine an
     // orphan — every poll forever.
+    lastWant.set(r.id, want);
     await teardown(r, db, cp, provider);
   }
 }
@@ -119,13 +143,15 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       }
       return;
     }
-    // One anchor per `anchor` subscription, enforced before any machine
-    // exists (rows already online predate the limit and are left alone).
-    const blocker = r.plan === "anchor" ? await db.blockingAnchorOfUser(r) : null;
-    if (blocker) {
+    // Enforce each plan's anchor limit before creating a machine. Existing
+    // machine holders keep their place, and rows already holding machines
+    // are left alone.
+    const limit = r.plan === "anchor" ? 1 : r.plan === "anchor+" ? ANCHOR_PLUS_MAX : 0;
+    const blockers = limit > 0 ? await db.outrankingAnchorsOfUser(r, limit) : [];
+    if (limit > 0 && blockers.length >= limit) {
       if (r.status !== "conflict") {
         await db.setStatus(r.id, "conflict", {
-          error: `plan covers one anchor; row ${blocker} already holds it`,
+          error: `plan covers ${limit} anchor${limit === 1 ? "" : "s"}; rows ${blockers.join(", ")} already hold them`,
         });
       }
       return;
@@ -160,6 +186,7 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       }
       const m = await provider.create({
         name: rowMachineName(r),
+        groupId: r.group_id,
         region: REGION,
         volumeGb: VOLUME_GB,
         env: {
@@ -244,8 +271,15 @@ async function provision(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anc
       // timeout rebuilds the machine if it does not return.
       // TODO(v1.5): suspend-on-idle once wake semantics are proven
       const { nodes } = await cp.listNodes(r.group_id);
-      if (!nodes.find((n) => n.id === r.node_id)?.online) {
-        await db.setStatus(r.id, "provisioning");
+      if (nodes.find((n) => n.id === r.node_id)?.online) {
+        offlineStreak.delete(r.id);
+      } else {
+        const streak = (offlineStreak.get(r.id) ?? 0) + 1;
+        offlineStreak.set(r.id, streak);
+        if (streak >= ONLINE_GRACE_PASSES) {
+          offlineStreak.delete(r.id);
+          await db.setStatus(r.id, "provisioning");
+        }
       }
       return;
     }
@@ -292,6 +326,64 @@ async function teardown(r: AnchorRow, db: AnchorDb, cp: CpClient, provider: Anch
   // scheduled sweep, not this hot loop (kept as a status for now).
   if (deferSettle) return; // revisit the recent machine next pass
   await db.setStatus(r.id, "deprovisioning", { error: null });
-  // TODO: volume retention grace (~14d read-only) then provider.deleteVolume
-  // and status 'gone'. MVP: mark deprovisioning; manual volume cleanup.
+}
+
+export async function sweepVolumes(
+  db: AnchorDb,
+  provider: AnchorProvider,
+  now = Date.now(),
+): Promise<void> {
+  const cutoffMs = now - VOLUME_RETENTION_MS;
+  const rows = await db.expiredTeardowns(cutoffMs);
+  for (const r of rows) {
+    try {
+      if (await db.volumeInUse(r.group_id, r.id, cutoffMs)) {
+        await db.claimSwept(r.id, r.updated_at);
+        continue;
+      }
+      const volumes: AnchorVolume[] = await provider.findVolumes(volumeName(r.group_id));
+      if (volumes.some((volume) => volume.attachedMachineId)) {
+        console.warn(
+          `anchor ${r.id} group ${r.group_id}: retained volume is still attached; skipping volume sweep`,
+        );
+        continue;
+      }
+      if (!(await db.claimSwept(r.id, r.updated_at))) continue;
+      try {
+        for (const volume of volumes) await provider.deleteVolume(volume.id);
+      } catch (e) {
+        try {
+          await db.unclaimSwept(r.id, r.updated_at);
+        } catch (unclaimError) {
+          console.error(
+            `anchor ${r.id} group ${r.group_id}: failed to restore teardown after volume deletion error:`,
+            unclaimError,
+          );
+        }
+        throw e;
+      }
+    } catch (e) {
+      console.error(`anchor ${r.id} group ${r.group_id}: volume sweep failed:`, e);
+    }
+  }
+  try {
+    const keep = new Set((await db.activeGroupIds()).map(volumeName));
+    for (const volume of await provider.listVolumes()) {
+      if (
+        !volume.name.startsWith("vol_anchor_") ||
+        keep.has(volume.name) ||
+        volume.attachedMachineId
+      ) {
+        continue;
+      }
+      try {
+        await provider.deleteVolume(volume.id);
+        console.info(`deleted orphan anchor volume ${volume.name} (${volume.id})`);
+      } catch (e) {
+        console.error(`failed to delete orphan anchor volume ${volume.name} (${volume.id}):`, e);
+      }
+    }
+  } catch (e) {
+    console.error("orphan volume sweep failed:", e);
+  }
 }

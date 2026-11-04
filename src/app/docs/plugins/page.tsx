@@ -1,153 +1,97 @@
-import { Chip } from "@heroui/react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
   Callout,
   Code,
-  CodeBlock,
   DocTitle,
   H2,
   P,
   Step,
   Steps,
 } from "@/components/docs-primitives";
-import { DocChecklist } from "@/components/docs/doc-checklist";
 
 export const metadata: Metadata = {
   title: "Varde plugins: add integrations to your group",
   description:
-    "Enable Varde plugins for your group, then learn what self-hosted operators configure for plugin secrets, service tokens, and trusted network access.",
+    "Configure catalog plugins in the Varde desktop app, or install them from the web dashboard when you run your own control plane.",
   alternates: { canonical: "/docs/plugins" },
   openGraph: {
     title: "Varde plugins: add integrations to your group",
     description:
-      "Enable Varde plugins for your group, then learn what self-hosted operators configure for plugin secrets, service tokens, and trusted network access.",
+      "Configure catalog plugins in the Varde desktop app, or install them from the web dashboard when you run your own control plane.",
     url: "/docs/plugins",
     type: "article",
   },
 };
-
-const NEED = ["A self-hosted control plane", "A group owner", "An operator"];
 
 export default function Plugins() {
   return (
     <>
       <DocTitle
         title="Varde plugins for group integrations"
-        intro="Plugins add integrations to a Varde group through a separately hosted HTTP service. The control plane describes its settings and pages, then draws them with the native Varde interface."
+        intro="Plugins add integrations to a Varde group through a separately hosted service. Group owners configure them in the Varde desktop app."
       />
-      <ul className="flex flex-wrap gap-2">
-        {NEED.map((item) => (
-          <li key={item}>
-            <Chip variant="secondary" size="sm">
-              <Chip.Label>{item}</Chip.Label>
-            </Chip>
-          </li>
-        ))}
-      </ul>
-
-      <H2>The short version</H2>
-      <P>
-        Plugins are installed by the person running the control plane. The
-        hosted control plane at varde.games does not load third-party plugins,
-        so plugins are for self-hosted Varde today. Plugins do not run
-        JavaScript in a Varde user&rsquo;s browser session.
-      </P>
-      <DocChecklist
-        title="Plugin setup checklist"
-        items={[
-          "An operator loads the plugin manifest and secret",
-          "A group owner fills out the plugin settings",
-          "The group owner selects Enable plugin",
-          "Plugin pages appear in the dashboard navigation",
-        ]}
-      />
+      <Callout tone="warn" title="Availability">
+        These setup flows need a Varde release that has not shipped yet.
+      </Callout>
 
       <H2>For group owners</H2>
       <Steps>
-        <Step n={1} title="Open plugin settings">
-          In the group dashboard, open <strong className="text-foreground">Settings</strong>{" "}
-          and find the <strong className="text-foreground">Plugins</strong>{" "}
-          card. It appears when the control plane operator has installed at
-          least one plugin.
+        <Step n={1} title="Open the plugin setup form">
+          Open the Varde desktop app and select{" "}
+          <strong className="text-foreground">Servers</strong>. When the
+          control plane operator has installed a catalog plugin, it appears in
+          the <strong className="text-foreground">Set up plugins</strong> card.
+          Select <strong className="text-foreground">Set up</strong> beside
+          that plugin.
         </Step>
-        <Step n={2} title="Set values and enable the plugin">
-          Fill in the fields shown in the card, then select{" "}
-          <strong className="text-foreground">Enable plugin</strong>. The
-          plugin&rsquo;s pages appear in the dashboard navigation. To remove
-          it from the group, select <strong className="text-foreground">Disable</strong>.
-        </Step>
-        <Step n={3} title="Link Steam when a plugin needs it">
-          Some plugins need group members&rsquo; Steam IDs. Each member links a
-          verified account from <strong className="text-foreground">Settings</strong>{" "}
-          with <strong className="text-foreground">Sign in through Steam</strong>.
-          You cannot add an ID by typing it.
+        <Step n={2} title="Configure the plugin">
+          Fill in the form and select{" "}
+          <strong className="text-foreground">Enable plugin</strong>. To
+          change the values later, select{" "}
+          <strong className="text-foreground">Save plugin settings</strong>.
+          The plugin&rsquo;s pages, such as{" "}
+          <strong className="text-foreground">Tournaments</strong>, then
+          appear in the app sidebar.
         </Step>
       </Steps>
 
-      <H2>For control plane operators</H2>
+      <h2
+        id="for-control-plane-operators"
+        className="mb-3 mt-10 text-xl font-semibold text-foreground"
+      >
+        For control plane operators
+      </h2>
       <P>
-        Load one or more manifest files at startup with{" "}
-        <Code>--plugin /path/plugin.json</Code>, repeating the option as needed,
-        or set <Code>VARDE_PLUGINS</Code> to a comma-separated list. The
-        manifest declares an HTTP service, its settings, and the pages Varde
-        should draw. Keep each plugin on a trusted network because the control
-        plane sends requests to its configured address.
+        The only web UI needed for plugin administration is the dashboard on
+        your own control plane, and it is for operators. Group owners use the
+        Varde desktop app. On that dashboard, open{" "}
+        <strong className="text-foreground">Plugins</strong> and select{" "}
+        <strong className="text-foreground">Install</strong> for a catalog
+        plugin. The same page has{" "}
+        <strong className="text-foreground">Update</strong> and{" "}
+        <strong className="text-foreground">Uninstall</strong> actions.
       </P>
       <P>
-        Set exactly one of <Code>secret_env</Code> and <Code>secret_file</Code>{" "}
-        in the manifest. The resolved signing secret must be at least 32 bytes.
-        The control plane uses it to sign requests and does not send the secret
-        in the request body.
+        Set <Code>VARDE_OPERATORS</Code> to the operator email addresses to
+        grant them access to the operator page. Catalog plugins are installed
+        by the control plane operator. Group owners configure them in the Varde
+        app.
       </P>
-      <P>
-        SQLite creates a local secrets key on first startup. For PostgreSQL or
-        multiple control plane replicas, set the same base64 encoded 32 byte{" "}
-        <Code>VARDE_SECRETS_KEY</Code> on every replica, or configure a shared{" "}
-        <Code>--secrets-key-file</Code>. Back the key up with the database.
-        Losing it makes saved plugin secrets unreadable.
-      </P>
-      <P>
-        If a plugin calls back into Varde, create a service token named to match
-        the manifest&rsquo;s <Code>service_token</Code> value, and bind it to
-        the group that enables the plugin. Available scopes are{" "}
-        <Code>enroll</Code>, <Code>members</Code>, <Code>nodes</Code>,{" "}
-        <Code>servers</Code>, <Code>server_addons</Code>, <Code>events</Code>,{" "}
-        <Code>steam_ids</Code>, and <Code>*</Code>.
-        Grant only the scopes the plugin&rsquo;s own docs list, and never grant{" "}
-        <Code>*</Code> to a plugin.
-      </P>
-      <CodeBlock
-        language="shell"
-        code="varde-control-plane service-token create --name server-notes --scopes members --groups <group-id>"
-      />
 
-      <H2>Install the control plane on Linux</H2>
+      <H2>Advanced: run a plugin service yourself</H2>
       <P>
-        The Linux installer can install just the control plane. Its environment
-        file is <Code>/etc/varde/control-plane.env</Code>.
-      </P>
-      <CodeBlock
-        language="shell"
-        code="curl -fsSL https://github.com/grendalaget/varde/releases/latest/download/install.sh | sh -s -- --component control-plane"
-      />
-
-      <Callout tone="glod" title="The short version">
-        Operators install and secure plugin services. Group owners configure
-        them in Settings, then use their pages from the normal dashboard
-        navigation.
-      </Callout>
-
-      <H2>What&rsquo;s next</H2>
-      <P>
-        Connect a CS2 group to Auto Tournament with the{" "}
-        <Link href="/docs/auto-tournament">Auto Tournament plugin guide</Link>,
-        or follow the{" "}
-        <Link href="/docs/cs2-tournament">CS2 tournament cookbook</Link>. Build
-        a service with the{" "}
-        <Link href="/docs/build-a-plugin">Varde plugin tutorial</Link>. For
-        request details and server addons, see the{" "}
+        Instead of installing a catalog plugin, an operator can run a service
+        on a trusted network and load its manifest with{" "}
+        <Code>--plugin /path/plugin.json</Code>, repeating the option as
+        needed, or set <Code>VARDE_PLUGINS</Code> to a comma-separated list of
+        manifest paths. For examples, see the{" "}
+        <Link href="/docs/auto-tournament">Auto Tournament plugin guide</Link>{" "}
+        or the{" "}
+        <Link href="/docs/cs2-tournament">CS2 tournament cookbook</Link>. Follow
+        the <Link href="/docs/build-a-plugin">plugin tutorial</Link> for the
+        manifest and service details. For the complete protocol, see the{" "}
         <Link href="https://github.com/grendalaget/varde/blob/main/docs/plugins.md">
           full plugin reference
         </Link>

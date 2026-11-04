@@ -16,12 +16,12 @@ import { DocChecklist } from "@/components/docs/doc-checklist";
 export const metadata: Metadata = {
   title: "Host a free CS2 server for your friends",
   description:
-    "Host a free Counter-Strike 2 server on your Windows or Linux PC. Reuse Steam, invite friends, and connect through Varde without renting or opening ports.",
+    "Host a free Counter-Strike 2 server on your Windows or Linux PC with the Varde desktop app. Reuse Steam, invite friends, and connect without renting or opening ports.",
   alternates: { canonical: "/docs/cs2-server" },
   openGraph: {
     title: "Host a free CS2 server for your friends",
     description:
-      "Host a free Counter-Strike 2 server on your Windows or Linux PC. Reuse Steam, invite friends, and connect through Varde without renting or opening ports.",
+      "Host a free Counter-Strike 2 server on your Windows or Linux PC with the Varde desktop app. Reuse Steam, invite friends, and connect without renting or opening ports.",
     url: "/docs/cs2-server",
     type: "article",
   },
@@ -31,7 +31,7 @@ const NEED = [
   "Windows or Linux x86_64 PC",
   "4 GB free memory",
   "CS2 installed through Steam",
-  "Varde",
+  "Varde desktop app",
 ];
 
 export default function Cs2Server() {
@@ -50,6 +50,9 @@ export default function Cs2Server() {
           </li>
         ))}
       </ul>
+      <Callout tone="warn" title="Availability">
+        This desktop app flow needs a Varde release that has not shipped yet.
+      </Callout>
 
       <H2>The short version</H2>
       <P>
@@ -60,9 +63,9 @@ export default function Cs2Server() {
       <DocChecklist
         title="CS2 hosting checklist"
         items={[
-          "Install Varde and link the PC to your group",
-          "Create a group if you do not have one yet",
-          "Create a Counter-Strike 2 Dedicated server",
+          "Set up this PC in the Varde desktop app",
+          "Log in with Varde",
+          "Create a Counter-Strike 2 Dedicated server in the app",
           "Invite friends from the Members page",
           "Keep Varde running on each player PC",
         ]}
@@ -70,17 +73,16 @@ export default function Cs2Server() {
 
       <H2>Step by step</H2>
       <Steps>
-        <Step n={1} title="Install Varde and link the PC">
-          Install Varde, then approve the PC in the browser window it opens.
-          The <Link href="/docs/join-a-server">join guide</Link> walks through
-          installing Varde and linking a PC.
+        <Step n={1} title="Set up this PC">
+          Open the Varde desktop app, select{" "}
+          <strong className="text-foreground">Set up this PC</strong>, then
+          select <strong className="text-foreground">Log in with Varde</strong>.
+          Complete sign-in to link this PC to your group.
         </Step>
-        <Step n={2} title="Create a group">
-          Open the dashboard and create a group for the people who will play.
-          If you already have a group, use it.
-        </Step>
-        <Step n={3} title="Create the CS2 server">
-          Select <strong className="text-foreground">New server</strong>, pick{" "}
+        <Step n={2} title="Create the CS2 server">
+          In the app, open <strong className="text-foreground">Servers</strong>{" "}
+          and select <strong className="text-foreground">New server</strong>.
+          Pick{" "}
           <strong className="text-foreground">
             Counter-Strike 2 Dedicated
           </strong>
@@ -92,13 +94,14 @@ export default function Cs2Server() {
           <Link href="/docs/cs2-server-settings">CS2 server settings</Link> for
           modes, maps, passwords, bots, and GSLT.
         </Step>
-        <Step n={4} title="Invite your friends">
-          On the dashboard&rsquo;s <strong className="text-foreground">Members</strong>{" "}
-          page, select <strong className="text-foreground">Invite friends</strong>{" "}
-          and send them the link. They need Varde running on their PC to connect.
+        <Step n={3} title="Invite your friends">
+          In the app, open <strong className="text-foreground">Members</strong>{" "}
+          and select <strong className="text-foreground">Invite friends</strong>.
+          Send the link to your friends. They need Varde running on their PC to
+          connect.
         </Step>
-        <Step n={5} title="Connect from CS2">
-          Copy the server address from the dashboard. In Counter-Strike 2, go
+        <Step n={4} title="Connect from CS2">
+          Copy the server address from the app. In Counter-Strike 2, go
           to <strong className="text-foreground">Settings</strong>,{" "}
           <strong className="text-foreground">Game</strong>, turn on{" "}
           <strong className="text-foreground">Enable Developer Console</strong>,
@@ -132,7 +135,7 @@ export default function Cs2Server() {
 
       <Callout tone="glod" title="The short version">
         Use the CS2 install already on a Windows or Linux PC, create the server
-        in your group, and share its dashboard address with friends.
+        in your group, and share its address from the Varde app with friends.
       </Callout>
 
       <H2>What&rsquo;s next</H2>

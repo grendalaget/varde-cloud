@@ -12,6 +12,11 @@ import * as schema from "@/db/schema";
 // Torn-down rows: 'deprovisioning' keeps the volume for the recovery grace,
 // 'gone' is final. Neither runs a machine.
 const TORN_DOWN = ["gone", "deprovisioning"];
+const anchorPlusMax = Number(process.env.ANCHOR_PLUS_MAX || "3");
+const ANCHOR_PLUS_MAX =
+  Number.isFinite(anchorPlusMax) && anchorPlusMax > 0
+    ? Math.max(1, Math.floor(anchorPlusMax))
+    : 3;
 
 // Only what the dashboard needs: other group admins see these rows too, and
 // the raw error column carries CP/Fly API responses.
@@ -22,6 +27,10 @@ function view(a: typeof schema.cloudAnchor.$inferSelect, userId: string) {
     status: a.status,
     mine: a.userId === userId,
   };
+}
+
+function pick<T extends { status: string }>(rows: T[]): T | undefined {
+  return rows.find((row) => !TORN_DOWN.includes(row.status)) ?? rows[0];
 }
 
 export async function GET() {
@@ -143,6 +152,25 @@ export async function POST(req: Request) {
       .update(schema.cloudAnchor)
       .set({ desired: "detached" })
       .where(and(elsewhere, inArray(schema.cloudAnchor.status, TORN_DOWN)));
+  } else if (user.plan === "anchor+") {
+    const elsewhere = and(
+      eq(schema.cloudAnchor.userId, user.id),
+      ne(schema.cloudAnchor.groupId, groupId),
+      eq(schema.cloudAnchor.desired, "provisioned"),
+    );
+    const running = await db
+      .select({ id: schema.cloudAnchor.id })
+      .from(schema.cloudAnchor)
+      .where(and(elsewhere, notInArray(schema.cloudAnchor.status, TORN_DOWN)));
+    if (running.length >= ANCHOR_PLUS_MAX) {
+      return Response.json(
+        {
+          error: "plan_limit",
+          message: `Your plan covers ${ANCHOR_PLUS_MAX} cloud anchors. Remove one from another group first.`,
+        },
+        { status: 409 },
+      );
+    }
   }
 
   // Re-attach on the caller's own row rather than inserting a second one:
@@ -198,24 +226,59 @@ export async function DELETE(req: Request) {
       { status: 400 },
     );
   }
-  // Marks desired=detached; the reconciler drains and deletes the machine
-  // and volume. Only the subscriber (or future: group admin) can detach.
-  const res = await db
-    .update(schema.cloudAnchor)
-    .set({ desired: "detached" })
+  // Subscribers can detach their own rows. Group admins can detach every
+  // provisioned row after their role has been checked.
+  const provisioned = await db
+    .select()
+    .from(schema.cloudAnchor)
     .where(
       and(
         eq(schema.cloudAnchor.groupId, groupId),
-        eq(schema.cloudAnchor.userId, user.id),
         eq(schema.cloudAnchor.desired, "provisioned"),
       ),
-    )
-    .returning();
-  if (res.length === 0) {
+    );
+  const own = provisioned.filter((anchor) => anchor.userId === user.id);
+  const others = provisioned.filter((anchor) => anchor.userId !== user.id);
+
+  let isAdmin = false;
+  if (others.length > 0) {
+    try {
+      const groups = await listGroups(user);
+      const group = groups.find((g) => g.id === groupId);
+      isAdmin = group?.role === "owner" || group?.role === "admin";
+    } catch (e) {
+      if (own.length === 0) return cpErrorResponse(e);
+      // CP outage: own rows still detach, others need the role check.
+    }
+  }
+
+  const allowedRows = isAdmin ? [...own, ...others] : own;
+  if (allowedRows.length === 0) {
     return Response.json(
       { error: "not_found", message: "No cloud anchor on this group." },
       { status: 404 },
     );
   }
-  return Response.json({ anchor: view(res[0], user.id) });
+
+  const detached = await db
+    .update(schema.cloudAnchor)
+    .set({ desired: "detached" })
+    .where(
+      and(
+        eq(schema.cloudAnchor.groupId, groupId),
+        eq(schema.cloudAnchor.desired, "provisioned"),
+        inArray(
+          schema.cloudAnchor.id,
+          allowedRows.map((anchor) => anchor.id),
+        ),
+      ),
+    )
+    .returning();
+  const anchor = pick(detached);
+  return anchor
+    ? Response.json({ anchor: view(anchor, user.id) })
+    : Response.json(
+        { error: "not_found", message: "No cloud anchor on this group." },
+        { status: 404 },
+      );
 }
