@@ -1,8 +1,9 @@
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
 import { withCp } from "@/lib/cp";
+import { withSameOrigin } from "@/lib/csrf";
 
 // Approve a real PC-link: same call the dashboard's approve page makes.
-export async function POST(req: Request) {
+export const POST = withSameOrigin(async function POST(req: Request) {
   const user = await cpUser();
   if (isResponse(user)) return user;
 
@@ -36,4 +37,4 @@ export async function POST(req: Request) {
   } catch (e) {
     return cpErrorResponse(e);
   }
-}
+});

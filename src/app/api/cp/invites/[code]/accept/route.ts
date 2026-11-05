@@ -1,8 +1,9 @@
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
 import { withCp } from "@/lib/cp";
+import { withSameOrigin } from "@/lib/csrf";
 
 // Accept a real invite — the signed-in reader joins the group for real.
-export async function POST(
+export const POST = withSameOrigin(async function POST(
   _req: Request,
   { params }: { params: Promise<{ code: string }> },
 ) {
@@ -20,4 +21,4 @@ export async function POST(
   } catch (e) {
     return cpErrorResponse(e);
   }
-}
+});

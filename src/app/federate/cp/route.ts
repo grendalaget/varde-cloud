@@ -10,10 +10,9 @@ import { safeNext } from "@/lib/next";
 // referers). The CP SPA reads location.hash and exchanges it at
 // /v1/auth/external for a real CP session.
 //
-// Combined with the domain-wide session cookie (crossSubDomainCookies in
-// lib/auth.ts) this is the zero-login path: a user already signed in on
-// varde.games gets bounced here by the dashboard and lands signed in on
-// cp.varde.games.
+// The host-only site cookie is read here, never on the CP. A user already
+// signed in on varde.games gets bounced here by the dashboard and lands
+// signed in on cp.varde.games using the short-lived federation token.
 export async function GET(req: Request) {
   const reqUrl = new URL(req.url);
   // Only same-site paths are honored — anything else would be an open
