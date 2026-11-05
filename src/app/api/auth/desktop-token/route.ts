@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { federationSecret, mintDesktopToken } from "@/lib/federation";
+import { withSameOrigin } from "@/lib/csrf";
 
 // Mints the short-lived token the desktop exchanges at the control plane.
 // Session-gated on both methods; the bearer never lands in page markup or
@@ -39,11 +40,11 @@ export async function GET(req: Request) {
 
 // JSON variant for the auto-open attempt on page load: the client hands the
 // returned URL to window.location itself so it can offer a retry on error.
-export async function POST() {
+export const POST = withSameOrigin(async function POST() {
   const r = await desktopToken(() =>
     Response.json({ error: "Sign in first" }, { status: 401 }),
   );
   return typeof r === "string"
     ? Response.json({ url: `varde://auth/callback?token=${r}` })
     : r;
-}
+});

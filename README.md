@@ -96,11 +96,19 @@ the canonical site host.
 Serve production auth over HTTPS and keep the exact-origin allowlist; hosted
 apps under `*.play.varde.games` are same-site but must never be trusted origins.
 
-The Better Auth origin allowlist does not protect custom `/api/cp/*` mutations.
-Those handlers currently check the session without an Origin/CSRF guard. A
-local authenticated `text/plain` group-creation request with a hosted-app Origin
-was accepted. Add a shared Origin/CSRF guard before enabling untrusted wildcard
-apps; host-only cookies alone do not prevent same-site CSRF.
+All mutating API exports use `withSameOrigin` from `src/lib/csrf.ts` before
+session lookup or side effects. Origin must equal the configured site's origin
+(`BETTER_AUTH_URL`, or the preview URL). Without Origin, only
+`Sec-Fetch-Site: same-origin` or `none` is accepted. Same-site sibling origins,
+`null`, missing metadata and arbitrary bearer headers do not bypass this guard.
+Only `POST /api/auth/polar/webhooks` is exempt: Polar authenticates its raw body
+by signature before billing updates. The desktop token route reads a browser
+session, so it is guarded, not a machine-endpoint exemption.
+
+The test suite enumerates API route exports with the TypeScript parser and
+rejects unwrapped mutating handlers, including re-exports and destructuring.
+There are no server actions; the coverage test rejects new `use server`
+directives until they receive an explicit CSRF review.
 
 ## Billing (Polar)
 

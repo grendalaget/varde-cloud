@@ -1,5 +1,6 @@
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
 import { CpError, withCp } from "@/lib/cp";
+import { withSameOrigin } from "@/lib/csrf";
 
 interface CpServer {
   id: string;
@@ -34,7 +35,7 @@ export async function GET(
 // Create a real server on the hosted CP. `start: true` additionally calls
 // /v1/servers/{id}/start — the CP creates servers stopped by default, and a
 // linked machine picks it up from there.
-export async function POST(
+export const POST = withSameOrigin(async function POST(
   req: Request,
   { params }: { params: Promise<{ groupId: string }> },
 ) {
@@ -92,4 +93,4 @@ export async function POST(
   } catch (e) {
     return cpErrorResponse(e);
   }
-}
+});
