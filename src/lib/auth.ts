@@ -13,6 +13,7 @@ import { db } from "./db";
 import * as schema from "../db/schema";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { polar, polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
+import { authCookieOptions } from "./auth-cookies";
 
 // Recompute the user's `plan` from Polar's live customer state. Webhook
 // payloads are snapshots that can arrive out of order (Polar retries failed
@@ -113,16 +114,6 @@ const baseURL =
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000");
 
-// Domain-wide session cookies let cp.varde.games recognize a varde.games
-// sign-in with no second login. Only on the real domain — previews and local
-// dev keep host-scoped cookies. A Vercel preview can point BETTER_AUTH_URL at
-// prod while serving *.vercel.app; a .varde.games cookie there is rejected by
-// browsers, which would break preview sign-ins, so the env must be prod too.
-const baseHost = new URL(baseURL).hostname;
-const shareAcrossSubdomains =
-  (process.env.VERCEL_ENV === "production" || !process.env.VERCEL_ENV) &&
-  (baseHost === "varde.games" || baseHost.endsWith(".varde.games"));
-
 export const auth = betterAuth({
   appName: "Varde",
   baseURL,
@@ -174,12 +165,7 @@ export const auth = betterAuth({
       );
     },
   },
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: shareAcrossSubdomains,
-      domain: "varde.games",
-    },
-  },
+  advanced: authCookieOptions(baseURL),
   user: {
     additionalFields: {
       // Subscription tier, synced from Polar webhooks: free | anchor | anchor+
@@ -198,4 +184,3 @@ export const auth = betterAuth({
   },
   plugins: [nextCookies(), ...polarPlugins],
 });
-
