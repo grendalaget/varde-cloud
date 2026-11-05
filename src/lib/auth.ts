@@ -14,6 +14,7 @@ import * as schema from "../db/schema";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { polar, polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
 import { authCookieOptions } from "./auth-cookies";
+import { authBaseURL } from "./auth-origins";
 
 // Recompute the user's `plan` from Polar's live customer state. Webhook
 // payloads are snapshots that can arrive out of order (Polar retries failed
@@ -102,17 +103,7 @@ const polarPlugins = polarCore
  * Billing (Polar) is wired but dormant until POLAR_ACCESS_TOKEN + product
  * IDs are set; see src/lib/polar.ts.
  */
-// Explicit BETTER_AUTH_URL wins. In production fall back to the canonical
-// domain — VERCEL_URL is the *.vercel.app deployment URL, which must never
-// end up in emailed verify/reset links. Previews fall back to their own
-// deployment URL so auth works on temp domains; dev falls back to local.
-const baseURL =
-  process.env.BETTER_AUTH_URL ??
-  (process.env.VERCEL_ENV === "production"
-    ? "https://varde.games"
-    : process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+const baseURL = authBaseURL();
 
 export const auth = betterAuth({
   appName: "Varde",

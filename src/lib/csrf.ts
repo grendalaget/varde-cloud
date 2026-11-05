@@ -1,3 +1,5 @@
+import { authBaseURL } from "./auth-origins.ts";
+
 const originExemptions = new Set([
   // Polar verifies the raw webhook body's signature before any billing update.
   "POST /api/auth/polar/webhooks",
@@ -5,8 +7,7 @@ const originExemptions = new Set([
 
 export function sameOriginRequest(
   request: Request,
-  siteURL = process.env.BETTER_AUTH_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : request.url),
+  siteURL = authBaseURL(),
 ): boolean {
   if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return true;
   const url = new URL(request.url);
