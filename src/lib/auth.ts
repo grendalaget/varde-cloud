@@ -14,7 +14,7 @@ import * as schema from "../db/schema";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { polar, polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
 import { authCookieOptions } from "./auth-cookies";
-import { authBaseURL } from "./auth-origins";
+import { authOriginOptions } from "./auth-origins";
 
 // Recompute the user's `plan` from Polar's live customer state. Webhook
 // payloads are snapshots that can arrive out of order (Polar retries failed
@@ -103,26 +103,13 @@ const polarPlugins = polarCore
  * Billing (Polar) is wired but dormant until POLAR_ACCESS_TOKEN + product
  * IDs are set; see src/lib/polar.ts.
  */
-const baseURL = authBaseURL();
+const { baseURL, trustedOrigins } = authOriginOptions();
 
 export const auth = betterAuth({
   appName: "Varde",
   baseURL,
   secret: process.env.BETTER_AUTH_SECRET,
-  // Origins allowed to POST to the auth endpoints and to receive auth
-  // redirects. The baseURL origin is implied; cover the custom domain, its
-  // www variant, local dev, and this preview deployment's own URLs (where
-  // BETTER_AUTH_URL may point at prod). Never a *.vercel.app wildcard:
-  // anyone can host there, and a reset link redirects to its callbackURL
-  // with the reset token attached.
-  trustedOrigins: [
-    "https://varde.games",
-    "https://www.varde.games",
-    "http://localhost:3000",
-    ...[process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
-      .filter(Boolean)
-      .map((host) => `https://${host}`),
-  ],
+  trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema,

@@ -1,4 +1,4 @@
-import { authBaseURL } from "./auth-origins.ts";
+import { authOriginOptions } from "./auth-origins.ts";
 
 const originExemptions = new Set([
   // Polar verifies the raw webhook body's signature before any billing update.
@@ -7,13 +7,13 @@ const originExemptions = new Set([
 
 export function sameOriginRequest(
   request: Request,
-  siteURL = authBaseURL(),
+  allowedOrigins: readonly string[] = authOriginOptions().trustedOrigins,
 ): boolean {
   if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return true;
   const url = new URL(request.url);
   if (originExemptions.has(`${request.method} ${url.pathname}`)) return true;
   const origin = request.headers.get("Origin");
-  if (origin !== null) return origin === new URL(siteURL).origin;
+  if (origin !== null) return allowedOrigins.includes(origin);
   const site = request.headers.get("Sec-Fetch-Site");
   return site === "same-origin" || site === "none";
 }

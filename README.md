@@ -97,9 +97,14 @@ Serve production auth over HTTPS and keep the exact-origin allowlist; hosted
 apps under `*.play.varde.games` are same-site but must never be trusted origins.
 
 All mutating API exports use `withSameOrigin` from `src/lib/csrf.ts` before
-session lookup or side effects. Origin must equal the configured site's origin
-(`BETTER_AUTH_URL`, or the preview URL). Without Origin, only
-`Sec-Fetch-Site: same-origin` or `none` is accepted. Same-site sibling origins,
+session lookup or side effects. Better Auth and the guard share the base URL
+resolver and exact trusted-origin list in `src/lib/auth-origins.ts`: production
+defaults to `https://varde.games`, previews to their deployment URL, and explicit
+`BETTER_AUTH_URL` wins. The list includes the base origin, `varde.games`,
+`www.varde.games`, localhost development, and the exact configured Vercel
+deployment and branch origins. It never trusts wildcard subdomains.
+Without Origin, only `Sec-Fetch-Site: same-origin` or `none` is accepted.
+Untrusted sibling origins,
 `null`, missing metadata and arbitrary bearer headers do not bypass this guard.
 Only `POST /api/auth/polar/webhooks` is exempt: Polar authenticates its raw body
 by signature before billing updates. The desktop token route reads a browser

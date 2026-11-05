@@ -25,7 +25,7 @@ test("configured site origin cannot be replaced by a forwarded request host", ()
   const request = new Request("https://srv-example.play.varde.games/api/cp/groups", {
     method: "POST", headers: { Origin: "https://srv-example.play.varde.games" },
   });
-  assert.equal(sameOriginRequest(request, "https://varde.games"), false);
+  assert.equal(sameOriginRequest(request, ["https://varde.games"]), false);
 });
 
 test("only the exact signed Polar webhook POST is exempt", () => {
