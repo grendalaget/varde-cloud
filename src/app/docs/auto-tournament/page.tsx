@@ -11,7 +11,7 @@ import {
 
 const title = "Auto Tournament plugin";
 const description =
-  "Run Auto Tournament on a Linux PC in your Varde group, choose a Ready Up licence, and organise CS2 tournaments.";
+  "Run Auto Tournament on a Linux or Windows PC in your Varde group, choose a Ready Up licence, and organise CS2 tournaments.";
 
 export const metadata: Metadata = {
   title,
@@ -40,9 +40,14 @@ export default function AutoTournamentPlugin() {
 
       <H2>Set up Auto Tournament for a group</H2>
       <P>
-        You need a Linux PC in your group, just as you do for CS2 servers with
-        Ready Up. Auto Tournament and your CS2 servers can use the same PC if it
-        has enough resources. Link the PC to your group in Varde before starting.
+        Auto Tournament runs natively on a Linux or Windows PC in your group.
+        Windows does not need WSL. CS2 servers with Ready Up still need Linux.
+        Auto Tournament and your CS2 servers can use the same Linux PC if it
+        has enough resources. Link the PCs to your group in Varde before starting.
+      </P>
+      <P>
+        On Windows, demos and highlights are off because Auto Tournament ships
+        those parts as Linux binaries.
       </P>
       <P>
         Open the Varde desktop app and select{" "}
@@ -73,15 +78,15 @@ export default function AutoTournamentPlugin() {
       <P>
         Select <strong className="text-foreground">Enable and start</strong>.
         Varde downloads and runs Auto Tournament on one of the group&rsquo;s Linux
-        PCs. When it is ready, the app shows a public HTTPS address and an admin
-        setup code. Open that address and use the code once to create your
+        or Windows PCs. When it is ready, the app shows a public HTTPS address
+        and an admin setup code. Open that address and use the code once to create your
         administrator account. You do not need to enter an address or API token
         when Varde runs it for you.
       </P>
       <P>
         Varde backs up Auto Tournament state like game saves. If its PC goes
         offline, the server and its saved state move to another available Linux
-        PC in the group. You do not need to set it up again.
+        or Windows PC in the group. You do not need to set it up again.
       </P>
 
       <H2>Already have Auto Tournament?</H2>
