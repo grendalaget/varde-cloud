@@ -45,9 +45,10 @@ export default function Cs2Tournament() {
         <Step n={1} title="What you need">
           <ul className="my-2 list-disc space-y-1 pl-5">
             <li>
-              A Linux PC in your group for Auto Tournament and the CS2 server.
-              Ready Up also needs Linux. They can run on the same PC if it has
-              enough resources.
+              A Linux or Windows PC in your group for Auto Tournament, and a
+              Linux PC for the CS2 server with Ready Up. Auto Tournament runs
+              natively on both systems, without WSL on Windows. They can run on
+              the same Linux PC if it has enough resources.
             </li>
             <li>
               CS2 installed through Steam, or about 69 GB to download with a
@@ -57,11 +58,12 @@ export default function Cs2Tournament() {
             <li>The Varde desktop app.</li>
           </ul>
         </Step>
-        <Step n={2} title="Set up your Linux PC in Varde">
+        <Step n={2} title="Link your PCs to Varde">
           Install and open the Varde desktop app. Select{" "}
           <strong className="text-foreground">Set up this PC</strong>, then
           select <strong className="text-foreground">Log in with Varde</strong>.
-          Complete sign-in to link the Linux PC to your group.
+          Complete sign-in to link the Linux PC to your group. If Auto Tournament
+          will run on a separate Linux or Windows PC, link that PC too.
         </Step>
         <Step n={3} title="Start Auto Tournament in Varde">
           In the app, open <strong className="text-foreground">Servers</strong>{" "}
@@ -89,13 +91,17 @@ export default function Cs2Tournament() {
           </ul>
           Select <strong className="text-foreground">Enable and start</strong>.
           Varde downloads and runs Auto Tournament on one of your group&rsquo;s
-          Linux PCs. When it is ready, the app shows a public HTTPS address and
-          an admin setup code. Open that address and use the code once to create
+          Linux or Windows PCs. When it is ready, the app shows a public HTTPS
+          address and an admin setup code. Open that address and use the code once to create
           your administrator account.
           <p className="mt-2">
             Varde backs up Auto Tournament state like game saves. If that PC
             goes offline, the server and its saved state move to another
-            available Linux PC in the group.
+            available Linux or Windows PC in the group.
+          </p>
+          <p className="mt-2">
+            On Windows, demos and highlights are off because Auto Tournament
+            ships those parts as Linux binaries.
           </p>
         </Step>
         <Step n={4} title="Create the CS2 server">
@@ -148,13 +154,14 @@ export default function Cs2Tournament() {
           after Ready Up is added, then run <Code>ru selftest</Code> in the CS2
           server console and look for <Code>PASS</Code>.
         </Step>
-        <Step n={2} title="The server is on a Windows PC">
+        <Step n={2} title="The CS2 server is on a Windows PC">
           Ready Up runs only on Linux, and Varde places tournament servers
-          only on Linux PCs. A tournament server cannot run on a Windows PC.
+          only on Linux PCs. A CS2 tournament server cannot run on a Windows PC,
+          but Auto Tournament itself can.
         </Step>
         <Step n={3} title="There is no Linux PC available">
-          Varde cannot start Auto Tournament or the CS2 tournament server until a Linux PC is linked
-          to the group and available to host it.
+          Auto Tournament can run on Windows, but the CS2 tournament server
+          still needs a Linux PC linked to the group and available to host it.
         </Step>
         <Step n={4} title="A player cannot be selected">
           Players need to link Steam in the Varde app. Open{" "}
