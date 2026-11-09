@@ -4,6 +4,7 @@ import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
 import { listGroups } from "@/lib/cp";
 import { db } from "@/lib/db";
 import * as schema from "@/db/schema";
+import { withSameOrigin } from "@/lib/csrf";
 
 // Cloud-anchor attach/detach for the signed-in site user. The row written
 // here is the desired state; the reconciler in services/anchor-reconciler
@@ -71,7 +72,7 @@ async function groupIdFrom(req: Request): Promise<string | null> {
   }
 }
 
-export async function POST(req: Request) {
+export const POST = withSameOrigin(async function POST(req: Request) {
   const user = await cpUser();
   if (isResponse(user)) return user;
 
@@ -213,9 +214,9 @@ export async function POST(req: Request) {
     })
     .returning();
   return Response.json({ anchor: view(anchor, user.id) }, { status: 201 });
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withSameOrigin(async function DELETE(req: Request) {
   const user = await cpUser();
   if (isResponse(user)) return user;
 
@@ -281,4 +282,4 @@ export async function DELETE(req: Request) {
         { error: "not_found", message: "No cloud anchor on this group." },
         { status: 404 },
       );
-}
+});

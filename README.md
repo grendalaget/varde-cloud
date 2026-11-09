@@ -69,11 +69,51 @@ better-auth owns sign-up/sign-in/sessions. Email+password is enabled now;
 GitHub/Google OAuth plug in via `socialProviders` in `src/lib/auth.ts` — the
 `account` table already stores provider tokens.
 
-The in-game Varde account (control-plane, argon2id) is intentionally separate
-for now: this site never talks to the control-plane auth. Unification is a
-later step — the CP has an `auth.Provider` seam, so the likely path is the CP
-becoming an OIDC provider to this site (or vice versa) rather than shared
-credentials.
+On HTTPS, all Better Auth cookies use the `__Host-varde.` prefix, `Secure`,
+`HttpOnly`, `Path=/`, and no `Domain` attribute. Local HTTP development uses
+host-only `varde.` cookies without `Secure`. Better Auth 1.7.7's automatic
+`__Secure-` naming is disabled so it cannot hide the browser-enforced `__Host-`
+prefix; the secure attribute is set explicitly. Cross-subdomain cookies stay
+disabled, including for previews.
+
+The CP does not read site cookies. `/federate/cp` reads the site session on its
+own host, then redirects to the CP with a five-minute federation token in the
+URL fragment. The CP exchanges that token for its own session. `/api/cp/*`
+uses a server-side exchange, and desktop sign-in also mints a federation token.
+Docs are same-origin routes under `/docs`, not a separate docs authentication
+host. No sibling subdomain needs the site's session cookie.
+
+Deploying this cookie-name change signs existing site users out once. Old
+domain-wide `better-auth` cookies are deliberately not accepted or migrated:
+a fallback would restore the sibling-subdomain attack surface. Existing CP
+sessions are independent. Old cookies can remain until their normal expiry,
+but the site ignores their old names. Before enabling untrusted hosted apps,
+revoke existing Better Auth sessions once (`DELETE FROM session` in the site's
+database). Renaming cookies alone does not revoke their signed values: a stolen
+legacy value could be replayed under the new name. This is an operator rollout
+step, not something to repeat on every deployment. Users must sign in again on
+the canonical site host.
+Serve production auth over HTTPS and keep the exact-origin allowlist; hosted
+apps under `*.play.varde.games` are same-site but must never be trusted origins.
+
+All mutating API exports use `withSameOrigin` from `src/lib/csrf.ts` before
+session lookup or side effects. Better Auth and the guard share the base URL
+resolver and exact trusted-origin list in `src/lib/auth-origins.ts`: production
+defaults to `https://varde.games`, previews to their deployment URL, and explicit
+`BETTER_AUTH_URL` wins. The list includes the base origin, `varde.games`,
+`www.varde.games`, localhost development, and the exact configured Vercel
+deployment and branch origins. It never trusts wildcard subdomains.
+Without Origin, only `Sec-Fetch-Site: same-origin` or `none` is accepted.
+Untrusted sibling origins,
+`null`, missing metadata and arbitrary bearer headers do not bypass this guard.
+Only `POST /api/auth/polar/webhooks` is exempt: Polar authenticates its raw body
+by signature before billing updates. The desktop token route reads a browser
+session, so it is guarded, not a machine-endpoint exemption.
+
+The test suite enumerates API route exports with the TypeScript parser and
+rejects unwrapped mutating handlers, including re-exports and destructuring.
+There are no server actions; the coverage test rejects new `use server`
+directives until they receive an explicit CSRF review.
 
 ## Billing (Polar)
 

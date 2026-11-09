@@ -1,5 +1,6 @@
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
 import { listGroups, withCp } from "@/lib/cp";
+import { withSameOrigin } from "@/lib/csrf";
 
 // The signed-in user's groups on the hosted CP — the account dashboard lists
 // them and the docs demos read them.
@@ -16,7 +17,7 @@ export async function GET() {
 
 // Create a group on the hosted CP (caller becomes its owner). Used when a
 // signed-in docs reader has no group yet — the demo makes one inline.
-export async function POST(req: Request) {
+export const POST = withSameOrigin(async function POST(req: Request) {
   const user = await cpUser();
   if (isResponse(user)) return user;
 
@@ -45,4 +46,4 @@ export async function POST(req: Request) {
   } catch (e) {
     return cpErrorResponse(e);
   }
-}
+});

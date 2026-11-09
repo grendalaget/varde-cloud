@@ -1,5 +1,6 @@
 import { CP_BASE_URL, withCp } from "@/lib/cp";
 import { cpErrorResponse, cpUser, isResponse } from "@/lib/cp-route";
+import { withSameOrigin } from "@/lib/csrf";
 
 interface CpInvite {
   code: string;
@@ -12,7 +13,7 @@ interface CpInvite {
 
 // Mint a real invite for the group. The URL mirrors what the dashboard's
 // Members page hands out: <cp>/invite/<code>.
-export async function POST(
+export const POST = withSameOrigin(async function POST(
   _req: Request,
   { params }: { params: Promise<{ groupId: string }> },
 ) {
@@ -35,4 +36,4 @@ export async function POST(
   } catch (e) {
     return cpErrorResponse(e);
   }
-}
+});

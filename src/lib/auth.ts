@@ -13,6 +13,8 @@ import { db } from "./db";
 import * as schema from "../db/schema";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { polar, polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
+import { authCookieOptions } from "./auth-cookies";
+import { authOriginOptions } from "./auth-origins";
 
 // Recompute the user's `plan` from Polar's live customer state. Webhook
 // payloads are snapshots that can arrive out of order (Polar retries failed
@@ -101,46 +103,13 @@ const polarPlugins = polarCore
  * Billing (Polar) is wired but dormant until POLAR_ACCESS_TOKEN + product
  * IDs are set; see src/lib/polar.ts.
  */
-// Explicit BETTER_AUTH_URL wins. In production fall back to the canonical
-// domain — VERCEL_URL is the *.vercel.app deployment URL, which must never
-// end up in emailed verify/reset links. Previews fall back to their own
-// deployment URL so auth works on temp domains; dev falls back to local.
-const baseURL =
-  process.env.BETTER_AUTH_URL ??
-  (process.env.VERCEL_ENV === "production"
-    ? "https://varde.games"
-    : process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
-
-// Domain-wide session cookies let cp.varde.games recognize a varde.games
-// sign-in with no second login. Only on the real domain — previews and local
-// dev keep host-scoped cookies. A Vercel preview can point BETTER_AUTH_URL at
-// prod while serving *.vercel.app; a .varde.games cookie there is rejected by
-// browsers, which would break preview sign-ins, so the env must be prod too.
-const baseHost = new URL(baseURL).hostname;
-const shareAcrossSubdomains =
-  (process.env.VERCEL_ENV === "production" || !process.env.VERCEL_ENV) &&
-  (baseHost === "varde.games" || baseHost.endsWith(".varde.games"));
+const { baseURL, trustedOrigins } = authOriginOptions();
 
 export const auth = betterAuth({
   appName: "Varde",
   baseURL,
   secret: process.env.BETTER_AUTH_SECRET,
-  // Origins allowed to POST to the auth endpoints and to receive auth
-  // redirects. The baseURL origin is implied; cover the custom domain, its
-  // www variant, local dev, and this preview deployment's own URLs (where
-  // BETTER_AUTH_URL may point at prod). Never a *.vercel.app wildcard:
-  // anyone can host there, and a reset link redirects to its callbackURL
-  // with the reset token attached.
-  trustedOrigins: [
-    "https://varde.games",
-    "https://www.varde.games",
-    "http://localhost:3000",
-    ...[process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
-      .filter(Boolean)
-      .map((host) => `https://${host}`),
-  ],
+  trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema,
@@ -174,12 +143,7 @@ export const auth = betterAuth({
       );
     },
   },
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: shareAcrossSubdomains,
-      domain: "varde.games",
-    },
-  },
+  advanced: authCookieOptions(baseURL),
   user: {
     additionalFields: {
       // Subscription tier, synced from Polar webhooks: free | anchor | anchor+
@@ -198,4 +162,3 @@ export const auth = betterAuth({
   },
   plugins: [nextCookies(), ...polarPlugins],
 });
-
