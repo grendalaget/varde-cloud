@@ -36,7 +36,7 @@ export default function Cs2Tournament() {
       />
 
       <Callout title="Availability">
-        This desktop app flow needs a Varde release that has not shipped yet.
+        This desktop app flow is available in the nightly build from the <Link href="/download">download page</Link>; there is no stable release yet.
         Ready Up is in beta.
       </Callout>
 

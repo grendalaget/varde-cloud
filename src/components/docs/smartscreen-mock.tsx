@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 
 // Stylized Windows SmartScreen dialog. Clicking "More info" reveals "Run
-// anyway", the same two clicks that get past the unsigned-installer warning.
+// anyway", as on the real warning for an unsigned installer.
 // The action area is fixed height so advancing the step never reflows the
 // page below.
 
@@ -83,7 +83,7 @@ export function SmartScreenMock() {
             Replay the warning
           </Button>
         ) : (
-          "The warning is normal for a new, unsigned app. Click More info."
+          "Downloaded from varde.games? Then this warning is expected for an unsigned build. Click More info."
         )}
       </figcaption>
     </figure>

@@ -51,7 +51,7 @@ export default function Cs2Server() {
         ))}
       </ul>
       <Callout tone="warn" title="Availability">
-        This desktop app flow needs a Varde release that has not shipped yet.
+        This desktop app flow is available in the nightly build from the <Link href="/download">download page</Link>; there is no stable release yet.
       </Callout>
 
       <H2>The short version</H2>

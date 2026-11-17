@@ -33,7 +33,7 @@ export default function Plugins() {
         intro="Plugins add integrations to a Varde group through a separately hosted service. Group owners configure them in the Varde desktop app."
       />
       <Callout tone="warn" title="Availability">
-        These setup flows need a Varde release that has not shipped yet.
+        These setup flows are available in the nightly build from the <Link href="/download">download page</Link>; there is no stable release yet.
       </Callout>
 
       <H2>For group owners</H2>
