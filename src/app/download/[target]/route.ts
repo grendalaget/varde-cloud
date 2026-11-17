@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ target: string }> },
 ) {
   const { target } = await params;
-  if (!(target in TARGETS))
+  if (!Object.hasOwn(TARGETS, target))
     return new Response("Unknown download", { status: 404 });
   const release = await latestRelease();
   const url = release?.urls[target as Target];
