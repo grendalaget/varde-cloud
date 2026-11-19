@@ -36,7 +36,7 @@ export default function Cs2Tournament() {
       />
 
       <Callout title="Availability">
-        This desktop app flow needs a Varde release that has not shipped yet.
+        This desktop app flow is available in the nightly build from the <Link href="/download">download page</Link>; there is no stable release yet.
         Ready Up is in beta.
       </Callout>
 
@@ -61,7 +61,7 @@ export default function Cs2Tournament() {
         <Step n={2} title="Link your PCs to Varde">
           Install and open the Varde desktop app. Select{" "}
           <strong className="text-foreground">Set up this PC</strong>, then
-          select <strong className="text-foreground">Log in with Varde</strong>.
+          select <strong className="text-foreground">Sign in with Varde</strong>.
           Complete sign-in to link the Linux PC to your group. If Auto Tournament
           will run on a separate Linux or Windows PC, link that PC too.
         </Step>

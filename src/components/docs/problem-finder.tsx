@@ -34,20 +34,21 @@ const PROBLEMS: Problem[] = [
     body: (
       <>
         <p>
-          Varde builds are not code-signed yet, so Windows SmartScreen warns
-          about new downloads.
+          Varde nightly builds are not code-signed yet, so Windows SmartScreen
+          warns about new downloads.
         </p>
         <FixSteps>
           <StepItem>
-            Check the file came from the official{" "}
+            Check the file came from the{" "}
+            <Link href="/download">download page</Link> or the official{" "}
             <a
               href="https://github.com/grendalaget/varde/releases"
               target="_blank"
               rel="noreferrer"
             >
-              GitHub releases page
+              GitHub releases
             </a>
-            .
+            . If you are not sure, delete it and download it again.
           </StepItem>
           <StepItem>
             Click <strong className="text-foreground">More info</strong>, then{" "}

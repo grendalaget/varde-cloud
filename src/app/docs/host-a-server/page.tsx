@@ -70,8 +70,11 @@ export default function HostAServer() {
           <Link href="/docs/join-a-server">join guide</Link> walks through every
           click if you want the detail.
           <Callout tone="warn" title="If Windows warns you">
-            The installer is not signed yet, so SmartScreen may show a blue
-            warning box. Click{" "}
+            Nightly builds are not code-signed yet, so Windows SmartScreen
+            may say the publisher is unknown. First make sure the file came
+            from the <Link href="/download">download page</Link> or Varde&apos;s
+            GitHub release; if you are not sure, delete it and download it
+            again. Then click{" "}
             <strong className="text-foreground">More info</strong>, then{" "}
             <strong className="text-foreground">Run anyway</strong>.
           </Callout>

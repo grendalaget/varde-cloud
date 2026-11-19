@@ -51,7 +51,7 @@ export default function Cs2Server() {
         ))}
       </ul>
       <Callout tone="warn" title="Availability">
-        This desktop app flow needs a Varde release that has not shipped yet.
+        This desktop app flow is available in the nightly build from the <Link href="/download">download page</Link>; there is no stable release yet.
       </Callout>
 
       <H2>The short version</H2>
@@ -64,7 +64,7 @@ export default function Cs2Server() {
         title="CS2 hosting checklist"
         items={[
           "Set up this PC in the Varde desktop app",
-          "Log in with Varde",
+          "Sign in with Varde",
           "Create a Counter-Strike 2 Dedicated server in the app",
           "Invite friends from the Members page",
           "Keep Varde running on each player PC",
@@ -76,7 +76,7 @@ export default function Cs2Server() {
         <Step n={1} title="Set up this PC">
           Open the Varde desktop app, select{" "}
           <strong className="text-foreground">Set up this PC</strong>, then
-          select <strong className="text-foreground">Log in with Varde</strong>.
+          select <strong className="text-foreground">Sign in with Varde</strong>.
           Complete sign-in to link this PC to your group.
         </Step>
         <Step n={2} title="Create the CS2 server">
