@@ -93,6 +93,16 @@ export function SiteFooter() {
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-medium text-foreground">Account</p>
+            <a href="mailto:support@varde.games" className="text-muted hover:text-foreground">
+              Email support
+            </a>
+            {process.env.NEXT_PUBLIC_DISCORD_URL ? (
+              <a href={process.env.NEXT_PUBLIC_DISCORD_URL} className="text-muted hover:text-foreground">
+                Discord
+              </a>
+            ) : null}
+            <Link href="/privacy" className="text-muted hover:text-foreground">Privacy policy</Link>
+            <Link href="/terms" className="text-muted hover:text-foreground">Terms of service</Link>
             <Link href="/auth/sign-in" className="text-muted transition-colors duration-150 hover:text-foreground">
               Sign in
             </Link>

@@ -17,6 +17,7 @@ export const user = sqliteTable("user", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   plan: text("plan").default("free"),
+  attribution: text("attribution"),
 });
 
 export const session = sqliteTable(

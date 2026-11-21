@@ -13,6 +13,9 @@ export const NAV_LINKS = [
   { href: "/pricing", label: "Pricing" },
   { href: "/download", label: "Download" },
   { href: "/docs", label: "Docs" },
+  ...(process.env.NEXT_PUBLIC_DISCORD_URL
+    ? [{ href: process.env.NEXT_PUBLIC_DISCORD_URL, label: "Discord" }]
+    : []),
 ];
 
 // The auth zone is client-side (nav-auth.tsx): better-auth's client store

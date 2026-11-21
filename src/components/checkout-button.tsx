@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * Polar checkout button. Renders a disabled "Coming soon" state until
@@ -49,6 +50,7 @@ export function CheckoutButton({
       router.push("/auth/sign-in?next=/pricing");
       return;
     }
+    trackEvent("checkout_started", { plan: slug });
     const { error } = await authClient.checkout({ slug });
     if (error) {
       setError("Checkout failed to start. Try again.");

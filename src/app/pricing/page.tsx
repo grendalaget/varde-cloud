@@ -24,7 +24,6 @@ const PLANS = [
       "Hosted control plane at varde.games",
       "Peer-hosted servers with automatic failover",
       "Self-hosted anchor nodes",
-      "Small free cloud anchor (fair use)",
     ],
   },
   {

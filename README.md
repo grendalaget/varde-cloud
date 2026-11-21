@@ -4,8 +4,8 @@
 
 <p align="center"><b>varde.games</b> — website and cloud services for <a href="https://github.com/grendalaget/varde">Varde</a></p>
 
-This repository holds everything hosted: the marketing site, user accounts,
-and (later) cloud anchors and billing. Varde's core technology lives in the
+This public repository holds the marketing site, user accounts, live Polar
+billing integration and managed cloud anchor provisioning. Varde's core technology lives in the
 public repo and stays open source (AGPL-3.0-or-later) forever.
 
 ## Stack
@@ -18,9 +18,10 @@ public repo and stays open source (AGPL-3.0-or-later) forever.
   (drizzle-kit only runs for schema changes), a first-class better-auth
   adapter, and Turso's generous free tier. Local dev runs on a plain
   `file:./varde.db` SQLite — no server needed.
-- **Polar** for payments — merchant of record (they handle global VAT,
+- **Polar** for payments, as merchant of record (they handle global VAT,
   invoicing, refunds, disputes), wired via the official
-  `@polar-sh/better-auth` plugin. Dormant until `POLAR_*` env vars are set.
+  `@polar-sh/better-auth` plugin. Billing is live on varde.games and remains
+  optional in local deployments through the `POLAR_*` environment variables.
 - **pnpm** — committed `pnpm-lock.yaml`; Vercel auto-detects it
 
 ## Layout
@@ -31,9 +32,8 @@ src/
   components/     nav, footer, brand marks, auth form
   db/             Drizzle schema (better-auth tables)
   lib/            auth server config, auth client, db pool
-public/brand/     logo kit copied from grendalaget/varde (MIT)
-infra/            reserved for hosted-infra provisioning (anchor fleet later); the cp deploy lives in grendalaget/varde at infra/cp
-services/         (future) plan-sync workers
+public/brand/     logo kit copied from grendalaget/varde (trademark policy applies)
+services/         anchor-reconciler: provisions managed anchors on Fly.io
 ```
 
 ## Local development
@@ -75,6 +75,8 @@ host-only `varde.` cookies without `Secure`. Better Auth 1.7.7's automatic
 `__Secure-` naming is disabled so it cannot hide the browser-enforced `__Host-`
 prefix; the secure attribute is set explicitly. Cross-subdomain cookies stay
 disabled, including for previews.
+
+The CP deploy lives in `grendalaget/varde` at `infra/cp`.
 
 The CP does not read site cookies. `/federate/cp` reads the site session on its
 own host, then redirects to the CP with a five-minute federation token in the
@@ -118,16 +120,16 @@ directives until they receive an explicit CSRF review.
 ## Billing (Polar)
 
 Polar is the merchant of record — we don't touch card data or VAT. The
-`@polar-sh/better-auth` plugin auto-creates a Polar customer on signup
-(external_id = user.id), serves `/api/auth/checkout` + `/customer/portal`,
+`@polar-sh/better-auth` plugin creates a Polar customer lazily at the first
+billing action (external_id = user.id), serves `/api/auth/checkout` + `/customer/portal`,
 and verifies webhooks at `POST /api/auth/polar/webhooks`. Subscription
 events write `plan` (`free` | `anchor` | `anchor+`) onto the user row — see
 `syncPlan` in `src/lib/auth.ts` and the product→plan map in `src/lib/polar.ts`.
 
-Without `POLAR_ACCESS_TOKEN` the whole billing layer is dormant: the pricing
-page renders "Coming soon" and no Polar calls are made. To activate: create
-the three products in the Polar dashboard (Anchor monthly ~3, Anchor yearly
-~30, Anchor+ ~6, EUR is the org default currency), set `POLAR_ACCESS_TOKEN`,
+Billing is live on varde.games. Without `POLAR_ACCESS_TOKEN`, a deployment
+renders "Coming soon" and makes no Polar calls. To configure another deployment,
+create the three products in Polar (Anchor €3.99/month or €39.90/year,
+Anchor+ €6/month), set `POLAR_ACCESS_TOKEN`,
 `POLAR_SERVER`, the product-ID envs, and add a webhook endpoint pointing at
 `/api/auth/polar/webhooks` (set `POLAR_WEBHOOK_SECRET`).
 
@@ -140,6 +142,37 @@ the three products in the Polar dashboard (Anchor monthly ~3, Anchor yearly
 3. Push the schema once: `TURSO_DATABASE_URL=<prod> TURSO_AUTH_TOKEN=<tok> pnpm db:push`
    (or run the generated SQL from `pnpm db:generate`).
 4. Done. Future OAuth provider keys go in the same env var set.
+
+Schema changes use `pnpm db:push`, not committed SQL migrations. Before
+deploying this version, push the schema to add the nullable `user.attribution`
+column to existing databases. Back up the database and review the schema diff
+before approving a production push. Existing users need no attribution value.
+
+## Analytics and attribution
+
+Set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` to enable cookieless Plausible analytics.
+Leave it unset to disable the script and all analytics events. An optional
+`NEXT_PUBLIC_PLAUSIBLE_SCRIPT_SRC` selects a self-hosted script; server events
+go to `/api/event` on that script's origin. Public variables are build-time
+configuration, so rebuild after changing them.
+
+Create Plausible goals for `download_click` (properties: `os`, `target`),
+`sign_up_started`, `sign_up_completed`, `email_verified` and `checkout_started`
+(property: `plan`). Sign-up starts and checkout starts are client-side intent
+events. Account creation, successful verification and download redirects are
+tracked server-side, including when browser JavaScript is unavailable.
+Analytics failures do not prevent the underlying action. No account identifiers
+or email addresses are sent as event properties.
+
+The first landing with `ref` or `utm_*` parameters sets the host-only,
+HttpOnly `varde_attribution` cookie for 30 days. Later campaigns do not replace
+it during that period. Values are bounded and copied as JSON to the nullable
+user attribution field on account creation, independently of analytics being
+enabled. Absent or malformed cookies produce no attribution. Campaign values
+are untrusted input, not proof of a referral or eligibility for an offer.
+
+Set `NEXT_PUBLIC_DISCORD_URL` to show a community link in navigation, footer
+and docs. It is hidden when unset. Support email is `support@varde.games`.
 
 ### Provisioning checklist
 
@@ -156,9 +189,12 @@ The site is dark-only: Natt `#10161A` canvas, Tåke `#DCE2E6` text, Skifer
 surfaces. Glød `#FF5B1F` is reserved for the host/ember accent (lit stone,
 primary CTA); warnings use `#E3C04B`. Text is set in Inter (`next/font`,
 see `src/app/layout.tsx`). Logo files in `public/brand/` are copied unmodified from
-`grendalaget/varde` (`brand/`, MIT-licensed) — geometry is never altered.
+`grendalaget/varde` (`brand/`), subject to its trademark policy. Geometry is
+never altered.
 
 ## License
 
-Proprietary — hosting, billing and this site's code are not open source.
-Brand assets under `public/brand/` remain MIT like the upstream kit.
+This repository is public and licensed under [AGPL-3.0-or-later](LICENSE).
+The Varde name and logos are subject to the upstream
+[trademark policy](https://github.com/grendalaget/varde/blob/main/TRADEMARKS.md),
+not the AGPL grant. Forks must use their own name and logos.
