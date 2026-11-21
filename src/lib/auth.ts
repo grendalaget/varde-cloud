@@ -15,6 +15,8 @@ import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { polar, polarCore, POLAR_PRODUCTS, planForProduct } from "./polar";
 import { authCookieOptions } from "./auth-cookies";
 import { authOriginOptions } from "./auth-origins";
+import { attributionFromCookie } from "./attribution";
+import { trackServerEvent } from "./analytics";
 
 // Recompute the user's `plan` from Polar's live customer state. Webhook
 // payloads are snapshots that can arrive out of order (Polar retries failed
@@ -114,7 +116,25 @@ export const auth = betterAuth({
     provider: "sqlite",
     schema,
   }),
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user, context) => ({
+          data: {
+            ...user,
+            attribution: attributionFromCookie(context?.request?.headers.get("cookie")),
+          },
+        }),
+        after: async (_user, context) => {
+          await trackServerEvent("sign_up_completed", context?.request);
+        },
+      },
+    },
+  },
   emailVerification: {
+    afterEmailVerification: async (_user, request) => {
+      await trackServerEvent("email_verified", request);
+    },
     sendVerificationEmail: async ({ user, url }) => {
       await sendWithCooldown(`verify:${user.email}`, () =>
         sendVerificationEmail(user.email, url),
@@ -148,6 +168,7 @@ export const auth = betterAuth({
     additionalFields: {
       // Subscription tier, synced from Polar webhooks: free | anchor | anchor+
       plan: { type: "string", defaultValue: "free", input: false },
+      attribution: { type: "string", required: false, input: false, returned: false },
     },
   },
   socialProviders: {

@@ -1,7 +1,6 @@
 # Managed cloud anchors
 
-Status: proposed
-Date: 2026-10-15
+Status: implemented, with live billing on varde.games
 
 ## Summary
 
@@ -20,13 +19,16 @@ the feature needs from them.
 - `anchor` plan: one cloud anchor attachable to one group the customer owns
   or admins. One anchor per group. Monthly and yearly billing via Polar
   (merchant of record, VAT handled).
-- `anchor+` is reserved in the plan model (multi-group, larger storage,
-  region choice) but is not part of the launch.
+- `anchor+` is available in pricing and entitlement checks, with a configurable
+  multi-group anchor cap. The advertised storage and regional capacity still
+  depend on the deployed fleet configuration.
 - The `anchor+` cap is `ANCHOR_PLUS_MAX` (3 by default); if changed, set the
   same value on Vercel and the reconciler.
   Invalid, zero or infinite values fall back to 3; fractions round down to at
   least 1.
-- Launch price: 3.99 (see the cost model for why 2.99 does not work yet).
+- Anchor price: €3.99/month or €39.90/year. Anchor+ is €6/month.
+- Free plans have no managed cloud anchor entitlement. Self-hosted anchors
+  remain available without a subscription.
 - Group admins see the anchor as a normal node in the dashboard and can
   remove it; they cannot edit it (it is owned by the service).
 
@@ -139,5 +141,6 @@ Fixed fleet cost: the reconciler itself (~$2.28/mo) plus the existing CP.
   tuning the relay path.
 - Quota enforcement: storage cap per anchor enforced at the agent/CP commit
   path, surfaced on the group view.
-- Polar production org + products still need creating (sandbox wiring is
-  done; `POLAR_SERVER=production` + product IDs per env).
+- Billing is live on varde.games. Other deployments must configure their own
+  Polar environment, products and webhook secret; use `POLAR_SERVER=production`
+  with production product IDs and access token.

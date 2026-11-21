@@ -15,6 +15,8 @@ export const NAV_LINKS = [
   { href: "/docs", label: "Docs" },
 ];
 
+const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL;
+
 // The auth zone is client-side (nav-auth.tsx): better-auth's client store
 // persists across soft navigations, so the avatar/sign-in state renders
 // instantly on every nav. The `navigate` prop is what makes Navbar.Item
@@ -53,6 +55,16 @@ export function SiteNav() {
           >
             GitHub
           </Navbar.Item>
+          {DISCORD_URL && (
+            <Navbar.Item
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden text-sm text-muted transition-colors hover:text-foreground lg:flex"
+            >
+              Discord
+            </Navbar.Item>
+          )}
         </Navbar.Content>
 
         <Navbar.Spacer />
@@ -76,6 +88,11 @@ export function SiteNav() {
           >
             GitHub
           </Navbar.MenuItem>
+          {DISCORD_URL && (
+            <Navbar.MenuItem href={DISCORD_URL} target="_blank" rel="noreferrer">
+              Discord
+            </Navbar.MenuItem>
+          )}
           <NavAuthMenuItems />
         </Navbar.Menu>
       </Navbar.Header>

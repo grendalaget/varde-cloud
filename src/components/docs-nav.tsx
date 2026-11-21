@@ -39,6 +39,11 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
           </ul>
         </div>
       ))}
+      {process.env.NEXT_PUBLIC_DISCORD_URL ? (
+        <a href={process.env.NEXT_PUBLIC_DISCORD_URL} className="block px-3 text-sm text-muted hover:text-foreground">
+          Discord community
+        </a>
+      ) : null}
     </nav>
   );
 }

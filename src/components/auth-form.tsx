@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
 import { safeNext } from "@/lib/next";
+import { trackEvent } from "@/lib/analytics";
 
 const cardClass =
   "vd-pop w-full max-w-sm rounded-2xl border border-separator bg-surface p-7";
@@ -37,6 +38,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     setPending(true);
     try {
       if (isSignUp) {
+        trackEvent("sign_up_started");
         const res = await authClient.signUp.email({
           email,
           password,
@@ -87,7 +89,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       </h1>
       <p className="mt-1.5 text-sm text-muted">
         {isSignUp
-          ? "One account for varde.games. Plans and group features land here."
+          ? "One account for varde.games, your groups and your plan."
           : "Sign in to your varde.games account."}
       </p>
 
@@ -141,6 +143,12 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         <Button type="submit" fullWidth isPending={pending} isDisabled={pending}>
           {isSignUp ? "Create account" : "Sign in"}
         </Button>
+        {isSignUp ? (
+          <p className="text-sm text-muted">
+            By signing up you agree to the <Link href="/terms" target="_blank" className="underline">terms of service</Link>{" "}
+            and acknowledge the <Link href="/privacy" target="_blank" className="underline">privacy policy</Link>.
+          </p>
+        ) : null}
       </form>
 
       <p className="mt-6 text-center text-sm text-muted">
