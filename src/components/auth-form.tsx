@@ -145,8 +145,8 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </Button>
         {isSignUp ? (
           <p className="text-sm text-muted">
-            By signing up you agree to the <Link href="/terms" className="underline">terms of service</Link>{" "}
-            and acknowledge the <Link href="/privacy" className="underline">privacy policy</Link>.
+            By signing up you agree to the <Link href="/terms" target="_blank" className="underline">terms of service</Link>{" "}
+            and acknowledge the <Link href="/privacy" target="_blank" className="underline">privacy policy</Link>.
           </p>
         ) : null}
       </form>
