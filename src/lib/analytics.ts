@@ -1,7 +1,7 @@
 export type AnalyticsEvent = "download_click" | "sign_up_started" | "sign_up_completed" | "email_verified" | "checkout_started";
 export type EventProps = Record<string, string>;
 
-type Plausible = ((name: string, options?: { props: EventProps }) => void) & { q?: unknown[][] };
+type Plausible = ((name: string, options?: { props?: EventProps; u?: string }) => void) & { q?: unknown[][] };
 
 declare global {
   interface Window {
@@ -22,6 +22,16 @@ export function trackEvent(name: AnalyticsEvent, props: EventProps = {}) {
   }
 }
 
+export function pageviewUrl(href: string): string {
+  const url = new URL(href);
+  const kept = new URLSearchParams();
+  for (const [key, value] of url.searchParams) {
+    if (key === "ref" || key.startsWith("utm_")) kept.append(key, value);
+  }
+  const query = kept.toString();
+  return `${url.origin}${url.pathname}${query ? `?${query}` : ""}`;
+}
+
 export function plausibleEventEndpoint(scriptSrc: string): string {
   return new URL("/api/event", new URL(scriptSrc)).toString();
 }
@@ -34,7 +44,7 @@ export async function trackServerEvent(
   const domain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
   if (!domain) return;
   try {
-    const endpoint = plausibleEventEndpoint(process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_SRC || "https://plausible.io/js/script.js");
+    const endpoint = plausibleEventEndpoint(process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_SRC || "https://plausible.io/js/script.manual.js");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     const agent = request?.headers.get("user-agent");
     const ip = request?.headers.get("x-forwarded-for");

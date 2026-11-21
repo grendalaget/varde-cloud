@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { plausibleEventEndpoint, trackEvent, trackServerEvent } from "./analytics.ts";
+import { pageviewUrl, plausibleEventEndpoint, trackEvent, trackServerEvent } from "./analytics.ts";
 
 test("analytics is a no-op without a configured domain", async (t) => {
   const domain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
@@ -80,4 +80,12 @@ test("client events queue before the script loads and tolerate a blocked script"
   ]);
   browser.plausible = () => { throw new Error("blocked"); };
   assert.doesNotThrow(() => trackEvent("sign_up_started"));
+});
+
+test("pageview URLs drop secrets from the query string but keep attribution", () => {
+  assert.equal(
+    pageviewUrl("https://varde.games/auth/reset?token=secret&utm_source=producthunt&ref=ph"),
+    "https://varde.games/auth/reset?utm_source=producthunt&ref=ph",
+  );
+  assert.equal(pageviewUrl("https://varde.games/auth/reset?token=secret#x"), "https://varde.games/auth/reset");
 });
