@@ -37,7 +37,7 @@ export function plausibleEventEndpoint(scriptSrc: string): string {
 }
 
 export async function trackServerEvent(
-  name: AnalyticsEvent,
+  name: Exclude<AnalyticsEvent, "download_click">,
   request?: Request,
   props: EventProps = {},
 ) {
@@ -50,11 +50,10 @@ export async function trackServerEvent(
     const ip = request?.headers.get("x-forwarded-for");
     if (agent) headers["User-Agent"] = agent;
     if (ip) headers["X-Forwarded-For"] = ip;
-    const path = name === "download_click" ? "/download" : "/auth/sign-up";
     await fetch(endpoint, {
       method: "POST",
       headers,
-      body: JSON.stringify({ name, domain, url: `https://${domain}${path}`, props }),
+      body: JSON.stringify({ name, domain, url: `https://${domain}/auth/sign-up`, props }),
       signal: AbortSignal.timeout(1500),
     });
   } catch {

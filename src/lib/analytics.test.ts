@@ -28,15 +28,15 @@ test("server event uses self-hosted origin and excludes request query and cookie
     else process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_SRC = oldSrc;
   });
   const fetch = t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 202 }));
-  await trackServerEvent("download_click", new Request("https://varde.games/download/windows?token=secret", {
+  await trackServerEvent("sign_up_completed", new Request("https://varde.games/auth/sign-up?token=secret", {
     headers: { "user-agent": "test browser", "x-forwarded-for": "192.0.2.1", cookie: "session=secret" },
-  }), { os: "windows", target: "windows" });
+  }));
   const [url, init] = fetch.mock.calls[0].arguments;
   assert.equal(url, "https://stats.example.com/api/event");
   const options = init as RequestInit;
   assert.deepEqual(JSON.parse(options.body as string), {
-    name: "download_click", domain: "varde.games", url: "https://varde.games/download",
-    props: { os: "windows", target: "windows" },
+    name: "sign_up_completed", domain: "varde.games", url: "https://varde.games/auth/sign-up",
+    props: {},
   });
   assert.equal((options.headers as Record<string, string>)["Cookie"], undefined);
   assert.equal((options.headers as Record<string, string>)["User-Agent"], "test browser");

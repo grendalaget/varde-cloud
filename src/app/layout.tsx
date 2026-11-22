@@ -5,6 +5,8 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { MotionProvider } from "@/components/reveal";
 import { Analytics } from "@/components/analytics";
+import { DownloadTracking } from "@/components/download-tracking";
+import { ProductHuntBanner } from "@/components/product-hunt-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -64,6 +66,8 @@ export default function RootLayout({
           <SiteFooter />
         </div>
         <Analytics />
+        <DownloadTracking />
+        <ProductHuntBanner />
       </body>
     </html>
   );

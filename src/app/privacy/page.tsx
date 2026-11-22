@@ -49,6 +49,9 @@ export default function PrivacyPage() {
         values are copied to your account when you sign up so we can understand
         which launch campaigns bring new users. Do not put personal or secret
         information in campaign URLs. You can remove this cookie in your browser.
+        A separate readable Product Hunt flag remembers a welcome-banner visit
+        for up to 30 days. A localStorage preference remembers banner dismissal
+        until you clear site storage.
       </P>
       <P>
         When configured, we use Plausible-compatible cookieless analytics for
