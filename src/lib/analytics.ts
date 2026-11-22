@@ -16,7 +16,7 @@ export function trackEvent(name: AnalyticsEvent, props: EventProps = {}) {
       (...args: unknown[]) => { window.plausible?.q?.push(args); },
       { q: [] as unknown[][] },
     );
-    window.plausible(name, { props });
+    window.plausible(name, { props, u: pageviewUrl(window.location.href) });
   } catch {
     // Analytics must not interrupt account or billing actions.
   }
