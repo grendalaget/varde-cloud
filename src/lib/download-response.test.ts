@@ -10,7 +10,7 @@ test("allowlisted artifact redirects have a short shared-cache lifetime", async 
     const response = await downloadResponse(target, async () => ({ urls: { [target]: url } }));
     assert.equal(response.status, 302);
     assert.equal(response.headers.get("location"), url);
-    assert.equal(response.headers.get("cache-control"), "public, max-age=0, s-maxage=300, stale-while-revalidate=600");
+    assert.equal(response.headers.get("cache-control"), "public, max-age=0, s-maxage=60");
     assert.equal(response.headers.get("set-cookie"), null);
   }
 });

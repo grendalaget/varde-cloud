@@ -11,7 +11,7 @@ export async function downloadResponse(target: string, loadRelease: () => Promis
       status: 302,
       headers: {
         Location: url ?? RELEASES_URL,
-        "Cache-Control": url ? "public, max-age=0, s-maxage=300, stale-while-revalidate=600" : "no-store",
+        "Cache-Control": url ? "public, max-age=0, s-maxage=60" : "no-store",
       },
     });
   } catch {
