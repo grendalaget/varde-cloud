@@ -51,6 +51,7 @@ export default function RootLayout({
       lang="en"
       className="dark mouve-dark"
       data-theme="mouve-dark"
+      data-scroll-behavior="smooth"
     >
       <body
         className={`${inter.variable} bg-background font-sans text-foreground antialiased`}
