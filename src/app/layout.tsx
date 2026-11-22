@@ -60,6 +60,7 @@ export default function RootLayout({
       >
         <div className="flex min-h-screen flex-col">
           <SiteNav />
+          <ProductHuntBanner />
           <div className="flex-1">
             <MotionProvider>{children}</MotionProvider>
           </div>
@@ -67,7 +68,6 @@ export default function RootLayout({
         </div>
         <Analytics />
         <DownloadTracking />
-        <ProductHuntBanner />
       </body>
     </html>
   );
