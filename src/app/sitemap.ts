@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { ALL_DOCS_PAGES } from "@/lib/docs-nav";
+import { LAUNCH_PAGES } from "@/lib/launch-content";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://varde.games";
@@ -11,6 +12,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/docs`, changeFrequency: "weekly", priority: 0.7 },
+    ...LAUNCH_PAGES.map((page) => ({
+      url: `${base}${page.path}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     ...ALL_DOCS_PAGES.map((p) => ({
       url: `${base}/docs/${p.slug}`,
       changeFrequency: "weekly" as const,

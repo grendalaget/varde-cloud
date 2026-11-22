@@ -6,6 +6,7 @@ import { HostingScene } from "@/components/hosting-scene";
 import { Mark } from "@/components/brand";
 import { Item, Reveal, Stagger } from "@/components/reveal";
 import { BILLING_ENABLED, DONATION_URL } from "@/lib/polar";
+import { SOFTWARE_APPLICATION } from "@/lib/software-application";
 
 const HOW_IT_WORKS = [
   {
@@ -73,6 +74,10 @@ const GAMES = [
 export default function Home() {
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(SOFTWARE_APPLICATION).replace(/</g, "\\u003c") }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div

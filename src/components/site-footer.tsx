@@ -2,11 +2,12 @@ import { Link as HLink } from "@heroui/react";
 import Link from "next/link";
 import { Mark } from "./brand";
 import { DONATION_URL } from "@/lib/polar";
+import { GAME_PAGES, COMPARE_PAGES } from "@/lib/launch-content";
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-separator">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 md:flex-row md:items-start md:justify-between">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
         <div className="flex items-start gap-3">
           <Mark className="h-7 w-7" title="Varde" />
           <div className="text-sm text-muted">
@@ -51,7 +52,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3 lg:grid-cols-5">
           <div className="flex flex-col gap-2">
             <p className="font-medium text-foreground">Product</p>
             <Link href="/#how-it-works" className="text-muted transition-colors duration-150 hover:text-foreground">
@@ -63,7 +64,18 @@ export function SiteFooter() {
             <Link href="/download" className="text-muted transition-colors duration-150 hover:text-foreground">
               Download
             </Link>
+            <Link href="/faq" className="text-muted hover:text-foreground">FAQ</Link>
           </div>
+          {[{ title: "Games", pages: GAME_PAGES }, { title: "Compare", pages: COMPARE_PAGES }].map((group) => (
+            <div key={group.title} className="flex min-w-0 flex-col gap-2">
+              <p className="font-medium text-foreground">{group.title}</p>
+              {group.pages.map((page) => (
+                <Link key={page.path} href={page.path} className="text-muted hover:text-foreground">
+                  {page.linkLabel}
+                </Link>
+              ))}
+            </div>
+          ))}
           <div className="flex flex-col gap-2">
             <p className="font-medium text-foreground">Developers</p>
             <HLink
