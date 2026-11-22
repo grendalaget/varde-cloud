@@ -28,15 +28,15 @@ test("server event uses self-hosted origin and excludes request query and cookie
     else process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_SRC = oldSrc;
   });
   const fetch = t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 202 }));
-  await trackServerEvent("download_click", new Request("https://varde.games/download/windows?token=secret", {
+  await trackServerEvent("sign_up_completed", new Request("https://varde.games/auth/sign-up?token=secret", {
     headers: { "user-agent": "test browser", "x-forwarded-for": "192.0.2.1", cookie: "session=secret" },
-  }), { os: "windows", target: "windows" });
+  }));
   const [url, init] = fetch.mock.calls[0].arguments;
   assert.equal(url, "https://stats.example.com/api/event");
   const options = init as RequestInit;
   assert.deepEqual(JSON.parse(options.body as string), {
-    name: "download_click", domain: "varde.games", url: "https://varde.games/download",
-    props: { os: "windows", target: "windows" },
+    name: "sign_up_completed", domain: "varde.games", url: "https://varde.games/auth/sign-up",
+    props: {},
   });
   assert.equal((options.headers as Record<string, string>)["Cookie"], undefined);
   assert.equal((options.headers as Record<string, string>)["User-Agent"], "test browser");
@@ -65,7 +65,7 @@ test("analytics tolerates network failures and invalid script URLs", async (t) =
 test("client events queue before the script loads and tolerate a blocked script", (t) => {
   const domain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
   process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN = "varde.games";
-  const browser = {} as Window & typeof globalThis;
+  const browser = { location: { href: "https://varde.games/auth/reset?token=secret&code=private&utm_source=producthunt#secret" } } as Window & typeof globalThis;
   Object.defineProperty(globalThis, "window", { value: browser, configurable: true });
   t.after(() => {
     Reflect.deleteProperty(globalThis, "window");
@@ -75,11 +75,32 @@ test("client events queue before the script loads and tolerate a blocked script"
   trackEvent("sign_up_started");
   trackEvent("checkout_started", { plan: "anchor-monthly" });
   assert.deepEqual(browser.plausible?.q, [
-    ["sign_up_started", { props: {} }],
-    ["checkout_started", { props: { plan: "anchor-monthly" } }],
+    ["sign_up_started", { props: {}, u: "https://varde.games/auth/reset?utm_source=producthunt" }],
+    ["checkout_started", { props: { plan: "anchor-monthly" }, u: "https://varde.games/auth/reset?utm_source=producthunt" }],
   ]);
   browser.plausible = () => { throw new Error("blocked"); };
   assert.doesNotThrow(() => trackEvent("sign_up_started"));
+});
+
+test("loaded client analytics receives a sanitized URL for download events", (t) => {
+  const domain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+  process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN = "varde.games";
+  const calls: unknown[][] = [];
+  const browser = {
+    location: { href: "https://varde.games/auth/reset?token=secret&code=private&ref=producthunt#secret" },
+    plausible: (...args: unknown[]) => { calls.push(args); },
+  } as unknown as Window & typeof globalThis;
+  Object.defineProperty(globalThis, "window", { value: browser, configurable: true });
+  t.after(() => {
+    Reflect.deleteProperty(globalThis, "window");
+    if (domain === undefined) delete process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+    else process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN = domain;
+  });
+  trackEvent("download_click", { os: "windows", target: "windows" });
+  assert.deepEqual(calls, [["download_click", {
+    props: { os: "windows", target: "windows" },
+    u: "https://varde.games/auth/reset?ref=producthunt",
+  }]]);
 });
 
 test("pageview URLs drop secrets from the query string but keep attribution", () => {

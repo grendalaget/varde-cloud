@@ -5,6 +5,8 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { MotionProvider } from "@/components/reveal";
 import { Analytics } from "@/components/analytics";
+import { DownloadTracking } from "@/components/download-tracking";
+import { ProductHuntBanner } from "@/components/product-hunt-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -58,12 +60,14 @@ export default function RootLayout({
       >
         <div className="flex min-h-screen flex-col">
           <SiteNav />
+          <ProductHuntBanner />
           <div className="flex-1">
             <MotionProvider>{children}</MotionProvider>
           </div>
           <SiteFooter />
         </div>
         <Analytics />
+        <DownloadTracking />
       </body>
     </html>
   );

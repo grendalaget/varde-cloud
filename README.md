@@ -159,8 +159,11 @@ configuration, so rebuild after changing them.
 Create Plausible goals for `download_click` (properties: `os`, `target`),
 `sign_up_started`, `sign_up_completed`, `email_verified` and `checkout_started`
 (property: `plan`). Sign-up starts and checkout starts are client-side intent
-events. Account creation, successful verification and download redirects are
-tracked server-side, including when browser JavaScript is unavailable.
+events. Download links and buttons are tracked client-side, independent of
+redirect caching. Artifact links report their selected OS and target; links to
+the download page report the browser OS and `target: download-page`. Raw redirect
+requests and visitors without JavaScript do not emit download events. Account
+creation and successful verification are tracked server-side.
 Analytics failures do not prevent the underlying action. No account identifiers
 or email addresses are sent as event properties.
 
@@ -170,6 +173,12 @@ it during that period. Values are bounded and copied as JSON to the nullable
 user attribution field on account creation, independently of analytics being
 enabled. Absent or malformed cookies produce no attribution. Campaign values
 are untrusted input, not proof of a referral or eligibility for an offer.
+
+Product Hunt referrals (`ref=producthunt` or `utm_source=producthunt`) show a
+dismissible welcome banner. A readable 30-day `varde_producthunt` flag keeps it
+available across pages without exposing attribution data. Dismissal is stored
+in localStorage. `NEXT_PUBLIC_PH_OFFER` optionally adds plain-text offer copy;
+it does not create a checkout discount or establish eligibility.
 
 Set `NEXT_PUBLIC_DISCORD_URL` to show a community link in navigation, footer
 and docs. It is hidden when unset. Support email is `support@varde.games`.
