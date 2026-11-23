@@ -60,8 +60,8 @@ export default function RootLayout({
       >
         <div className="flex min-h-screen flex-col">
           <SiteNav />
-          <ProductHuntBanner />
-          <div className="flex-1">
+          <div className="relative flex-1">
+            <ProductHuntBanner />
             <MotionProvider>{children}</MotionProvider>
           </div>
           <SiteFooter />
