@@ -32,16 +32,16 @@ export function ProductHuntBanner() {
   if (!visible || dismissed) return null;
 
   return (
-    <div className="px-3 py-3">
-      <aside aria-label="Product Hunt welcome" className="mx-auto flex max-w-3xl items-start gap-4 rounded-2xl border border-glod/40 bg-surface p-4 text-sm shadow-xl">
-        <div className="min-w-0 flex-1 break-words">
-          <p className="font-medium text-foreground">Welcome, Product Hunt visitors.</p>
-          {offer ? <p className="mt-1 text-muted">{offer}</p> : null}
+    <div className="pointer-events-none absolute inset-x-3 top-1 z-20">
+      <aside aria-label="Product Hunt welcome" className="pointer-events-auto mx-auto flex max-w-3xl items-center gap-2 rounded-xl border border-glod/40 bg-surface px-3 py-1 text-xs leading-4 shadow-xl">
+        <div className="flex min-w-0 flex-1 items-baseline gap-2">
+          <p className="shrink-0 whitespace-nowrap font-medium text-foreground">Welcome, Product Hunt visitors.</p>
+          {offer ? <p className="truncate text-muted" title={offer}>{offer}</p> : null}
         </div>
         <button
           type="button"
           aria-label="Dismiss Product Hunt welcome"
-          className="shrink-0 rounded-lg px-2 py-1 text-muted hover:bg-surface-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-glod"
+          className="shrink-0 rounded-lg px-1 text-muted hover:bg-surface-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-glod"
           onClick={() => {
             setDismissed(true);
             try { localStorage.setItem(PH_DISMISSED, "1"); } catch {
